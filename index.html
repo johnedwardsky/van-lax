@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The House of Van Lax</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@100;200;300;400&display=swap" rel="stylesheet">
+  <!-- GSAP, ScrollTrigger & Three.js Core -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  
+  <!-- ===============================
+       GLOBAL HUB: THE BEGINNING
+       =============================== -->
+  <div id="hub-wrapper">
+
+    <!-- Global Language Switch (fixed top-right, always visible on hub) -->
+    <div class="lang-switch-global" id="hub-lang-switch">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <!-- CENTER PARALLAX WORLD -->
+    <div id="hub-parallax-layer">
+      <div id="hub-image-box">
+        <img src="assets/gothic_hub.png" id="hub-bg-img" alt="Gothic Hub"/>
+        
+        <!-- Animated Ghost Layers (2.5D Parallax Compositing) -->
+        <img src="assets/left down ghost.png" class="ghost-layer ghost-1" />
+        <img src="assets/Right up ghost.png" class="ghost-layer ghost-2" />
+        <img src="assets/down right ghost.png" class="ghost-layer ghost-3" />
+        <img src="assets/center ghost.png" class="ghost-layer ghost-4" />
+
+        <div id="shatter-container"></div>
+        <!-- Central Logo Space -->
+        <div class="van-lax-overlay">
+          <div class="overlay-top">THE HOUSE OF</div>
+          <div class="overlay-bottom">VAN LAX</div>
+        </div>
+        
+        <!-- Interactive 3D CSS Space -->
+        <div class="hotspot" id="hs-gallery1" style="left: 45%; top: 15%;" onclick="flyThrough(1)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Gallery #1</div>
+        </div>
+        
+        <div class="hotspot" id="hs-knowledge" style="left: 61%; top: 20%;" onclick="flyThrough(2)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Knowlege...</div>
+        </div>
+        
+        <div class="hotspot" id="hs-music" style="left: 31%; top: 39%;" onclick="flyThrough(4)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Music...</div>
+        </div>
+        
+        <div class="hotspot" id="hs-gallery2" style="left: 35%; top: 65%;" onclick="flyThrough(3)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Gallery #2</div>
+        </div>
+        
+        <div class="hotspot" id="hs-gallery3" style="left: 65%; top: 60%;" onclick="flyThrough(4)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Gallery #3</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UI MENUS OVERLAY (Desktop Sidebar / Mobile Burger) -->
+    <div id="ui-panels">
+      <!-- LEFT PANEL -->
+      <aside class="side-panel panel-left">
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(1)">
+            <span class="section-prefix">The</span>
+            <h2 class="section-title gold">ART</h2>
+          </div>
+          <ul class="nav-list">
+            <li onclick="flyThrough(1)">
+              <span class="gold-num">1</span> 
+              <span class="nav-text">DIGITAL GALLERY</span>
+            </li>
+            <li onclick="flyThrough(2)">
+              <span class="gold-num">2</span> 
+              <span class="nav-text">SACRED GALLERY</span>
+            </li>
+            <li onclick="flyThrough(3)">
+              <span class="gold-num">3</span> 
+              <span class="nav-text">GENERATIVE GALLERY</span>
+            </li>
+          </ul>
+          
+          <button class="odyssey-btn" onclick="flyThrough(1)">START SPACE ODYSSEY</button>
+        </div>
+
+        <div class="footer-left" style="margin-top:auto;">
+          <p class="nav-link" onclick="flyThrough(7)">About</p>
+          <p class="nav-link" onclick="flyThrough(8)">Contacts</p>
+        </div>
+      </aside>
+
+      <!-- RIGHT PANEL -->
+      <aside class="side-panel panel-right">
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(4)">
+            <span class="section-prefix">The</span>
+            <h2 class="section-title right-title gold">MUSIC</h2>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(5)">
+            <span class="section-prefix">The</span>
+            <h2 class="section-title right-title gold">BOOK</h2>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(6)">
+            <span class="section-prefix">The</span>
+            <h2 class="section-title right-title gold">STORE</h2>
+          </div>
+        </div>
+        <div class="footer-right" style="margin-top:auto;">
+          <p class="copyright">&copy; 2026 Van Lax. All rights reserved.<br>This website and all artworks presented herein are the original intellectual property of Ivan Lakshinsky under the creative pseudonym Van Lax.</p>
+        </div>
+      </aside>
+
+      <!-- Mobile-only footer (visible only on small screens) -->
+      <div id="mobile-footer">
+        <p class="nav-link" onclick="flyThrough(7)">About</p>
+        <p class="nav-link" onclick="flyThrough(8)">Contacts</p>
+        <p class="copyright">&copy; 2026 Van Lax. All rights reserved.<br>This website and all artworks presented herein are the original intellectual property of Ivan Lakshinsky under the creative pseudonym Van Lax.</p>
+      </div>
+
+    </div>
+
+  </div> <!-- End hub-wrapper -->
+
+
+  <!-- ===============================
+       3D DNA SPIRAL SPACE
+       =============================== -->
+  <div id="webgl-container" style="display: none;">
+    <canvas id="webgl-canvas"></canvas>
+    
+    <nav class="gallery-nav fixed-overlay">
+      <div class="nav-brand">VAN LAX</div>
+      <div class="nav-controls">
+        <div class="lang-switch-nav">
+          <a href="index-ru.html">RU</a>
+          <span>/</span>
+          <a href="index.html" class="active">EN</a>
+        </div>
+        <button class="audio-btn" onclick="exitSection()">
+          Return to Main
+        </button>
+      </div>
+    </nav>
+    
+    <!-- Unified Container for Node UI inside 3D Spiral -->
+    <div id="ui-container" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none;">
+      
+      <!-- Node 1: Digital Gallery -->
+      <section class="gallery-node" id="node-1">
+        <h2 class="fade-in theme-glow-gold" style="margin-bottom:0;">DIGITAL GALLERY</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #E5B236; font-size: 2vh;">WEAVING REALITY</h3>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSection(1)">Enter</button>
+      </section>
+
+      <!-- Node 2: Sacred Gallery -->
+      <section class="gallery-node" id="node-2">
+        <h2 class="fade-in theme-glow-purple" style="margin-bottom:0;">SACRED GALLERY</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #8A2BE2; font-size: 2vh;">THE SEALS</h3>
+        <button class="start-view-btn btn-purple fade-in" onclick="enterSection(2)">Enter</button>
+      </section>
+
+      <!-- Node 3: Generative Gallery -->
+      <section class="gallery-node" id="node-3">
+        <h2 class="fade-in theme-glow-cyan" style="margin-bottom:0;">GENERATIVE GALLERY</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #00d2ff; font-size: 2vh;">AMUSE ART</h3>
+        <button class="start-view-btn btn-cyan fade-in" onclick="enterSection(3)">Enter</button>
+      </section>
+
+      <!-- Node 4: Listening -->
+      <section class="gallery-node" id="node-4">
+        <h2 class="fade-in theme-glow-violet">LISTENING</h2>
+        <button class="start-view-btn btn-violet fade-in" onclick="enterSection(4)">Enter</button>
+      </section>
+
+      <!-- Node 5: Reading -->
+      <section class="gallery-node" id="node-5">
+        <h2 class="fade-in theme-glow-fire" style="margin-bottom:0;">READING</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #ff5500; font-size: 2vh;">THE GOLDEN EGG</h3>
+        <button class="start-view-btn btn-fire fade-in" onclick="enterSection(5)">Enter</button>
+      </section>
+
+      <!-- Node 6: The Store -->
+      <section class="gallery-node" id="node-6">
+        <h2 class="fade-in theme-glow-pink">THE STORE</h2>
+        <button class="start-view-btn btn-pink fade-in" onclick="enterSection(6)">Enter</button>
+      </section>
+
+      <!-- Node 7: About -->
+      <section class="gallery-node" id="node-7">
+        <h2 class="fade-in theme-glow-gold">ABOUT</h2>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSection(7)">Enter</button>
+      </section>
+
+      <!-- Node 8: Contacts -->
+      <section class="gallery-node" id="node-8">
+        <h2 class="fade-in theme-glow-gold">CONNECT</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: var(--gold); font-size: 2vh;">CONTACTS</h3>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSection(8)">Enter</button>
+      </section>
+      
+    </div>
+
+  </div>
+
+  <!-- ===============================
+       GALLERY 1: DIGITAL GALLERY (SCROLL CINEMATIC)
+       =============================== -->
+  <div id="gallery-1-container" class="fullscreen-container" style="display: none; opacity: 0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <div class="g1-scroll-content">
+      
+      <!-- Intro Title -->
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">DIGITAL GALLERY <span>#1</span></div>
+        <h1 class="g1-intro-text">True creation...</h1>
+        <p class="g1-intro-sub">the genesis of new life, of a new history, according to the singular design of the Creator, upholding His law and order.</p>
+        <div class="scroll-down-hint">Scroll Down</div>
+      </div>
+
+      <!-- 1. Искра -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Искра.jpg" alt="The Spark">
+        <div class="g1-text-box">
+          <h2>The Spark</h2>
+          <p>In the beginning, before the first dawn of time, there was only the Void. A dark and infinite expanse of nothingness, devoid of all life and light. But then, in the depths of that abyss, there arose a spark of divine creation. And from that spark, the universe was born.</p>
+          <p>The creator of the universe, known only as the One, wove the fabric of reality with the sacred geometry of the cosmos. The rules of this geometry were absolute, and they governed the behaviour of all matter and energy in the universe.</p>
+        </div>
+      </div>
+
+      <!-- 2. Сердце -->
+      <div class="g1-card right">
+        <img class="g1-img" src="Digital Gallery/Сердце.jpg" alt="The Heart">
+        <div class="g1-text-box">
+          <h2>The Heart</h2>
+          <p>At the heart of this geometry lay the duality of light and darkness. For the One had decreed that the two were inseparable, and that one could not exist without the other. And so it was that the first act of creation was to separate the light from the darkness, forming a cosmic dance between the two.</p>
+          <p>From this dance emerged the stars and the galaxies, the planets and the moons. And on one of these worlds, a small and insignificant planet known as Earth, there arose a curious race of beings known as humans.</p>
+        </div>
+      </div>
+
+      <!-- 3. Семя -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Семя.jpg" alt="The Seed">
+        <div class="g1-text-box">
+          <h2>The Seed</h2>
+          <p>For eons, the humans gazed up at the stars and wondered about the mysteries of the universe. They marveled at the beauty of the light and the wonder of the darkness, and they searched for meaning in the dance between the two.</p>
+          <p>And then, in a moment of divine inspiration, one of these humans discovered the Book of Night. It was a tome of ancient knowledge, passed down from generation to generation, containing the secrets of the universe itself.</p>
+        </div>
+      </div>
+
+      <!-- 4. Материя -->
+      <div class="g1-card right">
+        <img class="g1-img" src="Digital Gallery/Материя.jpg" alt="The Matter">
+        <div class="g1-text-box">
+          <h2>The Matter</h2>
+          <p>The book spoke of the origins of the universe and the sacred geometry that governed its behavior. It spoke of the duality of light and darkness and the cosmic dance between the two. And it spoke of the human race, and how they were all born of the darkness, and how they could only see the true beauty of the light by first embracing the darkness within themselves.</p>
+          <p>And so it was that the Book of Night became a guiding light for the human race. They studied its words and learned its wisdom, and they grew in knowledge and understanding of the universe around them.</p>
+        </div>
+      </div>
+
+      <!-- 5. Золотое яйцо -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Золотое яйцо.jpg" alt="The Golden Egg">
+        <div class="g1-text-box">
+          <h2>The Golden Egg</h2>
+          <p>And though they would never fully comprehend the mysteries of the cosmos, they would always find solace in the knowledge that they were a part of something greater. For they knew that they had come from the darkness into the light, and that the light could only be seen in its true beauty in the darkness.</p>
+          <p>As the humans delved deeper into the mysteries of the Book of Night, they discovered more and more about the creation of the universe. They learned that the universe was not only shaped by the geometry of the cosmos, but also by the principles of growth and harmony.</p>
+        </div>
+      </div>
+
+      <!-- 6. Рождение -->
+      <div class="g1-card right">
+        <img class="g1-img" src="Digital Gallery/Рождение.jpg" alt="The Birth">
+        <div class="g1-text-box">
+          <h2>The Birth</h2>
+          <p>For the universe was like a vast garden, where the stars and galaxies were the flowers and the planets were the soil. And just as a garden needed both sunlight and water to grow, so too did the universe require both light and darkness to thrive.</p>
+          <p>The humans also discovered that the universe was not shaped like an egg, as they had once believed. Instead, it was formed by the interplay of two energies - the dark and the light. These energies were represented by the colors of red and blue, the male and female, and they were intertwined in a structure known as the vesica pisces.</p>
+        </div>
+      </div>
+
+      <!-- 7. Жизнь -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Жизнь.jpg" alt="The Life">
+        <div class="g1-text-box">
+          <h2>The Life</h2>
+          <p>This sacred structure had been passed down through the ages, from the ancient civilization of Atlantis to the Sumerians, Slavs, and Pharaohs of Egypt. And in each era, it had been revered as the seed of knowledge, the key to unlocking the mysteries of the universe.</p>
+          <p>And so it was that the humans came to understand that the universe was not just a collection of stars and planets, but a living, breathing entity, governed by the same principles of growth and harmony that governed all life. And they knew that they were but a small part of this vast and wondrous universe, and that their purpose was to live in harmony with the cosmos, to learn from its wisdom, and to share its beauty with all who would listen.</p>
+          <p>And so, armed with the knowledge of the Book of Night, the humans set forth into the universe, eager to explore its secrets and to discover the wonders that lay hidden within its depths. And though they would face many challenges and trials along the way, they would always carry with them the seed of knowledge, the sacred vesica pisces that had been passed down through the ages, and the promise of a universe filled with infinite possibilities.</p>
+        </div>
+      </div>
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(1)">NEXT GALLERY</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-2-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <div class="sacred-scroll-content">
+      
+      <!-- Sacred Intro -->
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">SACRED GALLERY <span>#2</span></div>
+        <h1 class="g1-intro-text">The Seals</h1>
+        <p class="g1-intro-sub">Inspired by tales!</p>
+        <div class="scroll-down-hint">Scroll Down</div>
+      </div>
+
+      <!-- Story Block -->
+      <div class="sacred-story">
+        <p>As a child, I listened to my grandmother weave endless stories and fairy tales. Only as the years passed did I begin to grasp their true purpose. This realization gave birth to an entirely new concept — one I hope will captivate both adults and children alike.</p>
+        
+        <blockquote>"Fairy tales are the ultimate vessel for passing down the wisdom of the universe."</blockquote>
+        
+        <p>The seeds of <em>Sealed Tales</em> were planted long ago. At the age of twelve, I was sent to England for my education, where I became utterly mesmerized by the legends of King Arthur, Merlin, and the Knights of the Round Table. These were myths kept alive by word of mouth, forming an unbroken circle across generations.</p>
+        
+        <p>The circle is where all things begin, and so do my stories. Everything traces back to that round table. I have always been drawn to the unseen, to the thrill of unraveling riddles and solving the universe's ultimate puzzles. This lifelong fascination inspired me to create these visual seals — intricate artworks containing the encrypted emotional and philosophical essence of those tales.</p>
+        
+        <p>While today's world races toward digital data and modern encryption, I chose to return to a far more profound and ancient code. I turned to <em>Sacred Geometry</em> — an eternal language spoken across cultures and eras, destined to outlast us all, for it is woven into the very symbols that surround us.</p>
+      </div>
+
+      <!-- Museum Wall Exhibition -->
+      <!-- Seal 1: The Time -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/The Time.png" alt="The Time">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">The Time</h2>
+          <p class="plaque-desc">We learn to value our time and not to waste it in vain.</p>
+        </div>
+      </div>
+
+      <!-- Seal 2: In The Shadow Of Unknown -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/In The Shadow Of Unknown.png" alt="In The Shadow Of Unknown">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">In The Shadow Of Unknown</h2>
+          <p class="plaque-desc">The unknown is something we fear and see no room for opportunity in the darkness, but as soon as the light enters the darkness, we receive the gifts to release our prejudice.</p>
+        </div>
+      </div>
+
+      <!-- Seal 3: Harvest -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Harvest.png" alt="Harvest">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Harvest</h2>
+          <p class="plaque-desc">What goes around comes around.</p>
+        </div>
+      </div>
+
+      <!-- Seal 4: Self Portrait -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Self Portrait.png" alt="Self Portrait">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Self Portrait</h2>
+          <p class="plaque-desc">An image of my inner beast.</p>
+        </div>
+      </div>
+
+      <!-- Seal 5: Strings of Dark Matter -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Strings of Dark Matter.png" alt="Strings of Dark Matter">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Strings of Dark Matter</h2>
+          <p class="plaque-desc">Everything in the ocean of the universe is interconnected, every drop has a purpose.</p>
+        </div>
+      </div>
+
+      <!-- Seal 6: Sixteen Fruits of VIRA -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Sixteen Fruits of VIRA.png" alt="Sixteen Fruits of VIRA">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Sixteen Fruits of VIRA</h2>
+          <p class="plaque-desc">The flower that keeps the universe in balance. From the Sealed Tales.</p>
+          <button class="read-tale-btn" onclick="openTaleModal('vira')">READ EXCERPT</button>
+        </div>
+      </div>
+
+      <!-- Seal 7: The Harmony -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/The Harmony.png" alt="The Harmony">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">The Harmony</h2>
+          <p class="plaque-desc">The wedding of opposites for the sake of balance creates eternal harmony.</p>
+        </div>
+      </div>
+
+      <!-- Seal 8: Eternal Engine -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Eternal Engine.png" alt="Eternal Engine">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Eternal Engine</h2>
+          <p class="plaque-desc">This, an interesting seal. By the way, it grants wishes in the literal sense. I will surely tell you a story connected with this seal, it concerns the launch of anything.</p>
+        </div>
+      </div>
+
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(2)">NEXT GALLERY</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-3-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(229,178,54,0.3) transparent;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <div class="g1-intro-section" style="padding-bottom: 20px;">
+      <div class="g1-elegant-title">GENERATIVE GALLERY <span>#3</span></div>
+      <h1 class="g1-intro-text">Amuse Art</h1>
+      <p class="g1-intro-sub">Here and now, you can become the creator. Try it...</p>
+    </div>
+    
+    <!-- Desktop Canvas -->
+    <div class="iframe-wrapper desktop-only-amuse" style="width: 90%; max-width: 1400px; height: 75vh; margin: 0 auto 40px; border: 1px solid rgba(229,178,54,0.2); border-radius: 8px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+      <iframe src="https://johnedwardsky.github.io/amuse-web/" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>
+    </div>
+
+    <!-- Mobile Placeholder -->
+    <div class="mobile-only-amuse" style="display: none; width: 90%; max-width: 500px; margin: 40px auto; padding: 40px; border: 1px solid rgba(229,178,54,0.3); border-radius: 8px; background: rgba(10,10,10,0.8); backdrop-filter: blur(5px); text-align: center;">
+      <p style="font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; font-style: italic;">Desktop Exclusive</p>
+      <p style="font-family: 'Montserrat', sans-serif; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6;">The generative canvas requires precision tools and processing power. Please visit this gallery on a desktop computer to unleash your creativity.</p>
+    </div>
+
+    <div class="g1-outro" style="margin-bottom: 80px;">
+      <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      <button class="g1-btn g1-btn-primary" onclick="nextSection(3)">NEXT GALLERY</button>
+    </div>
+  </div>
+
+  <div id="gallery-4-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <canvas id="music-visualizer"></canvas>
+    
+    <div class="g1-intro-section" style="position:relative; z-index: 10;">
+      <div class="g1-elegant-title">LISTENING <span>#4</span></div>
+      <h1 class="g1-intro-text" style="font-size: 10vh;">REBIRTH</h1>
+      <p class="g1-intro-sub" style="margin-bottom: 40px;">Interactive Audio Stems</p>
+      
+      <div class="stem-player-ui" style="position: relative; z-index: 20;">
+         <button id="master-play-btn" class="g1-btn g1-btn-primary solid-bg" style="font-size: 2vh; padding: 20px 60px; border-width: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">PLAY</button>
+         
+         <div class="stem-toggles">
+            <div class="stem-track">
+               <span class="stem-label">TRACK 1</span>
+               <button class="stem-mute-btn active" data-index="0">ACTIVE</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">TRACK 2</span>
+               <button class="stem-mute-btn active" data-index="1">ACTIVE</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">TRACK 3</span>
+               <button class="stem-mute-btn active" data-index="2">ACTIVE</button>
+            </div>
+         </div>
+      </div>
+      
+      <div style="margin-top: 40px;">
+        <button class="g1-btn" style="border: 1px solid rgba(255,255,255,0.2); opacity: 0.6; cursor: not-allowed;" disabled>
+          Listen to Van Lax Tracks (Coming Soon)
+        </button>
+      </div>
+
+      <div class="g1-outro" style="margin-top: 10vh; height: auto;">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(4)">NEXT GALLERY</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-5-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <div class="g1-intro-section">
+      <div class="g1-elegant-title">READING <span>#5</span></div>
+      <h1 class="g1-intro-text">The Golden Egg</h1>
+      <p class="g1-intro-sub">Decoding Reality — by Ivan Lakshinsky</p>
+      <div class="g1-outro">
+        <a class="g1-btn g1-btn-primary" href="book/index.html" style="text-decoration:none; display:inline-block; text-align:center;">OPEN BOOK</a>
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(5)">NEXT GALLERY</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-6-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <div class="g1-intro-section">
+      <div class="g1-elegant-title">THE STORE <span>#6</span></div>
+      <h1 class="g1-intro-text">Boutique</h1>
+      <p class="g1-intro-sub" style="max-width: 600px; margin: 0 auto 40px; font-size: 1.2rem; line-height: 1.6;">Coming Soon. Soon you will be able to discover and purchase exclusive Van Lax art objects and original prints.</p>
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-7-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <div class="g1-scroll-content">
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">ABOUT <span>#7</span></div>
+        <h1 class="g1-intro-text">Van Lax</h1>
+      </div>
+      
+      <div class="sacred-story" style="margin-top: 0; padding-top: 0;">
+        <p>At the crossroads of eras, we have acquired colossal knowledge. Today, the old world is crumbling, and the contours of the new one are only just beginning to emerge through the fog of the unknown. Throughout history, art has reflected the zeitgeist and prepared human minds for profound transformation. My name is Ivan Lakshinsky aka Van Lax. Originating from Russia, I was born in Siberia, studied in England, and continually refined my art, inspired by the multifaceted nature of our world. I am an explorer and a guide to the future.</p>
+        
+        <p>"The House of Van Lax" is not merely a portfolio. It is the first and only virtual space of its kind in the world, where classical art merges with cutting-edge web technologies and sacred geometry. Here, ancient knowledge casts off its veil through digital code. Today, more than ever, art hungers not just for an observer, but for an active participant who can think and feel.</p>
+
+        <h3 style="color: var(--gold); margin: 30px 0 15px; font-weight: 400; font-style: italic; font-size: 24px;">What awaits you in this space?</h3>
+        <p>Each hall in this gallery represents a stage of immersion into the fundamental architecture of reality:</p>
+        <ul style="list-style: none; padding-left: 15px; margin-bottom: 25px;">
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">The Digital Gallery</strong> unveils a philosophical myth about the creation of the world and the delicate balance between light and darkness through vast digital canvases.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">The Sacred Gallery</strong> presents "The Seals" — intricate visual artworks that encrypt the wisdom of ancient fairy tales and the absolute laws of sacred geometry.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">The Generative Gallery</strong> invites you to become a creator yourself here and now, engaging directly with Amuse algorithmic art.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Music & The Book</strong> (The Golden Egg) complement the visual experience, surrounding your senses and immersing you in deep reflections on the nature of perception.</li>
+        </ul>
+        
+        <p>In this digital sanctuary, I have united the philosophy of my entire life. I act as an architect of reality, artist, engineer, visionary, musician, entrepreneur, and the founder of the international IT company A-lab.tech. My explorations of our world never stop for a single second, and I know the time has exactly come to share this golden baggage with you.</p>
+
+        <p style="text-align: center; margin-top: 40px; font-size: 1.2em; color: var(--gold); letter-spacing: 0.1em;">Welcome to my temple.</p>
+      </div>
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-8-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active">EN</a>
+    </div>
+
+    <div class="g1-scroll-content">
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">CONNECT <span>#8</span></div>
+        <h1 class="g1-intro-text">Contacts</h1>
+      </div>
+      
+      <div class="contact-wrapper">
+        <div class="contact-emails">
+          <h3 class="contact-title">Direct Inquiries</h3>
+          <ul class="email-list">
+            <li>
+              <span>Press & Media</span>
+              <a href="mailto:media@vanlax.space">media@vanlax.space</a>
+            </li>
+            <li>
+              <span>Publishing</span>
+              <a href="mailto:publishing@vanlax.space">publishing@vanlax.space</a>
+            </li>
+            <li>
+              <span>Agents & Representation</span>
+              <a href="mailto:agent@vanlax.space">agent@vanlax.space</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="contact-form-container">
+          <h3 class="contact-title">Drop a Message</h3>
+          <form class="contact-form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Message sent successfully. We will get back to you soon.');">
+            <div class="form-group">
+              <label for="contact-name">Name</label>
+              <input type="text" id="contact-name" name="name" required placeholder="Your full name">
+            </div>
+            <div class="form-group">
+              <label for="contact-email">Email</label>
+              <input type="email" id="contact-email" name="email" required placeholder="Your email address">
+            </div>
+            <div class="form-group">
+              <label for="contact-message">Message</label>
+              <textarea id="contact-message" name="message" rows="5" required placeholder="How can we help?"></textarea>
+            </div>
+            <button type="submit" class="g1-btn contact-submit">SEND MESSAGE</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEALED TALES MODAL -->
+  <div id="tale-modal" class="tale-modal" onclick="closeTaleModal(event)">
+    <div class="tale-modal-content">
+      <button class="close-tale-btn" onclick="closeTaleModal(event)">&times;</button>
+      <div id="tale-modal-text" class="tale-text"></div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

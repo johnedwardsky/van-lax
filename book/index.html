@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Golden Egg — Decoding Reality</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #E5B236;
+      --bg: #0a0a0a;
+      --page-bg: #111;
+      --text: #d4d0c8;
+      --accent: #E5B236;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* ===== TOP BAR ===== */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 30px;
+      z-index: 100;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    }
+    .top-bar .brand {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300; letter-spacing: 0.3em;
+      font-size: 12px; color: rgba(255,255,255,0.5);
+    }
+    .top-bar .back-btn {
+      background: transparent; border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.6); padding: 8px 20px; border-radius: 4px;
+      font-family: 'Montserrat', sans-serif; font-size: 11px;
+      letter-spacing: 0.1em; cursor: pointer; transition: 0.3s;
+    }
+    .top-bar .back-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ===== PAGE COUNTER ===== */
+    .page-counter {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-family: 'Montserrat', sans-serif; font-size: 12px;
+      color: rgba(255,255,255,0.3); letter-spacing: 0.2em; z-index: 100;
+    }
+
+    /* ===== BOOK CONTAINER ===== */
+    .book-container {
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      perspective: 1600px;
+    }
+
+    .book {
+      position: relative;
+      width: min(90vw, 700px);
+      height: min(85vh, 950px);
+      transform-style: preserve-3d;
+    }
+
+    /* ===== PAGES ===== */
+    .page {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--page-bg);
+      border: 1px solid rgba(229,178,54,0.08);
+      border-radius: 4px;
+      padding: 60px 50px;
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      transform: translateX(40px) scale(0.95);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(229,178,54,0.3) transparent;
+    }
+    .page::-webkit-scrollbar { width: 4px; }
+    .page::-webkit-scrollbar-thumb { background: rgba(229,178,54,0.3); border-radius: 2px; }
+    .page::-webkit-scrollbar-track { background: transparent; }
+
+    .page.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(0) scale(1);
+      z-index: 10;
+    }
+    .page.exit-left {
+      opacity: 0;
+      transform: translateX(-60px) scale(0.95);
+    }
+    .page.exit-right {
+      opacity: 0;
+      transform: translateX(60px) scale(0.95);
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    .page h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .page h2 {
+      font-size: clamp(22px, 3.5vw, 32px);
+      color: #fff;
+      margin: 30px 0 15px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .page h3 {
+      font-size: clamp(18px, 2.5vw, 24px);
+      color: var(--gold);
+      margin: 25px 0 12px;
+      font-weight: 400;
+      font-style: italic;
+    }
+    .page p {
+      font-size: clamp(15px, 2vw, 18px);
+      line-height: 1.85;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+    .page .epigraph {
+      text-align: center;
+      font-style: italic;
+      color: rgba(229,178,54,0.7);
+      font-size: clamp(14px, 1.8vw, 17px);
+      margin: 20px 0 30px;
+      line-height: 1.7;
+    }
+    .page .subtitle {
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      font-size: clamp(11px, 1.5vw, 14px);
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 20px;
+    }
+    .page .author {
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      font-size: clamp(12px, 1.5vw, 15px);
+      color: rgba(255,255,255,0.5);
+      margin-top: 20px;
+    }
+    .page .divider {
+      text-align: center;
+      color: var(--gold);
+      font-size: 24px;
+      margin: 30px 0;
+      opacity: 0.4;
+    }
+    .page blockquote {
+      border-left: 2px solid rgba(229,178,54,0.3);
+      padding: 10px 20px;
+      margin: 20px 0;
+      font-style: italic;
+      color: rgba(255,255,255,0.6);
+      font-size: clamp(14px, 1.8vw, 16px);
+    }
+    .page ul {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0;
+    }
+    .page ul li {
+      padding: 8px 0 8px 20px;
+      position: relative;
+      font-size: clamp(15px, 1.8vw, 17px);
+      line-height: 1.7;
+    }
+    .page ul li::before {
+      content: '◆';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-size: 8px;
+      top: 14px;
+    }
+
+    /* ===== IMAGES ===== */
+    .page .page-img {
+      display: block;
+      max-width: 40%;
+      margin: 20px auto;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(229,178,54,0.1);
+    }
+    .page .cover-img {
+      display: block;
+      max-width: 60%;
+      max-height: 50vh;
+      margin: 30px auto;
+      border-radius: 6px;
+      box-shadow: 0 10px 60px rgba(229,178,54,0.2);
+    }
+
+    /* ===== PART TITLE PAGES ===== */
+    .page.part-title {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .page.part-title h1 {
+      font-size: clamp(32px, 6vw, 56px);
+      margin-bottom: 15px;
+    }
+    .page.part-title .epigraph {
+      max-width: 80%;
+    }
+
+    /* ===== NAVIGATION ARROWS ===== */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 60px; height: 100px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      z-index: 50;
+      color: var(--gold);
+      font-size: 42px;
+      transition: 0.3s;
+      border: 1px solid rgba(229,178,54,0.3);
+      border-radius: 6px;
+      background: rgba(229,178,54,0.05);
+    }
+    .nav-arrow:hover {
+      color: #fff;
+      background: rgba(229,178,54,0.2);
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(229,178,54,0.3);
+    }
+    .nav-arrow.left { left: 15px; }
+    .nav-arrow.right { right: 15px; }
+
+    /* ===== CTA PAGE ===== */
+    .cta-section {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .cta-section h1 {
+      margin-bottom: 20px;
+    }
+    .cta-section p {
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto 30px;
+    }
+    .cta-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+    .cta-btn {
+      display: inline-block;
+      padding: 16px 40px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.4s;
+      text-decoration: none;
+      min-width: 280px;
+    }
+    .cta-btn.primary {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      font-weight: 600;
+    }
+    .cta-btn.primary:hover {
+      box-shadow: 0 0 30px rgba(229,178,54,0.5);
+      transform: scale(1.03);
+    }
+    .cta-btn.secondary {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+    .cta-btn.secondary:hover {
+      background: rgba(229,178,54,0.1);
+    }
+    .cta-btn.outline {
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .cta-btn.outline:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ===== REQUEST FORM ===== */
+    .request-form {
+      display: none;
+      margin-top: 30px;
+      text-align: center;
+    }
+    .request-form.visible { display: block; }
+    .request-form input, .request-form textarea {
+      width: 100%;
+      max-width: 350px;
+      padding: 14px 18px;
+      margin: 8px auto;
+      display: block;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(229,178,54,0.2);
+      border-radius: 4px;
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+    }
+    .request-form input:focus, .request-form textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    .request-form textarea { height: 80px; resize: none; }
+    .request-form button {
+      margin-top: 15px;
+      padding: 14px 40px;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .request-form button:hover { box-shadow: 0 0 20px rgba(229,178,54,0.4); }
+
+    /* Language Switch */
+    .lang-switch-nav { display: flex; gap: 6px; align-items: center; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 300; letter-spacing: 0.1em; }
+    .lang-switch-nav a { color: rgba(255,255,255,0.5); text-decoration: none; transition: 0.3s; }
+    .lang-switch-nav a:hover { color: var(--gold); }
+    .lang-switch-nav a.active { color: var(--gold); font-weight: 500; pointer-events: none; }
+    .lang-switch-nav span { color: rgba(255,255,255,0.2); }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 768px) {
+      .page { padding: 50px 25px 80px; }
+      .nav-arrow { width: 35px; font-size: 22px; }
+      .nav-arrow.left { left: 2px; }
+      .nav-arrow.right { right: 2px; }
+      .page .cover-img { max-width: 80%; }
+      .top-bar { padding: 10px 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="brand">VAN LAX</div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div class="lang-switch-nav">
+        <a href="index-ru.html">RU</a>
+        <span>/</span>
+        <a href="index.html" class="active">EN</a>
+      </div>
+      <button class="back-btn" onclick="window.location.href='../index.html'">Return to Main</button>
+    </div>
+  </div>
+
+  <!-- Navigation Arrows -->
+  <button class="nav-arrow left" onclick="prevPage()">‹</button>
+  <button class="nav-arrow right" onclick="nextPage()">›</button>
+
+  <!-- Page Counter -->
+  <div class="page-counter" id="page-counter">1 / 1</div>
+
+  <!-- Book -->
+  <div class="book-container">
+    <div class="book" id="book">
+
+      <!-- PAGE 0: Cover -->
+      <div class="page part-title active">
+        <img class="cover-img" src="cover_en.jpg" alt="The Golden Egg">
+        <h1>The Golden Egg</h1>
+        <div class="subtitle">DECODING REALITY</div>
+        <div class="author">Van Lax</div>
+      </div>
+
+      <!-- PAGE 1: Prologue Title -->
+      <div class="page part-title">
+        <h1>Prologue</h1>
+        <div class="epigraph">The Speckled Hen and the Hidden Design of the Universe</div>
+      </div>
+
+      <!-- PAGE 2: Prologue Text -->
+      <div class="page">
+        <h2>The Speckled Hen and the Hidden Design of the Universe</h2>
+        <p>The ordinary fairy tales we heard as children seemed simple and naive. Yet if one looks deeper, behind them lie the mysteries of creation, encoded in images and symbols.</p>
+        <p>Let us recall the tale of the Speckled Hen. What is this golden egg that the hen laid? Why could neither the old man nor the old woman crack it? Why was it the mouse that broke it in the end?</p>
+        <p>If we unfold this plot onto a philosophical plane, deeper meanings emerge:</p>
+        <ul>
+          <li><strong>The golden egg</strong> is knowledge, truth, the hidden harmony of the world.</li>
+          <li><strong>The old man and old woman</strong> represent humanity, striving to unravel the secrets of existence.</li>
+          <li>They try to <strong>crack the egg</strong> — to reach truth by brute force — but nothing comes of it.</li>
+          <li><strong>The mouse</strong>, an inconspicuous creature, does it by sheer chance, as though hinting that truth reveals itself not through violence against the world, but through a natural process.</li>
+        </ul>
+        <p>This fairy tale is a code left to us by our ancestors. It says:</p>
+        <p class="epigraph">Not everything in this world needs to be deciphered. Some mysteries need only be accepted, contemplated, felt. And then they will reveal themselves to you at the right moment.</p>
+      </div>
+
+      <!-- PAGE 3: Perspective -->
+      <div class="page">
+        <h2>Perspective and Point of View</h2>
+        <p>The world is not a single, static picture. The world is perspective, a point of view, an angle of observation.</p>
+        <p>Take a simple line. Viewed from the front, it appears as a dot. From the side — a stripe. In three dimensions — an edge.</p>
+        <p>Now imagine the line is moving. From one angle, it travels from point A to point B. From another vantage point, it is already a plane changing its position in space. And from a third dimension, the line may turn out to be a spiral or even an infinite curve with no end.</p>
+        <p class="epigraph">What if everything you know is merely a line that you see from only one angle?</p>
+      </div>
+
+      <!-- PAGE 4: From the Author -->
+      <div class="page">
+        <h2>From the Author: The Life of an Observer</h2>
+        <p>I want to be utterly honest and open with you, dear reader. For a long time, my persona remained in the shadows for many in my circle.</p>
+        <p>For a long time, I believed the essence of understanding the world lay in taking it apart. We are accustomed to analysing reality, splitting it into components, striving to penetrate its mechanisms. But one day I stopped. And asked myself: what if the world does not require explanations at all? What if it asks not for analysis, but for simple, sincere contemplation?</p>
+        <p>When I was twelve, I left Russia and found myself in a British boarding school. For a child, it was chaos — an alien language, alien rules, an alien world. At thirteen I composed my first piece — an étude lasting twenty minutes, holding the entire composition in my head, without a single note on paper. Music saved me from chaos.</p>
+        <p>This book is not merely a collection of thoughts. It is a path, the length of my life. The path of an observer.</p>
+        <p class="epigraph">The question I pose to myself and to you, reader: what will you choose — to crack the egg in search of meaning, or to accept its mystery?</p>
+      </div>
+
+      <!-- PAGE 5: Map -->
+      <div class="page">
+        <h2>The Map of This Book</h2>
+        <p>This book is structured as a spiral — each turn deepens understanding.</p>
+        <ul>
+          <li><strong>Part I — Perception.</strong> What is reality? Dreams, illusions, the multi-layered nature of the world.</li>
+          <li><strong>Part II — The Code.</strong> What is reality built upon? Numbers, geometry, language, symbols, light and dark matter.</li>
+          <li><strong>Part III — Energy.</strong> What drives reality? Attention, chaos, time, discipline.</li>
+          <li><strong>Part IV — Harmony.</strong> How does one enter the flow? Awareness, awakening, the golden ratio.</li>
+          <li><strong>Part V — Practice.</strong> How does one live this? The MAGE Formula, a 21-day experiment.</li>
+        </ul>
+        <p class="epigraph">Let us together lift the veil on this world.</p>
+        <img class="page-img" src="avtoportret.jpg" alt="Self Portrait" style="max-width:50%;">
+      </div>
+
+      <!-- PAGE 6: PART I TITLE -->
+      <div class="page part-title">
+        <h1>Part I</h1>
+        <div class="subtitle">PERCEPTION</div>
+        <div class="epigraph">What is reality?</div>
+        <img class="page-img" src="teni.jpg" alt="In Shadows" style="max-width:50%; margin-top:20px;">
+      </div>
+
+      <!-- PAGE 7: Chapter 1 -->
+      <div class="page">
+        <h2>Chapter 1. The Observer and His World</h2>
+        <p class="epigraph">«Truth does not exist. We are what we are prepared to believe.»</p>
+        <p>These words reveal the essence of our perception. It seems to us that the world before us is real, that we see it as it truly is. But in reality, each of us looks at it through the prism of convictions, knowledge, emotions and experience.</p>
+        <p>Illusion permeates everything. We believe in money, yet it is merely paper. We acknowledge the borders of nations, yet there are no drawn lines upon the Earth. What we believe in becomes our reality.</p>
+        <p>The world resembles a matryoshka, in which one layer is hidden behind another. The outer shell is the material world. Beneath it — information. Deeper — convictions. Then — emotions. And at the very centre — the point of awareness, pure perception.</p>
+        <p>Quantum physics added scientific weight to this. The double-slit experiment showed that a particle behaves differently depending on whether it is being observed or not. Perhaps we are not merely observing reality — we are <strong>creating</strong> it.</p>
+      </div>
+
+      <!-- PAGE 8: Chapter 2 -->
+      <div class="page">
+        <h2>Chapter 2. Dreams: More Real Than Reality</h2>
+        <p class="epigraph">«In truth, through dreams we learn to govern this manifest reality of ours.»</p>
+        <p>Close your eyes. Recall a dream so vivid that, upon waking, you could not immediately tell — where was reality? In the dream you saw, heard, smelt, touched. Yet your eyes were closed. Who painted that world for you?</p>
+        <p>The mind. Only the mind.</p>
+        <p>Every night we leave the world of familiar laws and travel to a dimension where anything is possible. We fly, pass through walls, speak with those who are no longer here. But if consciousness can build such realities in sleep, how does this process differ from what occurs when we are awake?</p>
+        <blockquote>Christopher Nolan's film <em>Inception</em> brilliantly explores this idea: a dream within a dream — nested layers of reality, each of which feels utterly real.</blockquote>
+        <p>True wisdom lies not in recognising that reality is a dream, but in awakening within it and beginning to consciously create one's life.</p>
+      </div>
+
+      <!-- PAGE 9: Chapter 3 -->
+      <div class="page">
+        <h2>Chapter 3. The Matryoshka of Worlds</h2>
+        <p class="epigraph">«Meanings are the most important thing in our lives»</p>
+        <p>Every morning we wake not simply because we do, but because we believe in the meaning of a new day. We work because we consider money important. We build relationships because we sense the value of love.</p>
+        <p>But what if all these meanings are not objective? What if money is merely numbers in a system? What if love is biochemistry?</p>
+        <h3>Money as a Construct of Meaning</h3>
+        <p>Money is one of the most powerful examples of how collective belief becomes reality. A paper banknote is worth nothing in itself. The entire system works only because we collectively believe: this symbol equals value.</p>
+        <h3>Factories of Meaning</h3>
+        <p><strong>Whoever controls meaning controls perception.</strong></p>
+        <p>Hollywood is one of the most powerful generators of meaning in history. Through cinema, billions of people are fed models of behaviour, values, fears and dreams. Social media have perfected this: algorithms analyse your reactions and construct your feed to maximise the capture of attention. You do not consume content — content consumes you.</p>
+      </div>
+
+      <!-- PAGE 10: The Stupor -->
+      <div class="page">
+        <h2>The Stupor</h2>
+        <p class="epigraph">«Everything you see, hear, feel — it is all part of the spectacle. So that you never pause to wonder what goes on behind its curtain.»</p>
+        <p>The world is as if shrouded in a haze of sleep. We live in reality, yet see it through a prism of illusions that hold our attention inside the game.</p>
+        <p>So that we might sleep with our eyes open, they created the cinematograph. So that the ears might dwell in a pleasant stupor, they created music. For those who seek pleasure in food, they made flavours exquisite.</p>
+        <p>But what if one were to reduce the importance of all this? Not reject, not fight, but simply recognise the game. Watch, but do not lose oneself in images. Listen, but do not drown in sounds. Feel, but do not become a slave to feelings. Think, but do not identify with thoughts.</p>
+        <p>Then reality changes. The world begins to shimmer in a different light.</p>
+      </div>
+
+      <!-- PAGE 11: PART II TITLE -->
+      <div class="page part-title">
+        <h1>Part II</h1>
+        <div class="subtitle">THE CODE</div>
+        <div class="epigraph">What is reality built upon?</div>
+        <div class="epigraph" style="margin-top:30px;">«In the beginning was Number. Number begat Proportion. Proportion created Form. Form created Matter.»</div>
+      </div>
+
+      <!-- PAGE 12: Chapter 4 -->
+      <div class="page">
+        <h2>Chapter 4. Numbers and Sacred Geometry</h2>
+        <p class="epigraph">«All is structure. Without structure there is no form. Without form there is no matter.»</p>
+        <p>Sacred Geometry is an ancient science that studies the symbolic meaning of geometric shapes. It explores how specific angles and figures reflect the fundamental principles of the universe.</p>
+        <p>Pythagoras declared: 'Numbers are the essence of all things.' The number 3 symbolises creation. The number 7 — harmony of being. The number 12 governs time and cyclicality.</p>
+        <p>Galileo Galilei said: 'Geometry is the language in which God speaks.' The Fibonacci spiral is reflected in shells and galaxies; fractals repeat in leaves, lungs and the circulatory system; hexagons appear in honeycombs and crystalline lattices.</p>
+        <img class="page-img" src="seed_of_life_en.png" alt="Seed of Life">
+      </div>
+
+      <!-- PAGE 13: The Mathematical Code -->
+      <div class="page">
+        <h2>The Mathematical Code of Ancient Texts</h2>
+        <p>I conducted a thorough analysis of the numerical values in the Bible, cross-referencing them with sacred geometry. The result astonished me: the numbers form a precise mathematical framework.</p>
+        <p><strong>The seven days of Creation</strong> — six circles arranged around a single central one form the 'Seed of Life'. 6 days + 1 day of rest = the geometric constant.</p>
+        <p><strong>Noah's Ark</strong> — 300 × 50 × 30 cubits. Width/height = 5/3 ≈ 1.667, an approximation of the <strong>golden ratio</strong> φ = 1.618.</p>
+        <p><strong>The Ark of the Covenant</strong> — 2.5 × 1.5 × 1.5 cubits. Length/width = 5/3 — the very same proportion.</p>
+        <p><strong>Solomon's Temple</strong> — its heart, the Holy of Holies, is a <strong>perfect cube</strong>: 20 × 20 × 20. The same cube described in the New Jerusalem.</p>
+        <p><strong>The number 144,000</strong> — 144 is a Fibonacci number, and the only one that is a perfect square. It stands in the 12th position of the Fibonacci series.</p>
+      </div>
+
+      <!-- PAGE 14: Three Roots -->
+      <div class="page">
+        <h2>The Formulae of Creation: Three Roots of Reality</h2>
+        <p><strong>√2</strong> — the diagonal of a square. Used in Gothic cathedrals and the A-paper format.</p>
+        <p><strong>√3</strong> — the height of an equilateral triangle and the proportion of the Vesica Piscis — the 'womb of creation'.</p>
+        <img class="page-img" src="vesica_piscis_en.png" alt="Vesica Piscis" style="max-width:60%;">
+        <p><strong>φ (phi)</strong> — the golden ratio ≈ 1.618. Hidden in the nautilus shell, galaxy arms, sunflower seeds, DNA, the Parthenon, Stradivari violins.</p>
+        <img class="page-img" src="golden_spiral_en.png" alt="Golden Spiral" style="max-width:60%;">
+        <p>All three roots are linked through π: √2 = 2·cos(45°), √3 = 2·cos(30°), φ = 2·cos(36°). The circle contains everything.</p>
+        <img class="page-img" src="three_roots_en.png" alt="Three Roots" style="max-width:60%;">
+      </div>
+
+      <!-- PAGE 15: Platonic Solids -->
+      <div class="page">
+        <h2>Five Building Blocks of the Universe</h2>
+        <p>In all of infinite space there exist <strong>only five</strong> perfectly regular solid forms — the Platonic solids:</p>
+        <ul>
+          <li><strong>Tetrahedron</strong> (4 faces) — Fire</li>
+          <li><strong>Cube</strong> (6 faces) — Earth</li>
+          <li><strong>Octahedron</strong> (8 faces) — Air</li>
+          <li><strong>Icosahedron</strong> (20 faces) — Water. Its formulae contain φ, the golden ratio!</li>
+          <li><strong>Dodecahedron</strong> (12 faces) — The Universe, Aether</li>
+        </ul>
+        <img class="page-img" src="platonic_solids_en.png" alt="Platonic Solids">
+        <h3>Metatron's Cube: The Master Blueprint</h3>
+        <p>13 points. 78 lines. One blueprint that contains all five Platonic solids.</p>
+        <img class="page-img" src="metatron_cube_en.png" alt="Metatron's Cube">
+      </div>
+
+      <!-- PAGE 16: The Golden Egg geometry -->
+      <div class="page">
+        <h2>The Golden Egg Is the Geometry of Life</h2>
+        <p>The egg — the symbol of life and birth — is built upon the very same laws. Take a circle. Inscribe an equilateral triangle. From its vertices, draw arcs. The result is the perfect contour of an egg — containing the circle, the triangle, and √3.</p>
+        <img class="page-img" src="golden_egg_en.png" alt="The Golden Egg Geometry">
+        <div class="divider">✦ ✦ ✦</div>
+        <p>Three proportions. Five solids. One blueprint. These are the formulae upon which reality stands. Honeycombs, snowflakes, crystals, flowers, spirals, stars — all speak the same language. And that language is geometry.</p>
+      </div>
+
+      <!-- PAGE 17: Chapter 5 -->
+      <div class="page">
+        <h2>Chapter 5. The Word as Vibration</h2>
+        <p class="epigraph">«In the beginning was the Word.»</p>
+        <p>We are accustomed to thinking of language as merely a tool of communication. But what if words are something greater? A word carries vibration, and vibration creates form.</p>
+        <p>Ernst Chladni proved that sound vibrations create geometric patterns — sprinkle sand on a metal plate and draw a bow across it to see how chaos instantly arranges itself into perfect structures.</p>
+        <p>In all ancient traditions, the word held sacred significance. The Vedas, the Quran, the Bible — all these texts function as active codes, transforming consciousness.</p>
+        <p>Language is the key to shaping reality. Every word carries a charge. Speak consciously, utter words that carry strength and harmony, and you will see how not only your consciousness changes, but the very world around you.</p>
+      </div>
+
+      <!-- PAGE 18: Chapter 6 -->
+      <div class="page">
+        <h2>Chapter 6. The Hermetic Principle</h2>
+        <p class="epigraph">«As above, so below; as below, so above.»</p>
+        <p>An atom repeats the structure of the solar system. The neural network of the brain is indistinguishable from a map of the Universe. The spiral of DNA is the same spiral as a galaxy.</p>
+        <p>Fractals — every part contains the whole. Every level reflects all others.</p>
+        <p>If the microcosm reflects the macrocosm, then a change within you is a change in the world. Not metaphorically. Literally.</p>
+        <p>The Bible states: 'Know ye not that your bodies are the temple of the Holy Ghost?' The human spine consists of <strong>33 vertebrae</strong>. Jesus was crucified at <strong>33</strong>. Golgotha translates as 'skull'. The crucifixion takes place <strong>in the head</strong>.</p>
+        <p>In our brain there are approximately <strong>100 billion neurons</strong> — the same number as the stars in our Galaxy. We are not a 'likeness' of the Universe. We <strong>are</strong> the Universe in miniature.</p>
+      </div>
+
+      <!-- PAGE 19: Chapter 7 -->
+      <div class="page">
+        <h2>Chapter 7. Light and Dark Matter</h2>
+        <p class="epigraph">«Imagine that rays of light, carrying photons, are filled with diverse information, penetrating only those structures ready to receive it.»</p>
+        <p>What if light carries not only energy, but <strong>information</strong>? Every photon that touches your skin carries more than warmth. It carries the rhythm of the Universe.</p>
+        <p>Within this Universe there is also a reverse side — <strong>dark matter</strong>. It does not shine. Yet its influence is palpable. It holds galaxies together. Approximately 85% of the Universe's mass consists of dark matter — invisible, intangible, yet real.</p>
+        <p>Light and darkness are not opposites. They are <strong>two wings of the same bird</strong>. Light carries information; darkness creates the space for its reception.</p>
+        <div class="divider">✦ ✦ ✦</div>
+        <p class="epigraph">End of Part II — The Code</p>
+      </div>
+
+      <!-- PAGE 20: CTA PAGE -->
+      <div class="page part-title">
+        <div class="cta-section">
+          <h1>Continue Reading?</h1>
+          <p>You have reached the end of the free preview. The full book includes Parts III–V: Energy, Harmony, and Practice — with the MAGE Formula and 47 Golden Thoughts.</p>
+
+          <div class="cta-buttons">
+            <a class="cta-btn primary" href="../harmony-book/golden_egg_EN_A5_ebook.pdf" download>Download E-Book (PDF)</a>
+            <button class="cta-btn secondary" onclick="showRequestForm()">Order Printed Edition</button>
+            <a class="cta-btn outline" href="../index.html">Return to Van Lax</a>
+          </div>
+
+          <div class="request-form" id="request-form">
+            <h3 style="color:var(--gold); margin-bottom:15px;">Order a Printed Copy</h3>
+            <input type="text" placeholder="Your name" id="req-name">
+            <input type="email" placeholder="Email" id="req-email">
+            <textarea placeholder="Shipping address or message"></textarea>
+            <button onclick="submitRequest()">Send Request</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const pages = document.querySelectorAll('.page');
+    const counter = document.getElementById('page-counter');
+    let currentPage = 0;
+    const totalPages = pages.length;
+
+    function updateCounter() {
+      counter.textContent = `${currentPage + 1} / ${totalPages}`;
+    }
+
+    function goToPage(index) {
+      if (index < 0 || index >= totalPages || index === currentPage) return;
+
+      const direction = index > currentPage ? 'left' : 'right';
+      const oldPage = pages[currentPage];
+      const newPage = pages[index];
+
+      // Exit old page
+      oldPage.classList.remove('active');
+      oldPage.classList.add(direction === 'left' ? 'exit-left' : 'exit-right');
+      setTimeout(() => {
+        oldPage.classList.remove('exit-left', 'exit-right');
+      }, 600);
+
+      // Enter new page
+      newPage.style.transform = direction === 'left' ? 'translateX(40px) scale(0.95)' : 'translateX(-40px) scale(0.95)';
+      requestAnimationFrame(() => {
+        newPage.classList.add('active');
+        newPage.style.transform = '';
+        newPage.scrollTop = 0;
+      });
+
+      currentPage = index;
+      updateCounter();
+    }
+
+    function nextPage() { goToPage(currentPage + 1); }
+    function prevPage() { goToPage(currentPage - 1); }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevPage();
+    });
+
+    // Touch / swipe support
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      // Only trigger if horizontal swipe is dominant
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if (dx < 0) nextPage();   // swipe left = next
+        else prevPage();           // swipe right = previous
+      }
+    }, { passive: true });
+
+    // CTA functions
+    function showRequestForm() {
+      document.getElementById('request-form').classList.toggle('visible');
+    }
+
+    function submitRequest() {
+      const name = document.getElementById('req-name').value;
+      const email = document.getElementById('req-email').value;
+      if (!name || !email) {
+        alert('Please fill in your name and email.');
+        return;
+      }
+      alert('Thank you, ' + name + '! Your request has been received. We will contact you at ' + email + '.');
+      document.getElementById('request-form').classList.remove('visible');
+    }
+
+    updateCounter();
+
+    // ==========================================
+    // STATE PERSISTENCE (Language Switching)
+    // ==========================================
+    document.addEventListener('click', function(e) {
+      const langLink = e.target.closest('.lang-switch-nav a');
+      if (langLink) {
+        e.preventDefault();
+        let target = langLink.getAttribute('href');
+        if (typeof currentPage !== 'undefined' && currentPage > 0) {
+          window.location.href = target + '#page-' + currentPage;
+        } else {
+          window.location.href = target;
+        }
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash;
+      if(hash && hash.startsWith('#page-')) {
+        const pageNum = parseInt(hash.replace('#page-', ''), 10);
+        if(!isNaN(pageNum) && typeof goToPage === 'function') {
+           setTimeout(() => goToPage(pageNum), 100);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

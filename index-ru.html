@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дом Ван Лакса</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Russian title sizing — longer words need smaller sizes to fit panels */
+    .section-title { font-size: 5.5vh !important; }
+    .right-title { font-size: 5vh !important; }
+    @media (max-width: 768px) {
+      .section-title { font-size: 12vw !important; }
+      .right-title { font-size: 12vw !important; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@100;200;300;400&display=swap" rel="stylesheet">
+  <!-- GSAP, ScrollTrigger & Three.js Core -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  
+  <!-- ===============================
+       GLOBAL HUB: THE BEGINNING
+       =============================== -->
+  <div id="hub-wrapper">
+
+    <!-- Global Language Switch (fixed top-right, always visible on hub) -->
+    <div class="lang-switch-global" id="hub-lang-switch">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+
+    <!-- CENTER PARALLAX WORLD -->
+    <div id="hub-parallax-layer">
+      <div id="hub-image-box">
+        <img src="assets/gothic_hub.png" id="hub-bg-img" alt="Gothic Hub"/>
+        
+        <!-- Animated Ghost Layers (2.5D Parallax Compositing) -->
+        <img src="assets/left down ghost.png" class="ghost-layer ghost-1" />
+        <img src="assets/Right up ghost.png" class="ghost-layer ghost-2" />
+        <img src="assets/down right ghost.png" class="ghost-layer ghost-3" />
+        <img src="assets/center ghost.png" class="ghost-layer ghost-4" />
+
+        <div id="shatter-container"></div>
+        <!-- Central Logo Space -->
+        <div class="van-lax-overlay">
+          <div class="overlay-top">ТВОРЧЕСКИЙ ДОМ</div>
+          <div class="overlay-bottom">ВАН ЛАКС</div>
+        </div>
+        
+        <!-- Interactive 3D CSS Space -->
+        <div class="hotspot" id="hs-gallery1" style="left: 45%; top: 15%;" onclick="flyThrough(1)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Галерея #1</div>
+        </div>
+        
+        <div class="hotspot" id="hs-knowledge" style="left: 61%; top: 20%;" onclick="flyThrough(2)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Знания...</div>
+        </div>
+        
+        <div class="hotspot" id="hs-music" style="left: 31%; top: 39%;" onclick="flyThrough(4)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Музыка...</div>
+        </div>
+        
+        <div class="hotspot" id="hs-gallery2" style="left: 35%; top: 65%;" onclick="flyThrough(3)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Галерея #2</div>
+        </div>
+        
+        <div class="hotspot" id="hs-gallery3" style="left: 65%; top: 60%;" onclick="flyThrough(4)">
+          <div class="ring"></div>
+          <div class="tooltip tooltip-right">Галерея #3</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UI MENUS OVERLAY (Desktop Sidebar / Mobile Burger) -->
+    <div id="ui-panels">
+      <!-- LEFT PANEL -->
+      <aside class="side-panel panel-left">
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(1)">
+            <span class="section-prefix"></span>
+            <h2 class="section-title gold">ИСКУССТВО</h2>
+          </div>
+          <ul class="nav-list">
+            <li onclick="flyThrough(1)">
+              <span class="gold-num">1</span> 
+              <span class="nav-text">ЦИФРОВАЯ ГАЛЕРЕЯ</span>
+            </li>
+            <li onclick="flyThrough(2)">
+              <span class="gold-num">2</span> 
+              <span class="nav-text">САКРАЛЬНАЯ ГАЛЕРЕЯ</span>
+            </li>
+            <li onclick="flyThrough(3)">
+              <span class="gold-num">3</span> 
+              <span class="nav-text">ГЕНЕРАТИВНАЯ ГАЛЕРЕЯ</span>
+            </li>
+          </ul>
+          
+          <button class="odyssey-btn" onclick="flyThrough(1)">НАЧАТЬ ОДИССЕЮ</button>
+        </div>
+
+        <div class="footer-left" style="margin-top:auto;">
+          <p class="nav-link" onclick="flyThrough(7)">О нас</p>
+          <p class="nav-link" onclick="flyThrough(8)">Контакты</p>
+        </div>
+      </aside>
+
+      <!-- RIGHT PANEL -->
+      <aside class="side-panel panel-right">
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(4)">
+            <span class="section-prefix"></span>
+            <h2 class="section-title right-title gold">МУЗЫКА</h2>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(5)">
+            <span class="section-prefix"></span>
+            <h2 class="section-title right-title gold">КНИГА</h2>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="category-btn" onclick="flyThrough(6)">
+            <span class="section-prefix"></span>
+            <h2 class="section-title right-title gold">МАГАЗИН</h2>
+          </div>
+        </div>
+        <div class="footer-right" style="margin-top:auto;">
+          <p class="copyright">&copy; 2026 Van Lax. Все права защищены.<br>Настоящий сайт и все представленные на нем предметы искусства являются авторскими работами Ивана Лакшинского под творческим псевдонимом Ван Лакс.</p>
+        </div>
+      </aside>
+
+      <!-- Mobile-only footer (visible only on small screens) -->
+      <div id="mobile-footer">
+        <p class="nav-link" onclick="flyThrough(7)">О нас</p>
+        <p class="nav-link" onclick="flyThrough(8)">Контакты</p>
+        <p class="copyright">&copy; 2026 Van Lax. Все права защищены.<br>Настоящий сайт и все представленные на нем предметы искусства являются авторскими работами Ивана Лакшинского под творческим псевдонимом Ван Лакс.</p>
+      </div>
+
+    </div>
+
+  </div> <!-- End hub-wrapper -->
+
+
+  <!-- ===============================
+       3D DNA SPIRAL SPACE
+       =============================== -->
+  <div id="webgl-container" style="display: none;">
+    <canvas id="webgl-canvas"></canvas>
+    
+    <nav class="gallery-nav fixed-overlay">
+      <div class="nav-brand">VAN LAX</div>
+      <div class="nav-controls">
+        <div class="lang-switch-nav">
+          <a href="index-ru.html" class="active">RU</a>
+          <span>/</span>
+          <a href="index.html">EN</a>
+        </div>
+        <button class="audio-btn" onclick="exitSection()">
+          На главную
+        </button>
+      </div>
+    </nav>
+    
+    <!-- Unified Container for Node UI inside 3D Spiral -->
+    <div id="ui-container" style="display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none;">
+      
+      <!-- Node 1: Digital Gallery -->
+      <section class="gallery-node" id="node-1">
+        <h2 class="fade-in theme-glow-gold" style="margin-bottom:0;">ЦИФРОВАЯ ГАЛЕРЕЯ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #E5B236; font-size: 2vh;">СПЛЕТАЯ РЕАЛЬНОСТЬ</h3>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSection(1)">Войти</button>
+      </section>
+
+      <!-- Node 2: Sacred Gallery -->
+      <section class="gallery-node" id="node-2">
+        <h2 class="fade-in theme-glow-purple" style="margin-bottom:0;">САКРАЛЬНАЯ ГАЛЕРЕЯ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #8A2BE2; font-size: 2vh;">ПЕЧАТИ</h3>
+        <button class="start-view-btn btn-purple fade-in" onclick="enterSection(2)">Войти</button>
+      </section>
+
+      <!-- Node 3: Generative Gallery -->
+      <section class="gallery-node" id="node-3">
+        <h2 class="fade-in theme-glow-cyan" style="margin-bottom:0;">ГЕНЕРАТИВНАЯ ГАЛЕРЕЯ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #00d2ff; font-size: 2vh;">AMUSE ART</h3>
+        <button class="start-view-btn btn-cyan fade-in" onclick="enterSection(3)">Войти</button>
+      </section>
+
+      <!-- Node 4: Listening -->
+      <section class="gallery-node" id="node-4">
+        <h2 class="fade-in theme-glow-violet">СЛУШАТЬ</h2>
+        <button class="start-view-btn btn-violet fade-in" onclick="enterSection(4)">Войти</button>
+      </section>
+
+      <!-- Node 5: Reading -->
+      <section class="gallery-node" id="node-5">
+        <h2 class="fade-in theme-glow-fire" style="margin-bottom:0;">ЧТЕНИЕ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #ff5500; font-size: 2vh;">ЗОЛОТОЕ ЯЙЦО</h3>
+        <button class="start-view-btn btn-fire fade-in" onclick="enterSection(5)">Войти</button>
+      </section>
+
+      <!-- Node 6: The Store -->
+      <section class="gallery-node" id="node-6">
+        <h2 class="fade-in theme-glow-pink">МАГАЗИН</h2>
+        <button class="start-view-btn btn-pink fade-in" onclick="enterSection(6)">Войти</button>
+      </section>
+
+      <!-- Node 7: About -->
+      <section class="gallery-node" id="node-7">
+        <h2 class="fade-in theme-glow-gold">О НАС</h2>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSection(7)">Войти</button>
+      </section>
+
+      <!-- Node 8: Contacts -->
+      <section class="gallery-node" id="node-8">
+        <h2 class="fade-in theme-glow-gold">СВЯЗЬ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: var(--gold); font-size: 2vh;">КОНТАКТЫ</h3>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSection(8)">Войти</button>
+      </section>
+      
+    </div>
+
+  </div>
+
+  <!-- ===============================
+       GALLERY 1: DIGITAL GALLERY (SCROLL CINEMATIC)
+       =============================== -->
+  <div id="gallery-1-container" class="fullscreen-container" style="display: none; opacity: 0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+    <div class="g1-scroll-content">
+      
+      <!-- Intro Title -->
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">ЦИФРОВАЯ ГАЛЕРЕЯ <span>#1</span></div>
+        <h1 class="g1-intro-text">Истинное творение...</h1>
+        <p class="g1-intro-sub">зарождение новой жизни, новой истории, по единственному замыслу Создателя, хранящий закон и порядок.</p>
+        <div class="scroll-down-hint">Прокрутите вниз</div>
+      </div>
+
+      <!-- 1. Искра -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Искра.jpg" alt="Искра">
+        <div class="g1-text-box">
+          <h2>Искра</h2>
+          <p>В начале, до первого рассвета времени, существовала лишь Пустота. Тёмная и бесконечная бездна небытия, лишённая всякой жизни и света. Но затем, в глубинах этой бездны, возникла искра божественного творения. И из этой искры родилась Вселенная.</p>
+          <p>Создатель Вселенной, известный лишь как Единый, соткал ткань реальности сакральной геометрией космоса. Законы этой геометрии были абсолютны и управляли поведением всей материи и энергии во Вселенной.</p>
+        </div>
+      </div>
+
+      <!-- 2. Сердце -->
+      <div class="g1-card right">
+        <img class="g1-img" src="Digital Gallery/Сердце.jpg" alt="Сердце">
+        <div class="g1-text-box">
+          <h2>Сердце</h2>
+          <p>В основе этой геометрии лежала двойственность света и тьмы. Ибо Единый установил, что они неразделимы и одно не может существовать без другого. И потому первым актом творения стало отделение света от тьмы, формируя космический танец между ними.</p>
+          <p>Из этого танца возникли звёзды и галактики, планеты и луны. И на одном из этих миров, маленькой и незначительной планете под названием Земля, зародилась любопытная раса существ, известных как люди.</p>
+        </div>
+      </div>
+
+      <!-- 3. Семя -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Семя.jpg" alt="Семя">
+        <div class="g1-text-box">
+          <h2>Семя</h2>
+          <p>Веками люди смотрели на звёзды и размышляли о тайнах Вселенной. Они восхищались красотой света и чудом тьмы и искали смысл в танце между ними.</p>
+          <p>И тогда, в момент божественного вдохновения, один из этих людей обнаружил Книгу Ночи. Это был фолиант древнего знания, передававшийся из поколения в поколение, содержащий тайны самой Вселенной.</p>
+        </div>
+      </div>
+
+      <!-- 4. Материя -->
+      <div class="g1-card right">
+        <img class="g1-img" src="Digital Gallery/Материя.jpg" alt="Материя">
+        <div class="g1-text-box">
+          <h2>Материя</h2>
+          <p>Книга повествовала о происхождении Вселенной и сакральной геометрии, управлявшей её устройством. Она говорила о двойственности света и тьмы, о космическом танце между ними. И она рассказывала о человеческом роде — о том, что все они рождены из тьмы, и что истинную красоту света можно увидеть, лишь сначала приняв тьму внутри себя.</p>
+          <p>И так Книга Ночи стала путеводной звездой для человечества. Они изучали её слова и познавали мудрость, росли в знании и понимании окружающей Вселенной.</p>
+        </div>
+      </div>
+
+      <!-- 5. Золотое яйцо -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Золотое яйцо.jpg" alt="Золотое яйцо">
+        <div class="g1-text-box">
+          <h2>Золотое яйцо</h2>
+          <p>И хотя они никогда не смогут до конца постичь тайны космоса, они всегда найдут утешение в знании того, что являются частью чего-то большего. Ибо они знали, что пришли из тьмы к свету, и что свет можно увидеть во всей его истинной красоте лишь во тьме.</p>
+          <p>Углубляясь в тайны Книги Ночи, люди открывали всё больше о сотворении Вселенной. Они узнали, что Вселенная формировалась не только геометрией космоса, но и принципами роста и гармонии.</p>
+        </div>
+      </div>
+
+      <!-- 6. Рождение -->
+      <div class="g1-card right">
+        <img class="g1-img" src="Digital Gallery/Рождение.jpg" alt="Рождение">
+        <div class="g1-text-box">
+          <h2>Рождение</h2>
+          <p>Ибо Вселенная была подобна огромному саду, где звёзды и галактики были цветами, а планеты — почвой. И подобно тому, как саду нужны и солнечный свет, и вода для роста, так и Вселенной требовались и свет, и тьма для процветания.</p>
+          <p>Люди также обнаружили, что Вселенная имела форму не яйца, как они когда-то верили. Вместо этого она была сформирована взаимодействием двух энергий — тёмной и светлой. Эти энергии были представлены цветами красного и синего, мужским и женским началами, и были переплетены в структуре, известной как Vesica Piscis.</p>
+        </div>
+      </div>
+
+      <!-- 7. Жизнь -->
+      <div class="g1-card left">
+        <img class="g1-img" src="Digital Gallery/Жизнь.jpg" alt="Жизнь">
+        <div class="g1-text-box">
+          <h2>Жизнь</h2>
+          <p>Эта сакральная структура передавалась сквозь века — от древней цивилизации Атлантиды к шумерам, славянам и фараонам Египта. И в каждую эпоху её почитали как семя знания, ключ к разгадке тайн Вселенной.</p>
+          <p>И так люди пришли к пониманию того, что Вселенная — это не просто скопление звёзд и планет, а живое, дышащее существо, управляемое теми же принципами роста и гармонии, что управляют всей жизнью. И они знали, что являются лишь малой частью этой огромной и чудесной Вселенной, и что их предназначение — жить в гармонии с космосом, учиться его мудрости и делиться его красотой со всеми, кто готов слушать.</p>
+          <p>И вот, вооружённые знанием Книги Ночи, люди отправились во Вселенную, жаждя исследовать её тайны и открыть чудеса, скрытые в её глубинах. И хотя на их пути будет немало испытаний и трудностей, они всегда будут нести с собой семя знания — священную Vesica Piscis, передававшуюся сквозь века, и обещание Вселенной, полной бесконечных возможностей.</p>
+        </div>
+      </div>
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(1)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-2-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+    <div class="sacred-scroll-content">
+      
+      <!-- Sacred Intro -->
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">САКРАЛЬНАЯ ГАЛЕРЕЯ <span>#2</span></div>
+        <h1 class="g1-intro-text">Печати</h1>
+        <p class="g1-intro-sub">Вдохновлённые сказками!</p>
+        <div class="scroll-down-hint">Прокрутите вниз</div>
+      </div>
+
+      <!-- Story Block -->
+      <div class="sacred-story">
+        <p>В детстве я слушал, как бабушка плела бесконечные истории и сказки. Лишь с годами я начал осознавать их истинное предназначение. Это осознание породило совершенно новую концепцию — ту, что, я надеюсь, увлечёт и взрослых, и детей.</p>
+        
+        <blockquote>«Сказки — это высший сосуд для передачи мудрости Вселенной.»</blockquote>
+        
+        <p>Семена <em>Запечатанных Сказок</em> были посеяны давным-давно. В двенадцать лет меня отправили учиться в Англию, где я был совершенно очарован легендами о Короле Артуре, Мерлине и Рыцарях Круглого Стола. Это были мифы, хранимые из уст в уста, образующие нерушимый круг сквозь поколения.</p>
+        
+        <p>Круг — это то, с чего всё начинается, и мои истории тоже. Всё ведёт к тому самому круглому столу. Меня всегда влекло к невидимому, к азарту разгадывания загадок и решения главных головоломок Вселенной. Это пожизненное увлечение вдохновило меня создать эти визуальные печати — тонкие произведения искусства, содержащие зашифрованную эмоциональную и философскую суть тех сказок.</p>
+        
+        <p>Пока современный мир гонится за цифровыми данными и шифрованием, я решил вернуться к куда более глубокому и древнему коду. Я обратился к <em>Сакральной Геометрии</em> — вечному языку, звучащему сквозь культуры и эпохи, предназначенному пережить нас всех, ибо он вплетён в сами символы, что нас окружают.</p>
+      </div>
+
+      <!-- Museum Wall Exhibition -->
+      <!-- Seal 1: The Time -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/The Time.png" alt="Время">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Время</h2>
+          <p class="plaque-desc">Мы учимся ценить своё время и не тратить его впустую.</p>
+        </div>
+      </div>
+
+      <!-- Seal 2: In The Shadow Of Unknown -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/In The Shadow Of Unknown.png" alt="В тени неизвестного">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">В тени неизвестного</h2>
+          <p class="plaque-desc">Неизвестное — это то, чего мы боимся, не видя места для возможностей во тьме, но как только свет проникает в темноту, мы получаем дары, освобождающие нас от предрассудков.</p>
+        </div>
+      </div>
+
+      <!-- Seal 3: Harvest -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Harvest.png" alt="Жатва">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Жатва</h2>
+          <p class="plaque-desc">Что посеешь, то и пожнёшь.</p>
+        </div>
+      </div>
+
+      <!-- Seal 4: Self Portrait -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Self Portrait.png" alt="Автопортрет">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Автопортрет</h2>
+          <p class="plaque-desc">Образ моего внутреннего зверя.</p>
+        </div>
+      </div>
+
+      <!-- Seal 5: Strings of Dark Matter -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Strings of Dark Matter.png" alt="Струны тёмной материи">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Струны тёмной материи</h2>
+          <p class="plaque-desc">Всё в океане Вселенной взаимосвязано, каждая капля имеет своё предназначение.</p>
+        </div>
+      </div>
+
+      <!-- Seal 6: Sixteen Fruits of VIRA -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Sixteen Fruits of VIRA.png" alt="Шестнадцать плодов ВИРЫ">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Шестнадцать плодов ВИРЫ</h2>
+          <p class="plaque-desc">Цветок, удерживающий Вселенную в равновесии. Из Запечатанных Сказок.</p>
+          <button class="read-tale-btn" onclick="openTaleModal('vira')">ПРОЧИТАТЬ ОТРЫВОК</button>
+        </div>
+      </div>
+
+      <!-- Seal 7: The Harmony -->
+      <div class="sacred-seal gallery-spotlight">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/The Harmony.png" alt="Гармония">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Гармония</h2>
+          <p class="plaque-desc">Союз противоположностей ради равновесия рождает вечную гармонию.</p>
+        </div>
+      </div>
+
+      <!-- Seal 8: Eternal Engine -->
+      <div class="sacred-seal gallery-spotlight right-side">
+        <div class="seal-img-wrap">
+          <img class="seal-img" src="Sacred Gallery/Eternal Engine.png" alt="Вечный двигатель">
+        </div>
+        <div class="seal-plaque">
+          <h2 class="plaque-title">Вечный двигатель</h2>
+          <p class="plaque-desc">Это интересная печать. Между прочим, она исполняет желания в буквальном смысле. Я обязательно расскажу историю, связанную с этой печатью — она касается запуска чего угодно.</p>
+        </div>
+      </div>
+
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(2)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-3-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(229,178,54,0.3) transparent;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+    <div class="g1-intro-section" style="padding-bottom: 20px;">
+      <div class="g1-elegant-title">ГЕНЕРАТИВНАЯ ГАЛЕРЕЯ <span>#3</span></div>
+      <h1 class="g1-intro-text">Amuse Art</h1>
+      <p class="g1-intro-sub">Здесь и сейчас ты можешь стать творцом. Попробуй...</p>
+    </div>
+    
+    <!-- Desktop Canvas -->
+    <div class="iframe-wrapper desktop-only-amuse" style="width: 90%; max-width: 1400px; height: 75vh; margin: 0 auto 40px; border: 1px solid rgba(229,178,54,0.2); border-radius: 8px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+      <iframe src="https://johnedwardsky.github.io/amuse-web/" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>
+    </div>
+
+    <!-- Mobile Placeholder -->
+    <div class="mobile-only-amuse" style="display: none; width: 90%; max-width: 500px; margin: 40px auto; padding: 40px; border: 1px solid rgba(229,178,54,0.3); border-radius: 8px; background: rgba(10,10,10,0.8); backdrop-filter: blur(5px); text-align: center;">
+      <p style="font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; font-style: italic;">Только для десктопа</p>
+      <p style="font-family: 'Montserrat', sans-serif; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6;">Генеративное полотно требует точных инструментов и вычислительных мощностей. Пожалуйста, откройте эту галерею на настольном компьютере, чтобы раскрыть свой творческий потенциал.</p>
+    </div>
+
+    <div class="g1-outro" style="margin-bottom: 80px;">
+      <button class="g1-btn" onclick="exitSection()">На главную</button>
+      <button class="g1-btn g1-btn-primary" onclick="nextSection(3)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+    </div>
+  </div>
+
+  <div id="gallery-4-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+    <canvas id="music-visualizer"></canvas>
+    
+    <div class="g1-intro-section" style="position:relative; z-index: 10;">
+      <div class="g1-elegant-title">СЛУШАТЬ <span>#4</span></div>
+      <h1 class="g1-intro-text" style="font-size: 10vh;">REBIRTH</h1>
+      <p class="g1-intro-sub" style="margin-bottom: 40px;">Интерактивные аудио-стемы</p>
+      
+      <div class="stem-player-ui" style="position: relative; z-index: 20;">
+         <button id="master-play-btn" class="g1-btn g1-btn-primary solid-bg" style="font-size: 2vh; padding: 20px 60px; border-width: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">PLAY</button>
+         
+         <div class="stem-toggles">
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 1</span>
+               <button class="stem-mute-btn active" data-index="0">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 2</span>
+               <button class="stem-mute-btn active" data-index="1">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 3</span>
+               <button class="stem-mute-btn active" data-index="2">ВКЛ</button>
+            </div>
+         </div>
+      </div>
+      
+      <div style="margin-top: 40px;">
+        <button class="g1-btn" style="border: 1px solid rgba(255,255,255,0.2); opacity: 0.6; cursor: not-allowed;" disabled>
+          Слушать треки Van Lax (Скоро)
+        </button>
+      </div>
+
+      <div class="g1-outro" style="margin-top: 10vh; height: auto;">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(4)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-5-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <div class="g1-intro-section">
+      <div class="g1-elegant-title">ЧТЕНИЕ <span>#5</span></div>
+      <h1 class="g1-intro-text">Золотое яйцо</h1>
+      <p class="g1-intro-sub">Разгадывая код реальности — Иван Лакшинский</p>
+      <div class="g1-outro">
+        <a class="g1-btn g1-btn-primary" href="book/index-ru.html" style="text-decoration:none; display:inline-block; text-align:center;">ОТКРЫТЬ КНИГУ</a>
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(5)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-6-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+
+    <div class="g1-intro-section">
+      <div class="g1-elegant-title">МАГАЗИН <span>#6</span></div>
+      <h1 class="g1-intro-text">Бутик</h1>
+      <p class="g1-intro-sub" style="max-width: 600px; margin: 0 auto 40px; font-size: 1.2rem; line-height: 1.6;">Скоро открытие. Совсем скоро здесь можно будет приобрести эксклюзивные предметы искусства и оригинальные принты Van Lax.</p>
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-7-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+    <div class="g1-scroll-content">
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">О НАС <span>#7</span></div>
+        <h1 class="g1-intro-text">Ван Лакс</h1>
+      </div>
+      
+      <div class="sacred-story" style="margin-top: 0; padding-top: 0;">
+        <p>На стыке эпох мы получили колоссальные знания. Сегодня старый мир рушится, а контуры нового только начинают проступать сквозь туман неизвестности. Во все времена искусство отражало дух эпохи и готовило умы к глубокой трансформации. Меня зовут Иван Лакшинский (Ivan Lakshinsky) aka Van Lax. Я родом из России, родился в Сибири, учился в Англии и непрерывно совершенствовал свое творчество, вдохновляясь многогранностью этого мира. Я — исследователь и проводник в будущее.</p>
+        
+        <p>«Творческий дом Ван Лакс» — это не просто моё портфолио. Это первое и единственное в мире виртуальное пространство, где академическое искусство сливается с новейшими веб-технологиями и сакральной геометрией. Здесь древние знания сбрасывают свою вуаль благодаря цифровому коду. Искусство сегодня как никогда жаждет не просто зрителя, а активного соучастника, способного мыслить и чувствовать.</p>
+
+        <h3 style="color: var(--gold); margin: 30px 0 15px; font-weight: 400; font-style: italic; font-size: 24px;">Что вас ждет в этой галерее?</h3>
+        <p>Каждый зал этого пространства — это этап погружения в фундаментальную архитектуру реальности:</p>
+        <ul style="list-style: none; padding-left: 15px; margin-bottom: 25px;">
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Цифровая галерея</strong> раскрывает философский миф о сотворении мира и роли баланса между светом и тьмой через масштабные цифровые полотна.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Сакральная галерея</strong> представляет «Печати» — тонкие визуальные коды, в которых зашифрована мудрость старинных сказок и абсолютные законы сакральной геометрии.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Генеративная галерея</strong> позволяет вам самим стать творцами здесь и сейчас, взаимодействуя с алгоритмическим искусством Amuse.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Музыка и Книга</strong> («Золотое Яйцо») дополняют визуальный опыт, окружая ваши чувства и погружая в глубокие размышления о природе нашего восприятия.</li>
+        </ul>
+        
+        <p>В этой виртуальной обители я объединил философию всей моей жизни. Я выступаю архитектором реальности, художником, инженером, визионером, музыкантом, антрепренёром и основателем международной IT-компании A-lab.tech. Мои исследования нашего мира не прекращаются ни на секунду, и я точно знаю: пришло время делиться этим золотым багажом.</p>
+
+        <p style="text-align: center; margin-top: 40px; font-size: 1.2em; color: var(--gold); letter-spacing: 0.1em;">Добро пожаловать в мой храм.</p>
+      </div>
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gallery-8-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active">RU</a>
+      <span>/</span>
+      <a href="index.html">EN</a>
+    </div>
+
+    <div class="g1-scroll-content">
+      <div class="g1-intro-section">
+        <div class="g1-elegant-title">СВЯЗЬ <span>#8</span></div>
+        <h1 class="g1-intro-text">Контакты</h1>
+      </div>
+      
+      <div class="contact-wrapper">
+        <div class="contact-emails">
+          <h3 class="contact-title">Прямые контакты</h3>
+          <ul class="email-list">
+            <li>
+              <span>Медиа и Пресса</span>
+              <a href="mailto:media@vanlax.space">media@vanlax.space</a>
+            </li>
+            <li>
+              <span>Издательство</span>
+              <a href="mailto:publishing@vanlax.space">publishing@vanlax.space</a>
+            </li>
+            <li>
+              <span>Агенты и Представительство</span>
+              <a href="mailto:agent@vanlax.space">agent@vanlax.space</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="contact-form-container">
+          <h3 class="contact-title">Отправить сообщение</h3>
+          <form class="contact-form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Сообщение отправлено. Мы ответим вам в ближайшее время.');">
+            <div class="form-group">
+              <label for="contact-name-ru">Имя</label>
+              <input type="text" id="contact-name-ru" name="name" required placeholder="Ваше полное имя">
+            </div>
+            <div class="form-group">
+              <label for="contact-email-ru">Email</label>
+              <input type="email" id="contact-email-ru" name="email" required placeholder="Ваш электронный адрес">
+            </div>
+            <div class="form-group">
+              <label for="contact-message-ru">Сообщение</label>
+              <textarea id="contact-message-ru" name="message" rows="5" required placeholder="Как мы можем вам помочь?"></textarea>
+            </div>
+            <button type="submit" class="g1-btn contact-submit">ОТПРАВИТЬ</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="g1-outro">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEALED TALES MODAL -->
+  <div id="tale-modal" class="tale-modal" onclick="closeTaleModal(event)">
+    <div class="tale-modal-content">
+      <button class="close-tale-btn" onclick="closeTaleModal(event)">&times;</button>
+      <div id="tale-modal-text" class="tale-text"></div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

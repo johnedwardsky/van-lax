@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Золотое Яйцо — Разгадывая код реальности</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #E5B236;
+      --bg: #0a0a0a;
+      --page-bg: #111;
+      --text: #d4d0c8;
+      --accent: #E5B236;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* ===== TOP BAR ===== */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 30px;
+      z-index: 100;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    }
+    .top-bar .brand {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300; letter-spacing: 0.3em;
+      font-size: 12px; color: rgba(255,255,255,0.5);
+    }
+    .top-bar .back-btn {
+      background: transparent; border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.6); padding: 8px 20px; border-radius: 4px;
+      font-family: 'Montserrat', sans-serif; font-size: 11px;
+      letter-spacing: 0.1em; cursor: pointer; transition: 0.3s;
+    }
+    .top-bar .back-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ===== PAGE COUNTER ===== */
+    .page-counter {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      font-family: 'Montserrat', sans-serif; font-size: 12px;
+      color: rgba(255,255,255,0.3); letter-spacing: 0.2em; z-index: 100;
+    }
+
+    /* ===== BOOK CONTAINER ===== */
+    .book-container {
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      perspective: 1600px;
+    }
+
+    .book {
+      position: relative;
+      width: min(90vw, 700px);
+      height: min(85vh, 950px);
+      transform-style: preserve-3d;
+    }
+
+    /* ===== PAGES ===== */
+    .page {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: var(--page-bg);
+      border: 1px solid rgba(229,178,54,0.08);
+      border-radius: 4px;
+      padding: 60px 50px;
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      transform: translateX(40px) scale(0.95);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(229,178,54,0.3) transparent;
+    }
+    .page::-webkit-scrollbar { width: 4px; }
+    .page::-webkit-scrollbar-thumb { background: rgba(229,178,54,0.3); border-radius: 2px; }
+    .page::-webkit-scrollbar-track { background: transparent; }
+
+    .page.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(0) scale(1);
+      z-index: 10;
+    }
+    .page.exit-left {
+      opacity: 0;
+      transform: translateX(-60px) scale(0.95);
+    }
+    .page.exit-right {
+      opacity: 0;
+      transform: translateX(60px) scale(0.95);
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    .page h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 10px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .page h2 {
+      font-size: clamp(22px, 3.5vw, 32px);
+      color: #fff;
+      margin: 30px 0 15px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .page h3 {
+      font-size: clamp(18px, 2.5vw, 24px);
+      color: var(--gold);
+      margin: 25px 0 12px;
+      font-weight: 400;
+      font-style: italic;
+    }
+    .page p {
+      font-size: clamp(15px, 2vw, 18px);
+      line-height: 1.85;
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+    .page .epigraph {
+      text-align: center;
+      font-style: italic;
+      color: rgba(229,178,54,0.7);
+      font-size: clamp(14px, 1.8vw, 17px);
+      margin: 20px 0 30px;
+      line-height: 1.7;
+    }
+    .page .subtitle {
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      font-size: clamp(11px, 1.5vw, 14px);
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 20px;
+    }
+    .page .author {
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      font-size: clamp(12px, 1.5vw, 15px);
+      color: rgba(255,255,255,0.5);
+      margin-top: 20px;
+    }
+    .page .divider {
+      text-align: center;
+      color: var(--gold);
+      font-size: 24px;
+      margin: 30px 0;
+      opacity: 0.4;
+    }
+    .page blockquote {
+      border-left: 2px solid rgba(229,178,54,0.3);
+      padding: 10px 20px;
+      margin: 20px 0;
+      font-style: italic;
+      color: rgba(255,255,255,0.6);
+      font-size: clamp(14px, 1.8vw, 16px);
+    }
+    .page ul {
+      list-style: none;
+      padding: 0;
+      margin: 15px 0;
+    }
+    .page ul li {
+      padding: 8px 0 8px 20px;
+      position: relative;
+      font-size: clamp(15px, 1.8vw, 17px);
+      line-height: 1.7;
+    }
+    .page ul li::before {
+      content: '◆';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      font-size: 8px;
+      top: 14px;
+    }
+
+    /* ===== IMAGES ===== */
+    .page .page-img {
+      display: block;
+      max-width: 40%;
+      margin: 20px auto;
+      border-radius: 4px;
+      box-shadow: 0 4px 30px rgba(229,178,54,0.1);
+    }
+    .page .cover-img {
+      display: block;
+      max-width: 60%;
+      max-height: 50vh;
+      margin: 30px auto;
+      border-radius: 6px;
+      box-shadow: 0 10px 60px rgba(229,178,54,0.2);
+    }
+
+    /* ===== PART TITLE PAGES ===== */
+    .page.part-title {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .page.part-title h1 {
+      font-size: clamp(32px, 6vw, 56px);
+      margin-bottom: 15px;
+    }
+    .page.part-title .epigraph {
+      max-width: 80%;
+    }
+
+    /* ===== NAVIGATION ARROWS ===== */
+    .nav-arrow {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 60px; height: 100px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      z-index: 50;
+      color: var(--gold);
+      font-size: 42px;
+      transition: 0.3s;
+      border: 1px solid rgba(229,178,54,0.3);
+      border-radius: 6px;
+      background: rgba(229,178,54,0.05);
+    }
+    .nav-arrow:hover {
+      color: #fff;
+      background: rgba(229,178,54,0.2);
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(229,178,54,0.3);
+    }
+    .nav-arrow.left { left: 15px; }
+    .nav-arrow.right { right: 15px; }
+
+    /* ===== CTA PAGE ===== */
+    .cta-section {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .cta-section h1 {
+      margin-bottom: 20px;
+    }
+    .cta-section p {
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto 30px;
+    }
+    .cta-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+    .cta-btn {
+      display: inline-block;
+      padding: 16px 40px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.4s;
+      text-decoration: none;
+      min-width: 280px;
+    }
+    .cta-btn.primary {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      font-weight: 600;
+    }
+    .cta-btn.primary:hover {
+      box-shadow: 0 0 30px rgba(229,178,54,0.5);
+      transform: scale(1.03);
+    }
+    .cta-btn.secondary {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+    .cta-btn.secondary:hover {
+      background: rgba(229,178,54,0.1);
+    }
+    .cta-btn.outline {
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .cta-btn.outline:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ===== REQUEST FORM ===== */
+    .request-form {
+      display: none;
+      margin-top: 30px;
+      text-align: center;
+    }
+    .request-form.visible { display: block; }
+    .request-form input, .request-form textarea {
+      width: 100%;
+      max-width: 350px;
+      padding: 14px 18px;
+      margin: 8px auto;
+      display: block;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(229,178,54,0.2);
+      border-radius: 4px;
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+    }
+    .request-form input:focus, .request-form textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    .request-form textarea { height: 80px; resize: none; }
+    .request-form button {
+      margin-top: 15px;
+      padding: 14px 40px;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .request-form button:hover { box-shadow: 0 0 20px rgba(229,178,54,0.4); }
+
+    /* Language Switch */
+    .lang-switch-nav { display: flex; gap: 6px; align-items: center; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 300; letter-spacing: 0.1em; }
+    .lang-switch-nav a { color: rgba(255,255,255,0.5); text-decoration: none; transition: 0.3s; }
+    .lang-switch-nav a:hover { color: var(--gold); }
+    .lang-switch-nav a.active { color: var(--gold); font-weight: 500; pointer-events: none; }
+    .lang-switch-nav span { color: rgba(255,255,255,0.2); }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 768px) {
+      .page { padding: 50px 25px 80px; }
+      .nav-arrow { width: 35px; font-size: 22px; }
+      .nav-arrow.left { left: 2px; }
+      .nav-arrow.right { right: 2px; }
+      .page .cover-img { max-width: 80%; }
+      .top-bar { padding: 10px 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="brand">VAN LAX</div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div class="lang-switch-nav">
+        <a href="index-ru.html" class="active">RU</a>
+        <span>/</span>
+        <a href="index.html">EN</a>
+      </div>
+      <button class="back-btn" onclick="window.location.href='../index-ru.html'">На главную</button>
+    </div>
+  </div>
+
+  <!-- Navigation Arrows -->
+  <button class="nav-arrow left" onclick="prevPage()">‹</button>
+  <button class="nav-arrow right" onclick="nextPage()">›</button>
+
+  <!-- Page Counter -->
+  <div class="page-counter" id="page-counter">1 / 1</div>
+
+  <!-- Book -->
+  <div class="book-container">
+    <div class="book" id="book">
+
+      <!-- PAGE 0: Cover -->
+      <div class="page part-title active">
+        <img class="cover-img" src="cover_ru.jpg" alt="Золотое Яйцо">
+        <h1>Золотое Яйцо</h1>
+        <div class="subtitle">РАЗГАДЫВАЯ КОД РЕАЛЬНОСТИ</div>
+        <div class="author">Ван Лакс</div>
+      </div>
+
+      <!-- PAGE 1: Prologue Title -->
+      <div class="page part-title">
+        <h1>Пролог</h1>
+        <div class="epigraph">Курочка Ряба и скрытый замысел мироздания</div>
+      </div>
+
+      <!-- PAGE 2: Prologue Text -->
+      <div class="page">
+        <h2>Курочка Ряба и скрытый замысел мироздания</h2>
+        <p>Обычные сказки, которые мы слышали в детстве, казались нам простыми и наивными. Однако если взглянуть глубже, за ними скрываются тайны мироздания, зашифрованные в образах и символах.</p>
+        <p>Вспомним «Курочку Рябу». Что это за золотое яйцо, которое снесла курочка? Почему его не смогли разбить ни дед, ни баба? Почему его в итоге разбила мышь?</p>
+        <p>Если развернуть этот сюжет в философскую плоскость, можно увидеть глубинные смыслы:</p>
+        <ul>
+          <li><strong>Золотое яйцо</strong> — это знание, истина, скрытая гармония мира.</li>
+          <li><strong>Дед и баба</strong> — это человечество, стремящееся разгадать секреты бытия.</li>
+          <li>Они пытаются <strong>разбить яйцо</strong> — достичь истины грубой силой — но у них ничего не выходит.</li>
+          <li><strong>Мышь</strong>, незаметное существо, делает это по воле случая, словно намекая, что истина открывается не через насилие над миром, а через естественный процесс.</li>
+        </ul>
+        <p>Эта сказка — код, который нам оставили предки. Она говорит:</p>
+        <p class="epigraph">Не всё в этом мире нужно расшифровывать. Некоторые тайны нужно просто принять, созерцать, ощущать. И тогда они сами откроются перед тобой в нужный момент.</p>
+      </div>
+
+      <!-- PAGE 3: Perspective -->
+      <div class="page">
+        <h2>Перспектива и угол зрения</h2>
+        <p>Мир — это не единая, статичная картина. Мир — это перспектива, точка зрения, угол наблюдения.</p>
+        <p>Возьмём простую линию. Если смотреть спереди, она кажется точкой. Если смотреть сбоку — полоса. Если мы видим её в объёме — грань.</p>
+        <p>Теперь представим, что линия движется. С одной стороны, она движется из точки A в точку B. С другого ракурса — это уже плоскость, которая меняет своё положение в пространстве. А если смотреть из третьего измерения — линия может оказаться спиралью или даже бесконечной кривой, которой нет конца.</p>
+        <p class="epigraph">А что если всё, что ты знаешь, — это просто линия, которую ты видишь только под одним углом?</p>
+      </div>
+
+      <!-- PAGE 4: From the Author -->
+      <div class="page">
+        <h2>От автора: жизнь наблюдателя</h2>
+        <p>Хочу быть с тобой, дорогой читатель, предельно честным и открытым. Моя персона долгое время оставалась в тени для многих из моего окружения.</p>
+        <p>Я долгое время считал, что суть познания мира — в его разборе. Мы привыкли анализировать реальность, расщеплять её на части, стремиться проникнуть в механизмы. Но однажды я остановился. И спросил себя: а что, если мир вовсе не требует объяснений? Что, если он просит не анализа, а простого, искреннего созерцания?</p>
+        <p>Когда мне было двенадцать, я покинул Россию и оказался в закрытой британской школе. Для ребёнка это был хаос — чужой язык, чужие правила, чужой мир. В тринадцать лет я написал первое произведение — этюд продолжительностью в двадцать минут, держа всю композицию в голове, без единой ноты на бумаге. Музыка спасала меня от хаоса.</p>
+        <p>Эта книга — не просто собрание мыслей. Это путь, длиною в мою жизнь. Путь наблюдателя.</p>
+        <p class="epigraph">Вопрос, который я задаю себе и тебе, читатель: что ты выберешь — разбить яйцо в поисках смысла или принять его тайну?</p>
+      </div>
+
+      <!-- PAGE 5: Map -->
+      <div class="page">
+        <h2>Карта этой книги</h2>
+        <p>Эта книга устроена как спираль — каждый виток углубляет понимание.</p>
+        <ul>
+          <li><strong>Часть I — Восприятие.</strong> Что есть реальность? Сны, иллюзии, многослойность мира.</li>
+          <li><strong>Часть II — Код.</strong> На чём построена реальность? Числа, геометрия, язык, символы, свет и тёмная материя.</li>
+          <li><strong>Часть III — Энергия.</strong> Что движет реальностью? Внимание, хаос, время, дисциплина.</li>
+          <li><strong>Часть IV — Гармония.</strong> Как войти в поток? Осознанность, пробуждение, золотое сечение.</li>
+          <li><strong>Часть V — Практика.</strong> Как это прожить? Формула МАГА, эксперимент 21 дня.</li>
+        </ul>
+        <p class="epigraph">Давай вместе приоткроем завесу над этим миром.</p>
+        <img class="page-img" src="avtoportret.jpg" alt="Автопортрет" style="max-width:50%;">
+      </div>
+
+      <!-- PAGE 6: PART I TITLE -->
+      <div class="page part-title">
+        <h1>Часть I</h1>
+        <div class="subtitle">ВОСПРИЯТИЕ</div>
+        <div class="epigraph">Что есть реальность?</div>
+        <img class="page-img" src="teni.jpg" alt="В тенях" style="max-width:50%; margin-top:20px;">
+      </div>
+
+      <!-- PAGE 7: Chapter 1 -->
+      <div class="page">
+        <h2>Глава 1. Наблюдатель и его мир</h2>
+        <p class="epigraph">«Правды не существует. Мы — то, во что готовы поверить.»</p>
+        <p>Эти слова раскрывают суть нашего восприятия. Нам кажется, что мир перед нами реален, что мы видим его таким, каков он есть. Но в действительности каждый из нас смотрит на него через призму убеждений, знаний, эмоций и опыта.</p>
+        <p>Иллюзия пронизывает всё. Мы верим в деньги, но это всего лишь бумага. Мы признаём границы государств, но на Земле нет нарисованных линий. То, во что мы верим, становится нашей реальностью.</p>
+        <p>Мир напоминает матрёшку, в которой один слой скрыт за другим. Внешняя оболочка — материальный мир. Под ней — информация. Глубже — убеждения. Затем — эмоции. И в самом центре — точка осознания, чистое восприятие.</p>
+        <p>Квантовая физика добавила научный вес. Эксперимент с двойной щелью показал: частица ведёт себя по-разному в зависимости от того, наблюдают за ней или нет. Возможно, мы не просто наблюдаем реальность — мы <strong>создаём</strong> её.</p>
+      </div>
+
+      <!-- PAGE 8: Chapter 2 -->
+      <div class="page">
+        <h2>Глава 2. Сны: реальнее реальности</h2>
+        <p class="epigraph">«На самом деле через сны мы учимся управлять этой нашей проявленной реальностью.»</p>
+        <p>Закрой глаза. Вспомни сон, который был настолько ярким, что, проснувшись, ты не сразу понял — где реальность? Во сне ты видел, слышал, чувствовал запахи, прикосновения. Но ведь твои глаза были закрыты. Кто же рисовал тебе этот мир?</p>
+        <p>Ум. Только ум.</p>
+        <p>Каждую ночь мы покидаем мир привычных законов и отправляемся в измерение, где возможно всё. Мы летаем, проходим сквозь стены, говорим с теми, кого уже нет. Но если сознание способно строить такие реальности во сне, чем этот процесс отличается от того, что происходит, когда мы бодрствуем?</p>
+        <blockquote>Фильм Кристофера Нолана «Начало» (Inception) блестяще исследует эту идею: сон внутри сна — вложенные слои реальности, каждый из которых кажется абсолютно настоящим.</blockquote>
+        <p>Истинная мудрость не в том, чтобы осознать, что реальность — это сон, а в том, чтобы пробудиться внутри него и начать осмысленно творить свою жизнь.</p>
+      </div>
+
+      <!-- PAGE 9: Chapter 3 -->
+      <div class="page">
+        <h2>Глава 3. Матрёшка миров</h2>
+        <p class="epigraph">«Смыслы — это самое важное, что есть в нашей жизни»</p>
+        <p>Каждое утро мы просыпаемся не просто так, а потому что верим в смысл нового дня. Мы работаем, потому что считаем деньги важными. Мы строим отношения, потому что ощущаем ценность любви.</p>
+        <p>Но что, если все эти смыслы не объективны? Что, если деньги — это лишь цифры в системе? Что, если любовь — это биохимия?</p>
+        <h3>Деньги как смысловая конструкция</h3>
+        <p>Деньги — один из самых мощных примеров того, как коллективная вера становится реальностью. Бумажная купюра сама по себе не стоит ничего. Вся система работает лишь потому, что мы коллективно верим: этот символ равен ценности.</p>
+        <h3>Фабрики смыслов</h3>
+        <p><strong>Кто управляет смыслами, тот управляет восприятием.</strong></p>
+        <p>Голливуд — один из самых мощных генераторов смыслов в истории. Через кино миллиардам людей транслируются модели поведения, ценности, страхи и мечты. Социальные сети довели это до совершенства: алгоритмы анализируют твои реакции и выстраивают ленту так, чтобы максимально захватить внимание. Ты не потребляешь контент — контент потребляет тебя.</p>
+      </div>
+
+      <!-- PAGE 10: The Stupor -->
+      <div class="page">
+        <h2>Дурман</h2>
+        <p class="epigraph">«Всё, что ты видишь, слышишь, чувствуешь — это часть спектакля. Чтобы ты никогда не задумался, что происходит за его кулисами.»</p>
+        <p>Мир словно окутан дымкой сна. Мы живём в реальности, но видим её через призму иллюзий, которые удерживают наше внимание внутри игры.</p>
+        <p>Чтобы мы спали с открытыми глазами, они создали синематограф. Чтобы уши пребывали в приятном дурмане, они создали музыку. Для тех, кто ищет удовольствие в еде, они сделали вкусы изощрёнными.</p>
+        <p>Но что, если снизить значимость всего этого? Не отвергать, не бороться, а просто осознать игру. Смотреть, но не теряться в образах. Слушать, но не утопать в звуках. Чувствовать, но не становиться рабом чувств. Мыслить, но не отождествляться с мыслями.</p>
+        <p>Тогда реальность меняется. Мир начинает играть другим светом.</p>
+      </div>
+
+      <!-- PAGE 11: PART II TITLE -->
+      <div class="page part-title">
+        <h1>Часть II</h1>
+        <div class="subtitle">КОД</div>
+        <div class="epigraph">На чём построена реальность?</div>
+        <div class="epigraph" style="margin-top:30px;">«В начале было Число. Число породило Пропорцию. Пропорция сотворила Форму. Форма создала Материю.»</div>
+      </div>
+
+      <!-- PAGE 12: Chapter 4 -->
+      <div class="page">
+        <h2>Глава 4. Числа и сакральная геометрия</h2>
+        <p class="epigraph">«Все есть структура. Без структуры нет формы. Без формы нет материи.»</p>
+        <p>Сакральная геометрия — это древняя наука, изучающая символическое значение геометрических форм. Она рассматривает, как определённые углы и фигуры отражают фундаментальные принципы мироздания.</p>
+        <p>Пифагор утверждал: «Числа — это сущность всех вещей.» Число 3 символизирует творение. Число 7 — гармонию бытия. Число 12 управляет временем и цикличностью.</p>
+        <p>Галилео Галилей говорил: «Геометрия — это язык, на котором говорит Бог.» Спираль Фибоначчи отражается в раковинах и галактиках; фракталы повторяются в листьях, лёгких и кровеносной системе; шестигранники проявляются в пчелиных сотах и кристаллических решётках.</p>
+        <img class="page-img" src="seed_of_life_ru.png" alt="Семя Жизни">
+      </div>
+
+      <!-- PAGE 13: Mathematical Code -->
+      <div class="page">
+        <h2>Математический код древних текстов</h2>
+        <p>Я провёл тщательный анализ числовых значений в Библии, сопоставив их с сакральной геометрией. Результат меня поразил: числа образуют точный математический каркас.</p>
+        <p><strong>Семь дней Творения</strong> — шесть кругов вокруг одного центрального формируют «Семя Жизни». 6 дней + 1 день покоя = геометрическая константа.</p>
+        <p><strong>Ковчег Ноя</strong> — 300 × 50 × 30 локтей. Ширина/высота = 5/3 ≈ 1,667, приближение к <strong>золотому сечению</strong> φ = 1,618.</p>
+        <p><strong>Ковчег Завета</strong> — 2,5 × 1,5 × 1,5 локтей. Длина/ширина = 5/3 — та же самая пропорция.</p>
+        <p><strong>Храм Соломона</strong> — его сердце, Святое Святых — это <strong>идеальный куб</strong>: 20 × 20 × 20. Тот же куб описан в Новом Иерусалиме.</p>
+        <p><strong>Число 144 000</strong> — 144 — число Фибоначчи, причём единственное, являющееся точным квадратом. И стоит оно на 12-й позиции ряда Фибоначчи.</p>
+      </div>
+
+      <!-- PAGE 14: Three Roots -->
+      <div class="page">
+        <h2>Формулы мироздания: три корня реальности</h2>
+        <p><strong>√2</strong> — диагональ квадрата. Использовалась в готических соборах и формате бумаги A4.</p>
+        <p><strong>√3</strong> — высота равностороннего треугольника и пропорция Vesica Piscis — «матки мироздания».</p>
+        <img class="page-img" src="vesica_piscis_ru.png" alt="Vesica Piscis" style="max-width:60%;">
+        <p><strong>φ (фи)</strong> — золотое сечение ≈ 1,618. Скрыто в раковине наутилуса, рукавах галактик, семечках подсолнуха, ДНК, Парфеноне, скрипках Страдивари.</p>
+        <img class="page-img" src="golden_spiral_ru.png" alt="Золотая спираль" style="max-width:60%;">
+        <p>Все три корня связаны через π: √2 = 2·cos(45°), √3 = 2·cos(30°), φ = 2·cos(36°). Круг содержит в себе всё.</p>
+        <img class="page-img" src="three_roots_ru.png" alt="Три корня" style="max-width:60%;">
+      </div>
+
+      <!-- PAGE 15: Platonic Solids -->
+      <div class="page">
+        <h2>Пять кирпичей Вселенной</h2>
+        <p>Во всём бесконечном пространстве существует <strong>только пять</strong> идеально правильных объёмных тел — Платоновы тела:</p>
+        <ul>
+          <li><strong>Тетраэдр</strong> (4 грани) — Огонь</li>
+          <li><strong>Куб</strong> (6 граней) — Земля</li>
+          <li><strong>Октаэдр</strong> (8 граней) — Воздух</li>
+          <li><strong>Икосаэдр</strong> (20 граней) — Вода. В его формулах появляется φ, золотое сечение!</li>
+          <li><strong>Додекаэдр</strong> (12 граней) — Вселенная, Эфир</li>
+        </ul>
+        <img class="page-img" src="platonic_solids_ru.png" alt="Платоновы тела">
+        <h3>Куб Метатрона: единый чертёж всего</h3>
+        <p>13 точек. 78 линий. Один чертёж, содержащий все пять Платоновых тел.</p>
+        <img class="page-img" src="metatron_cube_ru.png" alt="Куб Метатрона">
+      </div>
+
+      <!-- PAGE 16: The Golden Egg geometry -->
+      <div class="page">
+        <h2>Золотое Яйцо — геометрия жизни</h2>
+        <p>Яйцо — символ жизни и рождения — построено по тем же законам. Возьми круг. Впиши равносторонний треугольник. Из его вершин проведи дуги. Результат — идеальный контур яйца, содержащий в себе и круг, и треугольник, и √3.</p>
+        <img class="page-img" src="golden_egg_ru.png" alt="Геометрия Золотого Яйца">
+        <div class="divider">✦ ✦ ✦</div>
+        <p>Три пропорции. Пять тел. Один чертёж. Вот формулы, на которых стоит реальность. Соты, снежинки, кристаллы, цветы, спирали, звёзды — всё говорит на одном языке. И этот язык — геометрия.</p>
+      </div>
+
+      <!-- PAGE 17: Chapter 5 -->
+      <div class="page">
+        <h2>Глава 5. Слово как вибрация</h2>
+        <p class="epigraph">«В начале было Слово.»</p>
+        <p>Мы привыкли думать, что язык — это просто инструмент общения. Но что, если слова — это нечто большее? Слово несёт вибрацию, а вибрация создаёт форму.</p>
+        <p>Эрнст Хладни доказал, что звуковые вибрации создают геометрические узоры — достаточно рассыпать песок на металлическую пластину и провести по ней смычком, чтобы увидеть, как хаос мгновенно складывается в совершенные структуры.</p>
+        <p>Во всех древних традициях слово имело сакральное значение. Веды, Коран, Библия — все эти тексты работают как активные коды, трансформирующие сознание.</p>
+        <p>Язык — это ключ к формированию реальности. Каждое слово несёт заряд. Говори осознанно, произноси слова, несущие силу и гармонию, и ты увидишь, как меняется не только твоё сознание, но и сам мир вокруг.</p>
+      </div>
+
+      <!-- PAGE 18: Chapter 6 -->
+      <div class="page">
+        <h2>Глава 6. Герметический принцип</h2>
+        <p class="epigraph">«Как вверху, так и внизу; как внизу, так и вверху.»</p>
+        <p>Атом повторяет структуру солнечной системы. Нейронная сеть мозга неотличима от карты Вселенной. Спираль ДНК — та же спираль галактики.</p>
+        <p>Фракталы — каждая часть содержит целое. Каждый уровень отражает все остальные.</p>
+        <p>Если микрокосм отражает макрокосм, то изменение внутри тебя — это изменение в мире. Не метафорически. Буквально.</p>
+        <p>Библия говорит: «Не знаете ли, что тела ваши суть храм?» Позвоночник человека состоит из <strong>33 позвонков</strong>. Иисус был распят в <strong>33</strong>. Голгофа переводится как «череп». Распятие происходит <strong>в голове</strong>.</p>
+        <p>В нашем мозге приблизительно <strong>100 миллиардов нейронов</strong> — столько же, сколько звёзд в нашей Галактике. Мы — не «подобие» Вселенной. Мы <strong>есть</strong> Вселенная в миниатюре.</p>
+      </div>
+
+      <!-- PAGE 19: Chapter 7 -->
+      <div class="page">
+        <h2>Глава 7. Свет и тёмная материя</h2>
+        <p class="epigraph">«Представьте, что световые лучи, несущие фотоны, наполнены разнообразной информацией, проникающей лишь в те структуры, которые готовы её принять.»</p>
+        <p>Что, если свет несёт не только энергию, но и <strong>информацию</strong>? Каждый фотон, коснувшийся твоей кожи, несёт больше, чем тепло. Он несёт ритм Вселенной.</p>
+        <p>В этой Вселенной есть и обратная сторона — <strong>тёмная материя</strong>. Она не светится. Но её влияние ощутимо. Она удерживает галактики. Около 85% массы Вселенной состоит из тёмной материи — невидимой, неосязаемой, но реальной.</p>
+        <p>Свет и тьма — не противоположности. Они <strong>два крыла одной птицы</strong>. Свет несёт информацию; тьма создаёт пространство для её восприятия.</p>
+        <div class="divider">✦ ✦ ✦</div>
+        <p class="epigraph">Конец Части II — Код</p>
+      </div>
+
+      <!-- PAGE 20: CTA PAGE -->
+      <div class="page part-title">
+        <div class="cta-section">
+          <h1>Продолжить чтение?</h1>
+          <p>Вы дочитали бесплатный фрагмент. Полная книга включает Части III–V: Энергия, Гармония и Практика — с Формулой МАГА и 47 Золотыми мыслями.</p>
+
+          <div class="cta-buttons">
+            <a class="cta-btn primary" href="../../harmony-book/golden_egg_A5_ebook.pdf" download>Скачать электронную книгу (PDF)</a>
+            <button class="cta-btn secondary" onclick="showRequestForm()">Заказать печатную версию</button>
+            <a class="cta-btn outline" href="../index-ru.html">Вернуться на сайт</a>
+          </div>
+
+          <div class="request-form" id="request-form">
+            <h3 style="color:var(--gold); margin-bottom:15px;">Заказать печатный экземпляр</h3>
+            <input type="text" placeholder="Ваше имя" id="req-name">
+            <input type="email" placeholder="Email" id="req-email">
+            <textarea placeholder="Адрес доставки или сообщение"></textarea>
+            <button onclick="submitRequest()">Отправить заявку</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const pages = document.querySelectorAll('.page');
+    const counter = document.getElementById('page-counter');
+    let currentPage = 0;
+    const totalPages = pages.length;
+
+    function updateCounter() {
+      counter.textContent = `${currentPage + 1} / ${totalPages}`;
+    }
+
+    function goToPage(index) {
+      if (index < 0 || index >= totalPages || index === currentPage) return;
+
+      const direction = index > currentPage ? 'left' : 'right';
+      const oldPage = pages[currentPage];
+      const newPage = pages[index];
+
+      // Exit old page
+      oldPage.classList.remove('active');
+      oldPage.classList.add(direction === 'left' ? 'exit-left' : 'exit-right');
+      setTimeout(() => {
+        oldPage.classList.remove('exit-left', 'exit-right');
+      }, 600);
+
+      // Enter new page
+      newPage.style.transform = direction === 'left' ? 'translateX(40px) scale(0.95)' : 'translateX(-40px) scale(0.95)';
+      requestAnimationFrame(() => {
+        newPage.classList.add('active');
+        newPage.style.transform = '';
+        newPage.scrollTop = 0;
+      });
+
+      currentPage = index;
+      updateCounter();
+    }
+
+    function nextPage() { goToPage(currentPage + 1); }
+    function prevPage() { goToPage(currentPage - 1); }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevPage();
+    });
+
+    // Touch / swipe support
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      // Only trigger if horizontal swipe is dominant
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if (dx < 0) nextPage();   // swipe left = next
+        else prevPage();           // swipe right = previous
+      }
+    }, { passive: true });
+
+    // CTA functions
+    function showRequestForm() {
+      document.getElementById('request-form').classList.toggle('visible');
+    }
+
+    function submitRequest() {
+      const name = document.getElementById('req-name').value;
+      const email = document.getElementById('req-email').value;
+      if (!name || !email) {
+        alert('Пожалуйста, заполните имя и email.');
+        return;
+      }
+      alert('Спасибо, ' + name + '! Ваша заявка принята. Мы свяжемся с вами по адресу ' + email + '.');
+      document.getElementById('request-form').classList.remove('visible');
+    }
+
+    updateCounter();
+
+    // ==========================================
+    // STATE PERSISTENCE (Language Switching)
+    // ==========================================
+    document.addEventListener('click', function(e) {
+      const langLink = e.target.closest('.lang-switch-nav a');
+      if (langLink) {
+        e.preventDefault();
+        let target = langLink.getAttribute('href');
+        if (typeof currentPage !== 'undefined' && currentPage > 0) {
+          window.location.href = target + '#page-' + currentPage;
+        } else {
+          window.location.href = target;
+        }
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash;
+      if(hash && hash.startsWith('#page-')) {
+        const pageNum = parseInt(hash.replace('#page-', ''), 10);
+        if(!isNaN(pageNum) && typeof goToPage === 'function') {
+           setTimeout(() => goToPage(pageNum), 100);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
