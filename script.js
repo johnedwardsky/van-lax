@@ -429,6 +429,31 @@ window.addEventListener('wheel', (e) => {
   updateNodes(scrollPercent);
 }, { passive: false });
 
+// Mobile Touch Scrolling
+let lastTouchY = 0;
+window.addEventListener('touchstart', (e) => {
+  if (!is3DActive || isGallery1) return;
+  lastTouchY = e.touches[0].clientY;
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+  if (!is3DActive || isGallery1) return;
+  const currentY = e.touches[0].clientY;
+  const deltaY = lastTouchY - currentY; // Positive if swiping up (scrolling down)
+  
+  if (Math.abs(deltaY) > 0) {
+    if(e.cancelable) e.preventDefault();
+  }
+  
+  scrollPercent += deltaY * 0.001; // Slightly more sensitive than wheel
+  if (scrollPercent < 0) scrollPercent = 0;
+  if (scrollPercent > 1) scrollPercent = 1;
+  targetCameraZ = scrollPercent * -spiralLength;
+  updateNodes(scrollPercent);
+  
+  lastTouchY = currentY;
+}, { passive: false });
+
 const nodeColors = [
   new THREE.Color(0x333333), // node 0 (Art)
   new THREE.Color(0xE5B236), // node 1 (Gallery 1)
