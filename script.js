@@ -233,10 +233,10 @@ window.proceedToGallery = () => {
   }
 };
 
-window.copyCryptoAddress = () => {
-  const addressText = document.getElementById('crypto-address-text').innerText;
+window.copyCryptoAddress = (elementId) => {
+  const addressText = document.getElementById(elementId).innerText;
   navigator.clipboard.writeText(addressText).then(() => {
-    alert('Crypto address copied to clipboard!');
+    alert('Address copied: ' + addressText);
   }).catch(err => {
     console.error('Failed to copy: ', err);
   });

@@ -670,16 +670,41 @@
       <p class="donation-text">Entry to the digital gallery is conditionally free. I would be grateful for any support towards the development of the project.</p>
       
       <div class="crypto-box">
-        <span class="crypto-network">USDT (TRC20)</span>
+        <div class="crypto-address-flex" style="margin-bottom: 15px;">
+          <div style="flex:1;">
+            <span class="crypto-network">ETHEREUM (ETH / ERC20)</span>
+            <span class="crypto-address" id="crypto-eth">0xf0BfE88fe0e0E7aaf8AEa24266EEe0344847b27C</span>
+          </div>
+          <button class="copy-btn" onclick="copyCryptoAddress('crypto-eth')">Copy</button>
+        </div>
+        
+        <div class="crypto-address-flex" style="margin-bottom: 15px;">
+          <div style="flex:1;">
+            <span class="crypto-network">BITCOIN (BTC)</span>
+            <span class="crypto-address" id="crypto-btc">bc1qwvgrxx8nngkwkmgtjkrpfev0829fsn6xmcltez</span>
+          </div>
+          <button class="copy-btn" onclick="copyCryptoAddress('crypto-btc')">Copy</button>
+        </div>
+
+        <div class="crypto-address-flex" style="margin-bottom: 15px;">
+          <div style="flex:1;">
+            <span class="crypto-network">SOLANA (SOL)</span>
+            <span class="crypto-address" id="crypto-sol">3oY6ZnKVSG4rMVSKj4gnntaJxYpYaJ3pnH7bxqSW5EJF</span>
+          </div>
+          <button class="copy-btn" onclick="copyCryptoAddress('crypto-sol')">Copy</button>
+        </div>
+
         <div class="crypto-address-flex">
-          <span class="crypto-address" id="crypto-address-text">YOUR_USDT_WALLET_ADDRESS_HERE</span>
-          <button class="copy-btn" onclick="copyCryptoAddress()">Copy</button>
+          <div style="flex:1;">
+            <span class="crypto-network">TRON (USDT TRC20 / TRX)</span>
+            <span class="crypto-address" id="crypto-trx">THJirt1n6QftN5bwuhLEKTptKfxHdkUWF8</span>
+          </div>
+          <button class="copy-btn" onclick="copyCryptoAddress('crypto-trx')">Copy</button>
         </div>
       </div>
 
       <div class="donation-actions">
-        <button class="g1-btn g1-btn-primary" onclick="window.open('YOUR_PAYMENT_LINK_HERE', '_blank')">DONATE</button>
-        <button class="g1-btn" onclick="proceedToGallery()">PROCEED TO GALLERY</button>
+        <button class="g1-btn" onclick="proceedToGallery()" style="width: 100%;">PROCEED TO GALLERY</button>
       </div>
     </div>
   </div>
