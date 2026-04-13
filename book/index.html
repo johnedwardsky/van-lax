@@ -361,10 +361,11 @@
 
     /* ===== MOBILE ===== */
     @media (max-width: 768px) {
+      html, body { overflow-x: hidden; }
       .page { padding: 50px 25px 80px; }
-      .nav-arrow { width: 35px; font-size: 22px; }
-      .nav-arrow.left { left: 2px; }
-      .nav-arrow.right { right: 2px; }
+      .nav-arrow { width: 30px; height: 80px; font-size: 20px; }
+      .nav-arrow.left { left: 0; }
+      .nav-arrow.right { right: 0; }
       .page .cover-img { max-width: 80%; }
       .top-bar { padding: 10px 15px; }
     }
