@@ -605,9 +605,9 @@ window.initMusicPlayer = () => {
   
   // Use M4A (AAC) for mobile compatibility and smaller file size
   const sources = [
-    "Rebirth Tracks/Untitled_4.m4a",
-    "Rebirth Tracks/Untitled_5.m4a",
-    "Rebirth Tracks/Untitled_8.m4a"
+    "Rebirth tracks/Untitled_4.m4a",
+    "Rebirth tracks/Untitled_5.m4a",
+    "Rebirth tracks/Untitled_8.m4a"
   ];
   
   // Pre-create Audio elements (no AudioContext yet — iOS requires it inside gesture)
