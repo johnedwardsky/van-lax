@@ -82,9 +82,9 @@ body, html {
   text-shadow: 0 5px 25px rgba(0,0,0,1);
   transition: opacity 0.5s;
 }
-.overlay-top { font-size: clamp(12px, 1.8vw, 2.5vh); letter-spacing: 0.2em; color: #fff; font-weight: 200; text-transform: uppercase;}
+.overlay-top { font-size: clamp(12px, 1.8vw, 1.38rem); letter-spacing: 0.2em; color: #fff; font-weight: 200; text-transform: uppercase;}
 .overlay-bottom { 
-  font-size: clamp(30px, 5vw, 7vh); 
+  font-size: clamp(30px, 5vw, 3.85rem); 
   letter-spacing: 0.15em; 
   color: var(--gold); 
   font-family: 'Cormorant Garamond', serif; 
@@ -135,7 +135,7 @@ body, html {
   border: 1px solid rgba(255,255,255,0.05);
   color: #fff;
   padding: 8px 18px;
-  font-size: clamp(10px, 1vh, 12px); letter-spacing: 0.1em; font-weight: 200;
+  font-size: clamp(10px, 0.55rem, 12px); letter-spacing: 0.1em; font-weight: 200;
   text-transform: uppercase;
   white-space: nowrap;
   display: block; /* Always display but we'll show the line */
@@ -201,9 +201,9 @@ body, html {
   transform-origin: bottom left;
 }
 
-.section-prefix { font-size: 2.2vh; font-weight: 200; letter-spacing: 0.1em; color: #ffffff; margin-bottom: -10px; display: block; font-family: 'Montserrat', sans-serif;}
-.section-title { margin: 0; font-size: 8vh; font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.05em; line-height: 1;}
-.right-title { font-size: 6.5vh; } /* Slightly smaller for right panel */
+.section-prefix { font-size: 1.21rem; font-weight: 200; letter-spacing: 0.1em; color: #ffffff; margin-bottom: -10px; display: block; font-family: 'Montserrat', sans-serif;}
+.section-title { margin: 0; font-size: 4.4rem; font-family: 'Cormorant Garamond', serif; font-weight: 300; letter-spacing: 0.05em; line-height: 1;}
+.right-title { font-size: 3.58rem; } /* Slightly smaller for right panel */
 
 .nav-list { list-style: none; padding: 0; margin-top: 5vh;}
 
@@ -244,8 +244,8 @@ body, html {
   transition: opacity 0.3s;
 }
 .nav-list li:hover { opacity: 0.6; }
-.gold-num { color: var(--gold); font-size: 2vh; width: 30px; font-weight: 300; font-family: 'Cormorant Garamond', serif; padding-top: 2px;}
-.nav-text { font-size: 2.2vh; font-weight: 200; letter-spacing: 0.1em; white-space: pre-wrap; width: 12vw; line-height: 1.4;}
+.gold-num { color: var(--gold); font-size: 1.1rem; width: 30px; font-weight: 300; font-family: 'Cormorant Garamond', serif; padding-top: 2px;}
+.nav-text { font-size: 1.21rem; font-weight: 200; letter-spacing: 0.1em; white-space: pre-wrap; width: 12vw; line-height: 1.4;}
 
 #desktop-footer {
   position: absolute;
@@ -260,9 +260,9 @@ body, html {
 .footer-left, .footer-right { pointer-events: auto; }
 .footer-right { width: 100%; }
 
-.nav-link { font-size: 1.8vh; font-weight: 300; color: #888; cursor: pointer; margin-bottom: 12px; letter-spacing: 0.1em; text-transform: uppercase;}
+.nav-link { font-size: 0.99rem; font-weight: 300; color: #888; cursor: pointer; margin-bottom: 12px; letter-spacing: 0.1em; text-transform: uppercase;}
 .nav-link:hover { color: #fff; }
-.copyright { font-size: 1.3vh; color: rgba(255,255,255,0.4); font-weight: 300; line-height: 1.8; letter-spacing: 0.05em; margin-top: auto; text-align: justify; text-justify: inter-word; }
+.copyright { font-size: 0.72rem; color: rgba(255,255,255,0.4); font-weight: 300; line-height: 1.8; letter-spacing: 0.05em; margin-top: auto; text-align: justify; text-justify: inter-word; }
 
 #mobile-footer { display: none; }
 
@@ -360,19 +360,19 @@ body, html {
 }
 .g1-elegant-title {
   font-family: 'Montserrat', sans-serif;
-  font-size: 2vh; font-weight: 200; letter-spacing: 0.3em; color: rgba(255,255,255,0.5);
+  font-size: 1.1rem; font-weight: 200; letter-spacing: 0.3em; color: rgba(255,255,255,0.5);
   margin-bottom: 40px; opacity: 0;
 }
 .g1-elegant-title span { color: var(--gold); }
 .g1-intro-text {
   font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(30px, 6vw, 8vh);
+  font-size: clamp(30px, 6vw, 4.4rem);
   color: var(--gold);
   margin-bottom: 20px;
   opacity: 0;
 }
 .g1-intro-sub {
-  font-size: clamp(14px, 2vw, 3vh);
+  font-size: clamp(14px, 2vw, 1.65rem);
   font-weight: 200;
   letter-spacing: 0.1em;
   max-width: 800px;
@@ -381,7 +381,7 @@ body, html {
 }
 .scroll-down-hint {
   position: absolute; bottom: 5vh;
-  color: var(--gold); font-size: 1.5vh; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold); font-size: 0.83rem; letter-spacing: 0.2em; text-transform: uppercase;
   animation: glitch-anim 2s infinite linear alternate-reverse;
 }
 
@@ -393,7 +393,7 @@ body, html {
   border: 1px solid rgba(229,178,54,0.5);
   font-family: 'Montserrat', sans-serif;
   letter-spacing: 0.3em;
-  font-size: 1.2vh;
+  font-size: 0.66rem;
   cursor: pointer;
   transition: all 0.4s ease;
   position: relative;
@@ -421,7 +421,7 @@ body, html {
   font-family: 'Montserrat', sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-size: 1.5vh;
+  font-size: 0.83rem;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.4s ease;
@@ -483,10 +483,10 @@ body, html {
 
 .g1-text-box h2 {
   font-family: 'Cormorant Garamond', serif;
-  color: var(--gold); font-size: 5vh; margin-top: 0; margin-bottom: 20px;
+  color: var(--gold); font-size: 2.75rem; margin-top: 0; margin-bottom: 20px;
 }
 .g1-text-box p {
-  font-size: 1.8vh; font-weight: 200; line-height: 1.6; color: #ddd; text-align: justify; margin-bottom: 1em;
+  font-size: 0.99rem; font-weight: 200; line-height: 1.6; color: #ddd; text-align: justify; margin-bottom: 1em;
 }
 .g1-outro { 
   text-align: center; height: 50vh; 
@@ -495,7 +495,7 @@ body, html {
 
 .g1-btn {
   font-family: 'Montserrat', sans-serif;
-  font-size: 1.5vh; letter-spacing: 0.2em; font-weight: 300;
+  font-size: 0.83rem; letter-spacing: 0.2em; font-weight: 300;
   padding: 15px 30px;
   background: none; border: 1px solid rgba(255,255,255,0.3); color: #ccc;
   cursor: pointer; transition: 0.4s;
@@ -525,9 +525,9 @@ body, html {
   border: 1px solid rgba(229,178,54,0.1);
   backdrop-filter: blur(5px);
 }
-.stem-label { font-family: 'Montserrat', sans-serif; font-size: 1.5vh; color: #fff; letter-spacing: 0.2em; font-weight: 200; }
+.stem-label { font-family: 'Montserrat', sans-serif; font-size: 0.83rem; color: #fff; letter-spacing: 0.2em; font-weight: 200; }
 .stem-mute-btn {
-  font-family: 'Montserrat', sans-serif; font-size: 1.2vh; padding: 10px 20px; 
+  font-family: 'Montserrat', sans-serif; font-size: 0.66rem; padding: 10px 20px; 
   background: transparent; color: #aaa; border: 1px solid #aaa; 
   cursor: pointer; transition: 0.3s; width: 120px;
 }
@@ -551,7 +551,7 @@ body, html {
     min-height: 30vh;
   }
   .g1-btn {
-    font-size: 1.4vh;
+    font-size: 0.77rem;
     padding: 12px 20px;
     letter-spacing: 0.15em;
     max-width: 100%;
@@ -570,7 +570,7 @@ body, html {
   padding: 2vh 4vw; display: flex; justify-content: space-between;
   align-items: center; z-index: 100; pointer-events: none;
 }
-.nav-brand { font-size: 2vh; letter-spacing: 0.3em; font-weight: 300; }
+.nav-brand { font-size: 1.1rem; letter-spacing: 0.3em; font-weight: 300; }
 .nav-controls { pointer-events: auto; display: flex; align-items: center; gap: 20px; }
 .audio-btn {
   background: transparent; border: 1px solid #555;
@@ -586,9 +586,9 @@ body, html {
   opacity: 0; transform: scale(0.9); transition: all 0.6s ease; pointer-events: none;
 }
 .gallery-node.active { opacity: 1; transform: scale(1); pointer-events: auto; }
-h1 { font-size: 6vh; font-weight: 200; margin: 0; letter-spacing: 0.05em; }
-h2 { font-size: 5vh; font-weight: 200; margin-bottom: 2vh; letter-spacing: 0.05em; }
-.subtitle { font-size: 2vh; text-transform: uppercase; letter-spacing: 0.3em; color: var(--gold); }
+h1 { font-size: 3.3rem; font-weight: 200; margin: 0; letter-spacing: 0.05em; }
+h2 { font-size: 2.75rem; font-weight: 200; margin-bottom: 1.1rem; letter-spacing: 0.05em; }
+.subtitle { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--gold); }
 
 /* ==========================================
    SACRED GALLERY — The Seals
