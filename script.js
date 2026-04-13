@@ -629,16 +629,20 @@ window.initMusicPlayer = () => {
   
   const playBtn = document.getElementById('master-play-btn');
   
-  playBtn.addEventListener('click', () => {
+  const togglePlay = (e) => {
+    if (e.type === 'touchstart') e.preventDefault();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
     if (!isAudioPlaying) {
-      audios.forEach(a => a.play());
-      playBtn.innerText = "PAUSE";
-      playBtn.style.color = "#000";
-      playBtn.style.background = "var(--gold)";
-      isAudioPlaying = true;
-      startVisualizer();
+      const playPromises = audios.map(a => a.play());
+      
+      Promise.all(playPromises.map(p => p.catch(e => console.error("Play prevented", e)))).then(() => {
+        playBtn.innerText = "PAUSE";
+        playBtn.style.color = "#000";
+        playBtn.style.background = "var(--gold)";
+        isAudioPlaying = true;
+        startVisualizer();
+      });
     } else {
       audios.forEach(a => a.pause());
       playBtn.innerText = "PLAY";
@@ -646,10 +650,14 @@ window.initMusicPlayer = () => {
       playBtn.style.background = "transparent";
       isAudioPlaying = false;
     }
-  });
+  };
+
+  playBtn.addEventListener('click', togglePlay);
+  playBtn.addEventListener('touchstart', togglePlay);
   
   document.querySelectorAll('.stem-mute-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    const toggleStem = (e) => {
+      if (e.type === 'touchstart') e.preventDefault();
       const idx = parseInt(e.target.getAttribute('data-index'));
       if(e.target.classList.contains('active')){
          e.target.classList.remove('active');
@@ -660,7 +668,9 @@ window.initMusicPlayer = () => {
          e.target.innerText = "ACTIVE";
          gsap.to(gainNodes[idx].gain, { value: 1, duration: 0.5 });
       }
-    });
+    };
+    btn.addEventListener('click', toggleStem);
+    btn.addEventListener('touchstart', toggleStem);
   });
 }
 
