@@ -200,7 +200,13 @@ let pendingNodeIndex = null;
 let pendingIsInstant = false;
 
 window.enterSection = (nodeIndex, isInstant = false) => {
-  // If user tries to re-enter from hub, show donation popup first
+  // Skip donation popup for Store, About, Contacts — enter directly
+  if (nodeIndex >= 6) {
+    executeEnterSection(nodeIndex, isInstant);
+    return;
+  }
+  
+  // For galleries 1-5, show donation popup first
   pendingNodeIndex = nodeIndex;
   pendingIsInstant = isInstant;
   
@@ -208,7 +214,6 @@ window.enterSection = (nodeIndex, isInstant = false) => {
   if (modal) {
     modal.classList.add('active');
   } else {
-    // Fallback if modal isn't present
     executeEnterSection(nodeIndex, isInstant);
   }
 };

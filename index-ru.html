@@ -666,7 +666,17 @@
       <button class="g1-btn" onclick="exitSection()">На главную</button>
     </div>
     </div>
-  <!-- DONATION MODAL -->
+  </div>
+
+  <!-- SEALED TALES MODAL -->
+  <div id="tale-modal" class="tale-modal" onclick="closeTaleModal(event)">
+    <div class="tale-modal-content">
+      <button class="close-tale-btn" onclick="closeTaleModal(event)">&times;</button>
+      <div id="tale-modal-text" class="tale-text"></div>
+    </div>
+  </div>
+
+  <!-- DONATION MODAL (top-level, never hidden by parent containers) -->
   <div id="donation-modal" class="donation-modal">
     <div class="donation-content">
       <button class="close-tale-btn" onclick="closeDonationModal()">&times;</button>
@@ -710,14 +720,6 @@
       <div class="donation-actions">
         <button class="g1-btn" onclick="proceedToGallery()" style="width: 100%;">ПЕРЕЙТИ В ГАЛЕРЕЮ</button>
       </div>
-    </div>
-  </div>
-
-  <!-- SEALED TALES MODAL -->
-  <div id="tale-modal" class="tale-modal" onclick="closeTaleModal(event)">
-    <div class="tale-modal-content">
-      <button class="close-tale-btn" onclick="closeTaleModal(event)">&times;</button>
-      <div id="tale-modal-text" class="tale-text"></div>
     </div>
   </div>
 
