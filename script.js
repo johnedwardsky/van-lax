@@ -597,52 +597,72 @@ let audioCtx;
 let analyser;
 let isAudioPlaying = false;
 let visAnimationFrame;
+let audioCtxReady = false;
 
 window.initMusicPlayer = () => {
   if (musicInitialized) return;
   musicInitialized = true;
   
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 512;
-  analyser.connect(audioCtx.destination);
-  
+  // Use M4A (AAC) for mobile compatibility and smaller file size
   const sources = [
-    "Rebirth Tracks/Untitled_4.wav",
-    "Rebirth Tracks/Untitled_5.wav",
-    "Rebirth Tracks/Untitled_8.wav"
+    "Rebirth Tracks/Untitled_4.m4a",
+    "Rebirth Tracks/Untitled_5.m4a",
+    "Rebirth Tracks/Untitled_8.m4a"
   ];
   
-  sources.forEach((src, index) => {
-    const audio = new Audio(src);
-    audio.loop = true; 
-    audio.crossOrigin = "anonymous";
+  // Pre-create Audio elements (no AudioContext yet — iOS requires it inside gesture)
+  sources.forEach((src) => {
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous"; // Must be set BEFORE src
+    audio.src = src;
+    audio.loop = true;
+    audio.preload = "auto";
     audios.push(audio);
-    
-    const sourceNode = audioCtx.createMediaElementSource(audio);
-    const gainNode = audioCtx.createGain();
-    
-    sourceNode.connect(gainNode);
-    gainNode.connect(analyser); // Route everything through analyser for visualization
-    gainNodes.push(gainNode);
   });
   
   const playBtn = document.getElementById('master-play-btn');
   
+  const setupAudioContext = () => {
+    if (audioCtxReady) return;
+    audioCtxReady = true;
+    
+    // Create AudioContext INSIDE user gesture — required by iOS Safari
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.connect(audioCtx.destination);
+    
+    audios.forEach((audio) => {
+      const sourceNode = audioCtx.createMediaElementSource(audio);
+      const gainNode = audioCtx.createGain();
+      sourceNode.connect(gainNode);
+      gainNode.connect(analyser);
+      gainNodes.push(gainNode);
+    });
+  };
+  
   const togglePlay = (e) => {
     if (e.type === 'touchstart') e.preventDefault();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    // Setup AudioContext on first interaction (iOS requirement)
+    setupAudioContext();
+    
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
     
     if (!isAudioPlaying) {
-      const playPromises = audios.map(a => a.play());
+      playBtn.innerText = "LOADING...";
       
-      Promise.all(playPromises.map(p => p.catch(e => console.error("Play prevented", e)))).then(() => {
-        playBtn.innerText = "PAUSE";
-        playBtn.style.color = "#000";
-        playBtn.style.background = "var(--gold)";
-        isAudioPlaying = true;
-        startVisualizer();
-      });
+      const playPromises = audios.map(a => a.play());
+      Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("Play blocked:", err)) : Promise.resolve()))
+        .then(() => {
+          playBtn.innerText = "PAUSE";
+          playBtn.style.color = "#000";
+          playBtn.style.background = "var(--gold)";
+          isAudioPlaying = true;
+          startVisualizer();
+        });
     } else {
       audios.forEach(a => a.pause());
       playBtn.innerText = "PLAY";
@@ -658,6 +678,7 @@ window.initMusicPlayer = () => {
   document.querySelectorAll('.stem-mute-btn').forEach(btn => {
     const toggleStem = (e) => {
       if (e.type === 'touchstart') e.preventDefault();
+      if (!audioCtxReady) return; // Don't do anything if audio not started yet
       const idx = parseInt(e.target.getAttribute('data-index'));
       if(e.target.classList.contains('active')){
          e.target.classList.remove('active');
