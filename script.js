@@ -193,7 +193,56 @@ function initGallery1Scroll() {
   });
 }
 
+// ==========================================
+// DONATION MODAL LOGIC
+// ==========================================
+let pendingNodeIndex = null;
+let pendingIsInstant = false;
+
 window.enterSection = (nodeIndex, isInstant = false) => {
+  // If user tries to re-enter from hub, show donation popup first
+  pendingNodeIndex = nodeIndex;
+  pendingIsInstant = isInstant;
+  
+  const modal = document.getElementById('donation-modal');
+  if (modal) {
+    modal.classList.add('active');
+  } else {
+    // Fallback if modal isn't present
+    executeEnterSection(nodeIndex, isInstant);
+  }
+};
+
+window.openDonationModal = () => {
+  // Used from the bottom of galleries to just donate
+  pendingNodeIndex = null;
+  const modal = document.getElementById('donation-modal');
+  if (modal) modal.classList.add('active');
+};
+
+window.closeDonationModal = () => {
+  const modal = document.getElementById('donation-modal');
+  if (modal) modal.classList.remove('active');
+  // If they closed without clicking proceed, they stay where they are
+};
+
+window.proceedToGallery = () => {
+  closeDonationModal();
+  if (pendingNodeIndex !== null) {
+    executeEnterSection(pendingNodeIndex, pendingIsInstant);
+  }
+};
+
+window.copyCryptoAddress = () => {
+  const addressText = document.getElementById('crypto-address-text').innerText;
+  navigator.clipboard.writeText(addressText).then(() => {
+    alert('Crypto address copied to clipboard!');
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+  });
+};
+
+function executeEnterSection(nodeIndex, isInstant = false) {
   // 1. Fade out the 3D node UI
   const ui = document.getElementById('ui-container');
   if (isInstant) {

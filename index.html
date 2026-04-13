@@ -316,9 +316,10 @@
       </div>
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Support / Donation</button>
+      <button class="g1-btn" onclick="exitSection()">Return to Main</button>
         <button class="g1-btn g1-btn-primary" onclick="nextSection(1)">NEXT GALLERY</button>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -445,9 +446,10 @@
 
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Support / Donation</button>
+      <button class="g1-btn" onclick="exitSection()">Return to Main</button>
         <button class="g1-btn g1-btn-primary" onclick="nextSection(2)">NEXT GALLERY</button>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -535,10 +537,11 @@
       <h1 class="g1-intro-text">The Golden Egg</h1>
       <p class="g1-intro-sub">Decoding Reality — by Ivan Lakshinsky</p>
       <div class="g1-outro">
-        <a class="g1-btn g1-btn-primary" href="book/index.html" style="text-decoration:none; display:inline-block; text-align:center;">OPEN BOOK</a>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Support / Donation</button>
+      <a class="g1-btn g1-btn-primary" href="book/index.html" style="text-decoration:none; display:inline-block; text-align:center;">OPEN BOOK</a>
         <button class="g1-btn" onclick="exitSection()">Return to Main</button>
         <button class="g1-btn g1-btn-primary" onclick="nextSection(5)">NEXT GALLERY</button>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -555,8 +558,9 @@
       <h1 class="g1-intro-text">Boutique</h1>
       <p class="g1-intro-sub" style="max-width: 600px; margin: 0 auto 40px; font-size: 1.2rem; line-height: 1.6;">Coming Soon. Soon you will be able to discover and purchase exclusive Van Lax art objects and original prints.</p>
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
-      </div>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Support / Donation</button>
+      <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+    </div>
     </div>
   </div>
 
@@ -594,8 +598,9 @@
       </div>
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
-      </div>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Support / Donation</button>
+      <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+    </div>
     </div>
   </div>
 
@@ -653,7 +658,28 @@
       </div>
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Support / Donation</button>
+      <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+    </div>
+    </div>
+  <!-- DONATION MODAL -->
+  <div id="donation-modal" class="donation-modal">
+    <div class="donation-content">
+      <button class="close-tale-btn" onclick="closeDonationModal()">&times;</button>
+      <h3 class="donation-title">Support the Art</h3>
+      <p class="donation-text">Entry to the digital gallery is conditionally free. I would be grateful for any support towards the development of the project.</p>
+      
+      <div class="crypto-box">
+        <span class="crypto-network">USDT (TRC20)</span>
+        <div class="crypto-address-flex">
+          <span class="crypto-address" id="crypto-address-text">YOUR_USDT_WALLET_ADDRESS_HERE</span>
+          <button class="copy-btn" onclick="copyCryptoAddress()">Copy</button>
+        </div>
+      </div>
+
+      <div class="donation-actions">
+        <button class="g1-btn g1-btn-primary" onclick="window.open('YOUR_PAYMENT_LINK_HERE', '_blank')">DONATE</button>
+        <button class="g1-btn" onclick="proceedToGallery()">PROCEED TO GALLERY</button>
       </div>
     </div>
   </div>

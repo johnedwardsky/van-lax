@@ -324,9 +324,10 @@
       </div>
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">На главную</button>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Поддержать Donation</button>
+      <button class="g1-btn" onclick="exitSection()">На главную</button>
         <button class="g1-btn g1-btn-primary" onclick="nextSection(1)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -452,9 +453,10 @@
 
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">На главную</button>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Поддержать Donation</button>
+      <button class="g1-btn" onclick="exitSection()">На главную</button>
         <button class="g1-btn g1-btn-primary" onclick="nextSection(2)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -540,10 +542,11 @@
       <h1 class="g1-intro-text">Золотое яйцо</h1>
       <p class="g1-intro-sub">Разгадывая код реальности — Иван Лакшинский</p>
       <div class="g1-outro">
-        <a class="g1-btn g1-btn-primary" href="book/index-ru.html" style="text-decoration:none; display:inline-block; text-align:center;">ОТКРЫТЬ КНИГУ</a>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Поддержать Donation</button>
+      <a class="g1-btn g1-btn-primary" href="book/index-ru.html" style="text-decoration:none; display:inline-block; text-align:center;">ОТКРЫТЬ КНИГУ</a>
         <button class="g1-btn" onclick="exitSection()">На главную</button>
         <button class="g1-btn g1-btn-primary" onclick="nextSection(5)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
-      </div>
+    </div>
     </div>
   </div>
 
@@ -560,8 +563,9 @@
       <h1 class="g1-intro-text">Бутик</h1>
       <p class="g1-intro-sub" style="max-width: 600px; margin: 0 auto 40px; font-size: 1.2rem; line-height: 1.6;">Скоро открытие. Совсем скоро здесь можно будет приобрести эксклюзивные предметы искусства и оригинальные принты Van Lax.</p>
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">На главную</button>
-      </div>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Поддержать Donation</button>
+      <button class="g1-btn" onclick="exitSection()">На главную</button>
+    </div>
     </div>
   </div>
 
@@ -598,8 +602,9 @@
       </div>
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">На главную</button>
-      </div>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Поддержать Donation</button>
+      <button class="g1-btn" onclick="exitSection()">На главную</button>
+    </div>
     </div>
   </div>
 
@@ -657,7 +662,28 @@
       </div>
 
       <div class="g1-outro">
-        <button class="g1-btn" onclick="exitSection()">На главную</button>
+      <button class="g1-btn g1-btn-primary" onclick="openDonationModal()">Поддержать Donation</button>
+      <button class="g1-btn" onclick="exitSection()">На главную</button>
+    </div>
+    </div>
+  <!-- DONATION MODAL -->
+  <div id="donation-modal" class="donation-modal">
+    <div class="donation-content">
+      <button class="close-tale-btn" onclick="closeDonationModal()">&times;</button>
+      <h3 class="donation-title">Поддержать искусство</h3>
+      <p class="donation-text">Вход в цифровую галерею Van Lax свободен. Я буду благодарен за любую поддержку проекта и его развития.</p>
+      
+      <div class="crypto-box">
+        <span class="crypto-network">USDT (TRC20)</span>
+        <div class="crypto-address-flex">
+          <span class="crypto-address" id="crypto-address-text">YOUR_USDT_WALLET_ADDRESS_HERE</span>
+          <button class="copy-btn" onclick="copyCryptoAddress()">Копировать</button>
+        </div>
+      </div>
+
+      <div class="donation-actions">
+        <button class="g1-btn g1-btn-primary" onclick="window.open('YOUR_PAYMENT_LINK_HERE', '_blank')">СДЕЛАТЬ DONATION</button>
+        <button class="g1-btn" onclick="proceedToGallery()">ПЕРЕЙТИ В ГАЛЕРЕЮ</button>
       </div>
     </div>
   </div>
