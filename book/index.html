@@ -619,9 +619,18 @@
           <p>You have reached the end of the free preview. The full book includes Parts III–V: Energy, Harmony, and Practice — with the MAGE Formula and 47 Golden Thoughts.</p>
 
           <div class="cta-buttons">
-            <a class="cta-btn primary" href="../harmony-book/golden_egg_EN_A5_ebook.pdf" download>Download E-Book (PDF)</a>
+            <button class="cta-btn primary" onclick="showDownloadForm()">Download E-Book (PDF)</button>
             <button class="cta-btn secondary" onclick="showRequestForm()">Order Printed Edition</button>
             <a class="cta-btn outline" href="../index.html">Return to Van Lax</a>
+          </div>
+
+          <div class="request-form" id="download-form" style="display:none; text-align: left; margin-bottom: 20px;">
+            <h3 style="color:var(--gold); margin-bottom:15px; text-align:center;">Enter Access Code</h3>
+            <p style="font-size:0.9rem; color:#ccc; margin-bottom:15px; text-align:center;">Please enter your unique 8-character code. The code will expire after use.</p>
+            <input type="text" placeholder="Access Code" id="req-code" style="text-transform: uppercase;">
+            <button onclick="submitDownloadCode('en')">Unlock Download</button>
+            <p id="download-error" style="color:#ff4d4d; margin-top:10px; display:none; font-size:0.9rem; text-align:center;"></p>
+            <a id="hidden-download-link" href="../harmony-book/golden_egg_EN_A5_ebook.pdf" download style="display:none;"></a>
           </div>
 
           <div class="request-form" id="request-form">
@@ -744,6 +753,66 @@
         }
       }
     });
+
+    // ==========================================
+    // DOWNLOAD CODE GATE LOGIC
+    // ==========================================
+    const validCodes = [
+      '4UDCV358', 'JQB7R4TX', '5UVJCOB1', 'DBOYYHK2', 'NO2WBPIB', 
+      'LLET4BH2', 'H1OITFB5', '0NVRL5R6', 'KGQ9QOL2', 'ST937OLK', 
+      'XJYWSTFA', 'T8BS405U', 'OC86S0F0', 'QT65TEDW', 'T1RIRBNA', 
+      '9ZL61DCZ', 'F6WRXUS7', 'T5INWCKH', '2AMGU5ZL', '8I18YRD2', 
+      'ZCTDFF15', 'VIF838EP', 'X7GLKVE8', 'YYAGSD06', 'V210GUGD', 
+      'PIVIM240', 'C40XBTMV', 'CSUMWBCR', '64J5TEXS', 'KPMMSULD'
+    ];
+
+    function showDownloadForm() {
+       const form = document.getElementById('download-form');
+       const reqForm = document.getElementById('request-form');
+       if (reqForm) reqForm.classList.remove('visible'); // hide other form
+       
+       if (form.style.display === 'none' || form.style.display === '') {
+           form.style.display = 'block';
+       } else {
+           form.style.display = 'none';
+       }
+       document.getElementById('download-error').style.display = 'none';
+    }
+
+    function submitDownloadCode(lang) {
+      const codeInput = document.getElementById('req-code').value.trim().toUpperCase();
+      const errorMsg = document.getElementById('download-error');
+      
+      if (!codeInput) {
+        errorMsg.textContent = lang === 'ru' ? 'Введите код.' : 'Please enter a code.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      if (!validCodes.includes(codeInput)) {
+        errorMsg.textContent = lang === 'ru' ? 'Неверный код доступа.' : 'Invalid access code.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      let usedCodes = JSON.parse(localStorage.getItem('used_book_codes') || '[]');
+      if (usedCodes.includes(codeInput)) {
+        errorMsg.textContent = lang === 'ru' ? 'Этот код уже использован и недействителен.' : 'This code has already been used and is burned.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      // Burn the code by saving to localStorage
+      usedCodes.push(codeInput);
+      localStorage.setItem('used_book_codes', JSON.stringify(usedCodes));
+      errorMsg.style.display = 'none';
+      
+      // Trigger download
+      document.getElementById('hidden-download-link').click();
+      
+      // Update form to show success
+      document.getElementById('download-form').innerHTML = '<h3 style="color:var(--gold); margin-bottom:15px; text-align:center;">' + (lang === 'ru' ? 'Загрузка началась!' : 'Download Started!') + '</h3><p style="font-size:0.9rem; color:#ccc; text-align:center;">' + (lang === 'ru' ? 'Ваш код успешно погашен.' : 'Your code was successfully burned and redeemed.') + '</p>';
+    }
   </script>
 </body>
 </html>
