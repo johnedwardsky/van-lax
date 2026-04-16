@@ -200,22 +200,8 @@ let pendingNodeIndex = null;
 let pendingIsInstant = false;
 
 window.enterSection = (nodeIndex, isInstant = false) => {
-  // Skip donation popup for Store, About, Contacts — enter directly
-  if (nodeIndex >= 6) {
-    executeEnterSection(nodeIndex, isInstant);
-    return;
-  }
-  
-  // For galleries 1-5, show donation popup first
-  pendingNodeIndex = nodeIndex;
-  pendingIsInstant = isInstant;
-  
-  const modal = document.getElementById('donation-modal');
-  if (modal) {
-    modal.classList.add('active');
-  } else {
-    executeEnterSection(nodeIndex, isInstant);
-  }
+  // Enter gallery directly — no donation popup on entry
+  executeEnterSection(nodeIndex, isInstant);
 };
 
 window.openDonationModal = () => {
