@@ -1482,38 +1482,36 @@ function startEvoBgParticles() {
   const c = canvas.getContext('2d');
 
   // ── Generate crystal shards ──────────────────────────────────────────
-  const crystals = Array.from({length: 160}, () => {
-    const vertCount = 4 + Math.floor(Math.random() * 5); // 4–8 vertices
+  const crystals = Array.from({length: 80}, () => {
+    const vertCount = 4 + Math.floor(Math.random() * 4); // 4–7 vertices
     const verts = Array.from({length: vertCount}, (_, v) => ({
-      angle: (v / vertCount) * Math.PI * 2 + (Math.random() - 0.5) * 1.1,
-      dist:  0.4 + Math.random() * 0.6,  // irregular distances → shard shape
+      angle: (v / vertCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.9,
+      dist:  0.35 + Math.random() * 0.65,
     }));
 
-    const rayCount = 3 + Math.floor(Math.random() * 4); // 3–6 rays
+    const rayCount = 2 + Math.floor(Math.random() * 3); // 2–4 rays (fewer)
     const baseHue = Math.random() * 360;
     const rays = Array.from({length: rayCount}, (_, r) => ({
       angle:   Math.random() * Math.PI * 2,
-      lenMult: 3 + Math.random() * 7,    // how long the ray stretches (× shard size)
-      width:   0.08 + Math.random() * 0.18, // ray angular width multiplier
-      hue:     (baseHue + r * (280 / rayCount) + (Math.random() - 0.5) * 50 + 360) % 360,
-      curve:   (Math.random() - 0.5) * 0.5, // slight wiggly bend
-      backLen: 0.3 + Math.random() * 0.5,   // opposite-side ray length fraction
+      lenMult: 4 + Math.random() * 8,    // length multiplier
+      width:   0.05 + Math.random() * 0.10, // thinner rays
+      hue:     (baseHue + r * (280 / rayCount) + (Math.random() - 0.5) * 40 + 360) % 360,
+      curve:   (Math.random() - 0.5) * 0.4,
+      backLen: 0.2 + Math.random() * 0.4,
     }));
 
     return {
       x: Math.random(), y: Math.random(),
       ox: 0, oy: 0,
-      baseR:    2.5 + Math.random() * 5,   // shard 2.5–7.5 px
+      baseR:    1.5 + Math.random() * 3,   // smaller shards: 1.5–4.5 px
       rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.004,
+      rotSpeed: (Math.random() - 0.5) * 0.002, // slower rotation
       phase:    Math.random() * Math.PI * 2,
       freqBin:  Math.floor(Math.random() * 200),
-      driftX:   (Math.random() - 0.5) * 0.00012,
-      driftY:   (Math.random() - 0.5) * 0.00012,
+      driftX:   (Math.random() - 0.5) * 0.00008,
+      driftY:   (Math.random() - 0.5) * 0.00008,
       energy:   0,
-      verts,
-      rays,
-      baseHue,
+      verts, rays, baseHue,
     };
   });
 
@@ -1529,27 +1527,28 @@ function startEvoBgParticles() {
   let freqData = new Uint8Array(1024);
   let bass = 0, mid = 0, treble = 0;
 
-  // ── Draw a single prismatic ray ──────────────────────────────────────
+  // ── Draw a single prismatic ray — fades deep into darkness ──────────
   const drawRay = (cx, cy, angle, len, width, hue, alpha, bend) => {
     c.save();
     c.translate(cx, cy);
     c.rotate(angle);
 
-    // Wispy shape: quadratic curve so it's not a perfect triangle
-    const t2 = Date.now() * 0.0004;
-    const mid1Y = width * (-0.4 + Math.sin(t2 + hue) * 0.25 + bend);
-    const mid2Y = width * ( 0.4 + Math.cos(t2 + hue) * 0.25 + bend);
+    const t2 = Date.now() * 0.0003;
+    const mid1Y = width * (-0.3 + Math.sin(t2 + hue * 0.05) * 0.2 + bend);
+    const mid2Y = width * ( 0.3 + Math.cos(t2 + hue * 0.05) * 0.2 + bend);
 
+    // Very steep falloff — bright only at origin, almost gone by 20% of length
     const grad = c.createLinearGradient(0, 0, len, 0);
-    grad.addColorStop(0,   `hsla(${hue},              100%, 90%, ${alpha})`);
-    grad.addColorStop(0.3, `hsla(${(hue+30)%360},     100%, 80%, ${alpha * 0.65})`);
-    grad.addColorStop(0.65,`hsla(${(hue+70)%360},     100%, 70%, ${alpha * 0.3})`);
-    grad.addColorStop(1,   `hsla(${(hue+110)%360},    100%, 60%, 0)`);
+    grad.addColorStop(0,    `hsla(${hue},           100%, 90%, ${alpha})`);
+    grad.addColorStop(0.12, `hsla(${(hue+20)%360},  100%, 80%, ${alpha * 0.45})`);
+    grad.addColorStop(0.35, `hsla(${(hue+50)%360},  100%, 70%, ${alpha * 0.12})`);
+    grad.addColorStop(0.65, `hsla(${(hue+90)%360},  100%, 60%, ${alpha * 0.03})`);
+    grad.addColorStop(1,    'transparent');
 
     c.beginPath();
     c.moveTo(0, 0);
-    c.quadraticCurveTo(len * 0.45, mid1Y, len, 0);
-    c.quadraticCurveTo(len * 0.45, mid2Y, 0, 0);
+    c.quadraticCurveTo(len * 0.35, mid1Y, len, 0);
+    c.quadraticCurveTo(len * 0.35, mid2Y, 0, 0);
     c.fillStyle = grad;
     c.fill();
     c.restore();
@@ -1612,24 +1611,25 @@ function startEvoBgParticles() {
 
       const cx = (cr.x + cr.ox) * W;
       const cy = (cr.y + cr.oy) * H;
-      const twinkle = 0.5 + 0.5 * Math.sin(t * 1.4 + cr.phase);
-      const size = cr.baseR * (1.1 + twinkle * 0.4 + e * 3.5 + bass * 2);
+      const twinkle = 0.5 + 0.5 * Math.sin(t * 1.0 + cr.phase);
+      // Size barely changes at rest — energy only lifts it slightly
+      const size = cr.baseR * (1.0 + twinkle * 0.15 + e * 2.5 + bass * 1.2);
 
-      // Slow shard rotation
-      cr.rotation += cr.rotSpeed * (1 + e * 2);
+      // Very slow rotation
+      cr.rotation += cr.rotSpeed * (1 + e * 1.5);
 
-      // ── Prismatic rays (draw BEHIND the shard) ───────────────────
+      // ── Prismatic rays — drawn faint, darkness swallows them ──────
       cr.rays.forEach(ray => {
-        const rayAngle = ray.angle + cr.rotation * 0.25;
-        const rayLen   = size * (ray.lenMult + e * 14 + bass * 9 + twinkle * 2);
-        const rayW     = size * (ray.width + e * 0.4 + bass * 0.2);
-        const alpha    = Math.min(0.12 + twinkle * 0.1 + e * 0.55 + bass * 0.3, 0.85);
+        const rayAngle = ray.angle + cr.rotation * 0.15;
+        const rayLen   = size * (ray.lenMult + e * 10 + bass * 6 + twinkle * 1.5);
+        const rayW     = size * (ray.width + e * 0.2 + bass * 0.1);
+        // Very low base alpha — only music lifts it
+        const alpha    = Math.min(0.025 + twinkle * 0.03 + e * 0.25 + bass * 0.18, 0.45);
 
-        // Forward ray
         drawRay(cx, cy, rayAngle, rayLen, rayW, ray.hue, alpha, ray.curve);
-        // Shorter back-ray (complementary hue)
-        drawRay(cx, cy, rayAngle + Math.PI, rayLen * ray.backLen, rayW * 0.6,
-                (ray.hue + 160) % 360, alpha * 0.6, -ray.curve * 0.5);
+        // Opposite ray even fainter
+        drawRay(cx, cy, rayAngle + Math.PI, rayLen * ray.backLen * 0.7, rayW * 0.5,
+                (ray.hue + 160) % 360, alpha * 0.4, -ray.curve * 0.4);
       });
 
       // ── Crystal shard polygon ────────────────────────────────────
@@ -1646,18 +1646,17 @@ function startEvoBgParticles() {
       });
       c.closePath();
 
-      // Interior prismatic gradient
+      // Interior — nearly transparent, just a whisper of colour
       const inner = c.createRadialGradient(size*0.1, size*-0.1, 0, 0, 0, size * 1.1);
-      inner.addColorStop(0,   `hsla(${cr.baseHue},            70%, 100%, ${0.75 + e*0.25})`);
-      inner.addColorStop(0.35,`hsla(${(cr.baseHue+80)%360},   90%,  90%, ${0.4 + e*0.3})`);
-      inner.addColorStop(0.7, `hsla(${(cr.baseHue+160)%360}, 100%,  75%, ${0.2 + e*0.2})`);
-      inner.addColorStop(1,   `hsla(${(cr.baseHue+220)%360}, 100%,  65%, 0.05)`);
+      inner.addColorStop(0,    `hsla(${cr.baseHue},            60%, 100%, ${0.25 + e*0.35})`);
+      inner.addColorStop(0.4,  `hsla(${(cr.baseHue+80)%360},   80%, 90%,  ${0.08 + e*0.2})`);
+      inner.addColorStop(1,    `hsla(${(cr.baseHue+160)%360}, 100%, 75%,  0)`);
       c.fillStyle = inner;
       c.fill();
 
-      // Bright edge facets (stroke)
-      c.strokeStyle = `hsla(${cr.baseHue}, 60%, 100%, ${0.5 + twinkle * 0.4 + e * 0.4})`;
-      c.lineWidth   = 0.6 + e * 0.8;
+      // Edge — fine bright line, flickers with twinkle
+      c.strokeStyle = `hsla(${cr.baseHue}, 70%, 100%, ${0.15 + twinkle * 0.25 + e * 0.35})`;
+      c.lineWidth   = 0.4 + e * 0.6;
       c.stroke();
 
       c.restore();
