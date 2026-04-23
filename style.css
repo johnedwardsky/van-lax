@@ -506,9 +506,84 @@ body, html {
 .g1-btn-primary:hover { background: var(--gold); color: #000; }
 
 /* ===============================
-   MUSIC PLAYER / REBIRTH UI
+   MUSIC PLAYER / REBIRTH + DEEP BLUE UI
    =============================== */
-#music-visualizer {
+
+/* Merged Listening page layout */
+.listening-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.listening-header {
+  width: 100%;
+  text-align: center;
+  padding: 80px 20px 40px;
+  position: relative;
+  z-index: 10;
+}
+.listening-header-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 200;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Individual track section */
+.track-section {
+  width: 100%;
+  max-width: 900px;
+  padding: 50px 40px;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+.track-section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 300;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  margin-bottom: 40px;
+  text-shadow: 0 0 30px rgba(229,178,54,0.4);
+}
+
+/* Divider between tracks */
+.track-divider {
+  width: 60%;
+  max-width: 500px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  margin: 10px auto;
+  position: relative;
+  z-index: 10;
+}
+.track-divider::before {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,255,255,0.2);
+  font-size: 0.9rem;
+  background: #000;
+  padding: 0 12px;
+}
+
+/* Larger play button for the merged page */
+.play-btn-large {
+  font-size: 1.1rem !important;
+  padding: 20px 60px !important;
+  border-width: 2px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+}
+
+#music-visualizer,
+#deep-blue-visualizer,
+#nox-visualizer {
   position: absolute; top: 0; left: 0;
   width: 100vw; height: 100vh;
   z-index: 1; pointer-events: none;
@@ -518,7 +593,7 @@ body, html {
   display: flex; flex-direction: column; align-items: center; gap: 40px;
   z-index: 10;
 }
-.stem-toggles { display: flex; gap: 40px; }
+.stem-toggles { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
 .stem-track {
   display: flex; flex-direction: column; align-items: center; gap: 15px;
   background: rgba(255,255,255,0.03); padding: 30px 40px; border-radius: 10px;
@@ -526,13 +601,19 @@ body, html {
   backdrop-filter: blur(5px);
 }
 .stem-label { font-family: 'Montserrat', sans-serif; font-size: 0.83rem; color: #fff; letter-spacing: 0.2em; font-weight: 200; }
-.stem-mute-btn {
+.stem-mute-btn,
+.db-stem-mute-btn,
+.nox-stem-mute-btn {
   font-family: 'Montserrat', sans-serif; font-size: 0.66rem; padding: 10px 20px; 
   background: transparent; color: #aaa; border: 1px solid #aaa; 
   cursor: pointer; transition: 0.3s; width: 120px;
 }
-.stem-mute-btn:hover { border-color: #fff; color: #fff; }
-.stem-mute-btn.active {
+.stem-mute-btn:hover,
+.db-stem-mute-btn:hover,
+.nox-stem-mute-btn:hover { border-color: #fff; color: #fff; }
+.stem-mute-btn.active,
+.db-stem-mute-btn.active,
+.nox-stem-mute-btn.active {
   background: var(--gold); color: #000; border-color: var(--gold);
 }
 

@@ -18,7 +18,7 @@ let targetCameraZ = 0;
 
 // Shift these up so they are ready for any function calls
 const nodeSpacing = 200; 
-const totalNodes = 9; 
+const totalNodes = 11; 
 const spiralLength = nodeSpacing * (totalNodes - 1);
 const nodes = document.querySelectorAll('.gallery-node');
 
@@ -286,9 +286,19 @@ function executeEnterSection(nodeIndex, isInstant = false) {
         initSacredGalleryScroll();
       }
     
-      // If it's the Music gallery, initialize player
+      // If it's the Music gallery (REBIRTH), initialize its player
       if(nodeIndex === 4) {
         initMusicPlayer();
+      }
+
+      // If it's the Deep Blue gallery, initialize its player
+      if(nodeIndex === 9) {
+        initDeepBluePlayer();
+      }
+
+      // If it's the NOX gallery, initialize its player
+      if(nodeIndex === 10) {
+        initNoxPlayer();
       }
     }
 };
@@ -500,10 +510,12 @@ const nodeColors = [
   new THREE.Color(0x8A2BE2), // node 2 (Gallery 2)
   new THREE.Color(0xffffff), // node 3 (The Book)
   new THREE.Color(0x00d2ff), // node 4 (Generative)
-  new THREE.Color(0xaa00ff), // node 5 (Music)
+  new THREE.Color(0xaa00ff), // node 5 (Music / Rebirth)
   new THREE.Color(0xff0055), // node 6 (Store)
   new THREE.Color(0x00ff88), // node 7 (About)
-  new THREE.Color(0xff8800)  // node 8 (Contacts)
+  new THREE.Color(0xff8800), // node 8 (Contacts)
+  new THREE.Color(0x00b4d8), // node 9 (Deep Blue)
+  new THREE.Color(0xaa00ff), // node 10 (NOX)
 ];
 
 let currentNodeIndex = 0;
@@ -735,9 +747,359 @@ function startVisualizer() {
 
 window.pauseAllAudio = () => {
     if(isAudioPlaying) {
-      document.getElementById('master-play-btn').click(); // trigger pause logic
+      document.getElementById('master-play-btn').click();
+    }
+    if(dbAudioPlaying) {
+      const dbBtn = document.getElementById('deep-blue-play-btn');
+      if(dbBtn) dbBtn.click();
+    }
+    if(noxAudioPlaying) {
+      const noxBtn = document.getElementById('nox-play-btn');
+      if(noxBtn) noxBtn.click();
     }
 };
+
+// Switch between track pages (pause current audio, cross-fade containers)
+window.switchTrack = (fromSection, toSection) => {
+  // Pause audio on current page
+  if(fromSection === 4 && isAudioPlaying) {
+    const btn = document.getElementById('master-play-btn');
+    if(btn) btn.click();
+  }
+  if(fromSection === 9 && dbAudioPlaying) {
+    const btn = document.getElementById('deep-blue-play-btn');
+    if(btn) btn.click();
+  }
+  if(fromSection === 10 && noxAudioPlaying) {
+    const btn = document.getElementById('nox-play-btn');
+    if(btn) btn.click();
+  }
+
+  // Init player for destination if not already done
+  if(toSection === 9)  initDeepBluePlayer();
+  if(toSection === 4)  initMusicPlayer();
+  if(toSection === 10) initNoxPlayer();
+
+  const fromEl = document.getElementById(`gallery-${fromSection}-container`);
+  const toEl   = document.getElementById(`gallery-${toSection}-container`);
+  if(!fromEl || !toEl) return;
+
+  gsap.to(fromEl, { opacity: 0, duration: 0.6, onComplete: () => {
+    fromEl.style.display = 'none';
+    toEl.style.display = 'block';
+    toEl.style.opacity = '0';
+    gsap.to(toEl, { opacity: 1, duration: 0.8 });
+
+    // Animate in the titles on the destination page
+    const titles = toEl.querySelectorAll('.g1-elegant-title, .g1-intro-text, .g1-intro-sub');
+    if(titles.length > 0) {
+      gsap.fromTo(titles,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, stagger: 0.2, duration: 1.2, ease: 'power2.out', delay: 0.3 }
+      );
+    }
+  }});
+};
+
+// ==========================================
+// 8. NOX STEM PLAYER (5 TRACKS)
+// ==========================================
+let noxInitialized = false;
+let noxAudios = [];
+let noxGainNodes = [];
+let noxAudioCtx;
+let noxAnalyser;
+let noxAudioPlaying = false;
+let noxCtxReady = false;
+
+window.initNoxPlayer = () => {
+  if (noxInitialized) return;
+  noxInitialized = true;
+
+  const sources = [
+    "NOX/1.mp3",
+    "NOX/2.mp3",
+    "NOX/3.mp3",
+    "NOX/4.mp3",
+    "NOX/5.mp3"
+  ];
+
+  sources.forEach((src) => {
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous";
+    audio.src = src;
+    audio.loop = true;
+    audio.preload = "auto";
+    noxAudios.push(audio);
+  });
+
+  const playBtn = document.getElementById('nox-play-btn');
+  if (!playBtn) return;
+
+  const setupNoxCtx = () => {
+    if (noxCtxReady) return;
+    noxCtxReady = true;
+    noxAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    noxAnalyser = noxAudioCtx.createAnalyser();
+    noxAnalyser.fftSize = 512;
+    noxAnalyser.connect(noxAudioCtx.destination);
+
+    noxAudios.forEach((audio) => {
+      const sourceNode = noxAudioCtx.createMediaElementSource(audio);
+      const gainNode = noxAudioCtx.createGain();
+      sourceNode.connect(gainNode);
+      gainNode.connect(noxAnalyser);
+      noxGainNodes.push(gainNode);
+    });
+  };
+
+  const toggleNoxPlay = (e) => {
+    if (e.type === 'touchstart') e.preventDefault();
+    setupNoxCtx();
+
+    if (noxAudioCtx.state === 'suspended') noxAudioCtx.resume();
+
+    if (!noxAudioPlaying) {
+      playBtn.innerText = "LOADING...";
+      const playPromises = noxAudios.map(a => a.play());
+      Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("NOX Play blocked:", err)) : Promise.resolve()))
+        .then(() => {
+          playBtn.innerText = "PAUSE";
+          playBtn.style.color = "#000";
+          playBtn.style.background = "#aa00ff";
+          playBtn.style.borderColor = "#aa00ff";
+          noxAudioPlaying = true;
+          startNoxVisualizer();
+        });
+    } else {
+      noxAudios.forEach(a => a.pause());
+      playBtn.innerText = "PLAY";
+      playBtn.style.color = "#aa00ff";
+      playBtn.style.background = "transparent";
+      playBtn.style.borderColor = "#aa00ff";
+      noxAudioPlaying = false;
+    }
+  };
+
+  playBtn.addEventListener('click', toggleNoxPlay);
+  playBtn.addEventListener('touchstart', toggleNoxPlay);
+
+  document.querySelectorAll('.nox-stem-mute-btn').forEach(btn => {
+    const toggleStem = (e) => {
+      if (e.type === 'touchstart') e.preventDefault();
+      if (!noxCtxReady) return;
+      const idx = parseInt(e.target.getAttribute('data-index'));
+      const isRu = window.location.pathname.includes('-ru');
+      if (e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+        e.target.innerText = isRu ? "ВЫКЛ" : "MUTED";
+        gsap.to(noxGainNodes[idx].gain, { value: 0, duration: 0.5 });
+      } else {
+        e.target.classList.add('active');
+        e.target.innerText = isRu ? "ВКЛ" : "ACTIVE";
+        gsap.to(noxGainNodes[idx].gain, { value: 1, duration: 0.5 });
+      }
+    };
+    btn.addEventListener('click', toggleStem);
+    btn.addEventListener('touchstart', toggleStem);
+  });
+};
+
+function startNoxVisualizer() {
+  const canvas = document.getElementById('nox-visualizer');
+  if (!canvas) return;
+  const c = canvas.getContext('2d');
+  const bufferLength = noxAnalyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+
+  function draw() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    if (!noxAudioPlaying) {
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    requestAnimationFrame(draw);
+    noxAnalyser.getByteTimeDomainData(dataArray);
+    c.clearRect(0, 0, canvas.width, canvas.height);
+    c.lineWidth = 3;
+
+    // NOX — deep violet / purple palette
+    const time = Date.now() * 0.04;
+    const gradient = c.createLinearGradient(0, 0, canvas.width, 0);
+    gradient.addColorStop(0, `hsl(${270 + (time % 30)}, 100%, 60%)`);
+    gradient.addColorStop(0.5, `hsl(${290 + (time % 20)}, 100%, 70%)`);
+    gradient.addColorStop(1, `hsl(${260 + (time % 30)}, 100%, 55%)`);
+
+    c.strokeStyle = gradient;
+    c.shadowBlur = 28;
+    c.shadowColor = `hsl(275, 100%, 55%)`;
+
+    c.beginPath();
+    const sliceWidth = canvas.width / bufferLength;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = v * (canvas.height / 2);
+      if (i === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+      x += sliceWidth;
+    }
+    c.stroke();
+  }
+  draw();
+}
+
+// ==========================================
+// 7. DEEP BLUE STEM PLAYER (4 TRACKS)
+// ==========================================
+let dbInitialized = false;
+let dbAudios = [];
+let dbGainNodes = [];
+let dbAudioCtx;
+let dbAnalyser;
+let dbAudioPlaying = false;
+let dbVisFrame;
+let dbCtxReady = false;
+
+window.initDeepBluePlayer = () => {
+  if (dbInitialized) return;
+  dbInitialized = true;
+
+  const sources = [
+    "DEEP BLUE/1.mp3",
+    "DEEP BLUE/2.mp3",
+    "DEEP BLUE/3.mp3",
+    "DEEP BLUE/4.mp3"
+  ];
+
+  sources.forEach((src) => {
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous";
+    audio.src = src;
+    audio.loop = true;
+    audio.preload = "auto";
+    dbAudios.push(audio);
+  });
+
+  const playBtn = document.getElementById('deep-blue-play-btn');
+  if (!playBtn) return;
+
+  const setupDbCtx = () => {
+    if (dbCtxReady) return;
+    dbCtxReady = true;
+    dbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    dbAnalyser = dbAudioCtx.createAnalyser();
+    dbAnalyser.fftSize = 512;
+    dbAnalyser.connect(dbAudioCtx.destination);
+
+    dbAudios.forEach((audio) => {
+      const sourceNode = dbAudioCtx.createMediaElementSource(audio);
+      const gainNode = dbAudioCtx.createGain();
+      sourceNode.connect(gainNode);
+      gainNode.connect(dbAnalyser);
+      dbGainNodes.push(gainNode);
+    });
+  };
+
+  const toggleDbPlay = (e) => {
+    if (e.type === 'touchstart') e.preventDefault();
+    setupDbCtx();
+
+    if (dbAudioCtx.state === 'suspended') dbAudioCtx.resume();
+
+    if (!dbAudioPlaying) {
+      playBtn.innerText = "LOADING...";
+      const playPromises = dbAudios.map(a => a.play());
+      Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("DB Play blocked:", err)) : Promise.resolve()))
+        .then(() => {
+          playBtn.innerText = "PAUSE";
+          playBtn.style.color = "#000";
+          playBtn.style.background = "var(--gold)";
+          dbAudioPlaying = true;
+          startDbVisualizer();
+        });
+    } else {
+      dbAudios.forEach(a => a.pause());
+      playBtn.innerText = "PLAY";
+      playBtn.style.color = "var(--gold)";
+      playBtn.style.background = "transparent";
+      dbAudioPlaying = false;
+    }
+  };
+
+  playBtn.addEventListener('click', toggleDbPlay);
+  playBtn.addEventListener('touchstart', toggleDbPlay);
+
+  document.querySelectorAll('.db-stem-mute-btn').forEach(btn => {
+    const toggleStem = (e) => {
+      if (e.type === 'touchstart') e.preventDefault();
+      if (!dbCtxReady) return;
+      const idx = parseInt(e.target.getAttribute('data-index'));
+      const isRu = window.location.pathname.includes('-ru');
+      if (e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+        e.target.innerText = isRu ? "ВЫКЛ" : "MUTED";
+        gsap.to(dbGainNodes[idx].gain, { value: 0, duration: 0.5 });
+      } else {
+        e.target.classList.add('active');
+        e.target.innerText = isRu ? "ВКЛ" : "ACTIVE";
+        gsap.to(dbGainNodes[idx].gain, { value: 1, duration: 0.5 });
+      }
+    };
+    btn.addEventListener('click', toggleStem);
+    btn.addEventListener('touchstart', toggleStem);
+  });
+};
+
+function startDbVisualizer() {
+  const canvas = document.getElementById('deep-blue-visualizer');
+  if (!canvas) return;
+  const c = canvas.getContext('2d');
+  const bufferLength = dbAnalyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+
+  function draw() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    if (!dbAudioPlaying) {
+      c.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
+    dbVisFrame = requestAnimationFrame(draw);
+    dbAnalyser.getByteTimeDomainData(dataArray);
+    c.clearRect(0, 0, canvas.width, canvas.height);
+    c.lineWidth = 3;
+
+    // Deep blue themed gradient: blues and cyans
+    const time = Date.now() * 0.05;
+    const gradient = c.createLinearGradient(0, 0, canvas.width, 0);
+    gradient.addColorStop(0, `hsl(${190 + (time % 40)}, 100%, 60%)`);
+    gradient.addColorStop(0.5, `hsl(${210 + (time % 40)}, 100%, 70%)`);
+    gradient.addColorStop(1, `hsl(${230 + (time % 30)}, 100%, 60%)`);
+
+    c.strokeStyle = gradient;
+    c.shadowBlur = 24;
+    c.shadowColor = `hsl(210, 100%, 60%)`;
+
+    c.beginPath();
+    const sliceWidth = canvas.width / bufferLength;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      const v = dataArray[i] / 128.0;
+      const y = v * (canvas.height / 2);
+      if (i === 0) c.moveTo(x, y);
+      else c.lineTo(x, y);
+      x += sliceWidth;
+    }
+    c.stroke();
+  }
+  draw();
+}
 
 // ==========================================
 // STATE PERSISTENCE (Language Switching)

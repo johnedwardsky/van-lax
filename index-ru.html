@@ -227,6 +227,20 @@
         <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: var(--gold); font-size: 1.1rem;">КОНТАКТЫ</h3>
         <button class="start-view-btn btn-gold fade-in" onclick="enterSection(8)">Войти</button>
       </section>
+
+      <!-- Node 9: Deep Blue -->
+      <section class="gallery-node" id="node-9">
+        <h2 class="fade-in theme-glow-cyan" style="margin-bottom:0;">СЛУШАТЬ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #00b4d8; font-size: 1.1rem;">DEEP BLUE</h3>
+        <button class="start-view-btn btn-cyan fade-in" onclick="enterSection(9)">Войти</button>
+      </section>
+
+      <!-- Node 10: NOX -->
+      <section class="gallery-node" id="node-10">
+        <h2 class="fade-in theme-glow-violet" style="margin-bottom:0;">СЛУШАТЬ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #aa00ff; font-size: 1.1rem;">NOX</h3>
+        <button class="start-view-btn btn-violet fade-in" onclick="enterSection(10)">Войти</button>
+      </section>
       
     </div>
 
@@ -522,16 +536,112 @@
             </div>
          </div>
       </div>
+
+      <div class="g1-outro" style="margin-top: 10vh; height: auto;">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+        <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(4, 9)" style="border-color: #00b4d8; color: #00b4d8;">DEEP BLUE &rarr;</button>
+        <button class="g1-btn g1-btn-primary" onclick="nextSection(4)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===============================
+       GALLERY 9: DEEP BLUE (4 СТЕМА)
+       =============================== -->
+  <div id="gallery-9-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active" onclick="localStorage.setItem('lang_selected', 'true')">RU</a>
+      <span>/</span>
+      <a href="index.html" onclick="localStorage.setItem('lang_selected', 'true')">EN</a>
+    </div>
+
+    <canvas id="deep-blue-visualizer"></canvas>
+    
+    <div class="g1-intro-section" style="position:relative; z-index: 10;">
+      <div class="g1-elegant-title">СЛУШАТЬ <span>#9</span></div>
+      <h1 class="g1-intro-text" style="font-size: 5.5rem; color: #00b4d8; text-shadow: 0 0 40px rgba(0,180,216,0.4);">DEEP BLUE</h1>
+      <p class="g1-intro-sub" style="margin-bottom: 40px;">Интерактивные аудио-стемы</p>
       
-      <div style="margin-top: 40px;">
-        <button class="g1-btn" style="border: 1px solid rgba(255,255,255,0.2); opacity: 0.6; cursor: not-allowed;" disabled>
-          Слушать треки Van Lax (Скоро)
-        </button>
+      <div class="stem-player-ui" style="position: relative; z-index: 20;">
+         <button id="deep-blue-play-btn" class="g1-btn g1-btn-primary solid-bg" style="font-size: 1.1rem; padding: 20px 60px; border-width: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-color: #00b4d8; color: #00b4d8;">PLAY</button>
+         
+         <div class="stem-toggles">
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 1</span>
+               <button class="db-stem-mute-btn active" data-index="0">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 2</span>
+               <button class="db-stem-mute-btn active" data-index="1">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 3</span>
+               <button class="db-stem-mute-btn active" data-index="2">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 4</span>
+               <button class="db-stem-mute-btn active" data-index="3">ВКЛ</button>
+            </div>
+         </div>
       </div>
 
       <div class="g1-outro" style="margin-top: 10vh; height: auto;">
         <button class="g1-btn" onclick="exitSection()">На главную</button>
-        <button class="g1-btn g1-btn-primary" onclick="nextSection(4)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
+        <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(9, 4)" style="border-color: var(--gold); color: var(--gold);">&larr; REBIRTH</button>
+        <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(9, 10)" style="border-color: #aa00ff; color: #aa00ff;">NOX &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===============================
+       GALLERY 10: NOX (5 СТЕМОВ)
+       =============================== -->
+  <div id="gallery-10-container" class="fullscreen-container" style="display:none; opacity:0;">
+    <!-- Local Language Switch for gallery -->
+    <div class="lang-switch-global">
+      <a href="index-ru.html" class="active" onclick="localStorage.setItem('lang_selected', 'true')">RU</a>
+      <span>/</span>
+      <a href="index.html" onclick="localStorage.setItem('lang_selected', 'true')">EN</a>
+    </div>
+
+    <canvas id="nox-visualizer"></canvas>
+    
+    <div class="g1-intro-section" style="position:relative; z-index: 10;">
+      <div class="g1-elegant-title">СЛУШАТЬ <span>#10</span></div>
+      <h1 class="g1-intro-text" style="font-size: 5.5rem; color: #aa00ff; text-shadow: 0 0 40px rgba(170,0,255,0.5);">NOX</h1>
+      <p class="g1-intro-sub" style="margin-bottom: 40px;">Интерактивные аудио-стемы</p>
+      
+      <div class="stem-player-ui" style="position: relative; z-index: 20;">
+         <button id="nox-play-btn" class="g1-btn g1-btn-primary solid-bg" style="font-size: 1.1rem; padding: 20px 60px; border-width: 2px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-color: #aa00ff; color: #aa00ff;">PLAY</button>
+         
+         <div class="stem-toggles">
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 1</span>
+               <button class="nox-stem-mute-btn active" data-index="0">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 2</span>
+               <button class="nox-stem-mute-btn active" data-index="1">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 3</span>
+               <button class="nox-stem-mute-btn active" data-index="2">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 4</span>
+               <button class="nox-stem-mute-btn active" data-index="3">ВКЛ</button>
+            </div>
+            <div class="stem-track">
+               <span class="stem-label">ТРЕК 5</span>
+               <button class="nox-stem-mute-btn active" data-index="4">ВКЛ</button>
+            </div>
+         </div>
+      </div>
+
+      <div class="g1-outro" style="margin-top: 10vh; height: auto;">
+        <button class="g1-btn" onclick="exitSection()">На главную</button>
+        <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(10, 9)" style="border-color: #00b4d8; color: #00b4d8;">&larr; DEEP BLUE</button>
       </div>
     </div>
   </div>
