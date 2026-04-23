@@ -835,12 +835,13 @@ window.initNoxPlayer = () => {
 
   let readyCount = 0;
   const total = sources.length;
+  let noxStarted = false; // track whether audio has ever started
 
   // Use HTMLAudioElement — browser streams natively, no full download needed
   sources.forEach((src, i) => {
     const audio = new Audio();
     audio.src = src;
-    audio.loop = true;
+    audio.loop = false; // Manual loop control for sync
     audio.preload = "auto";
     noxAudios.push(audio);
 
@@ -856,6 +857,13 @@ window.initNoxPlayer = () => {
     };
     audio.addEventListener('canplaythrough', onReady, { once: true });
     if (audio.readyState >= 4) onReady();
+  });
+
+  // Sync loop: when reference track ends, restart ALL tracks at the same time
+  noxAudios[0].addEventListener('ended', () => {
+    if (noxAudioPlaying) {
+      noxAudios.forEach(a => { a.currentTime = 0; a.play().catch(() => {}); });
+    }
   });
 
   // Create AudioContext only on first PLAY (requires user gesture)
@@ -885,7 +893,8 @@ window.initNoxPlayer = () => {
 
     if (!noxAudioPlaying) {
       // Sync: start all tracks in the same synchronous loop tick
-      noxAudios.forEach(a => { a.currentTime = 0; a.play().catch(e => {}); });
+      noxAudios.forEach(a => { a.currentTime = 0; a.play().catch(() => {}); });
+      noxStarted = true;
       playBtn.innerText = "PAUSE";
       playBtn.style.color = "#000";
       playBtn.style.background = "#aa00ff";
@@ -1006,12 +1015,13 @@ window.initDeepBluePlayer = () => {
 
   let readyCount = 0;
   const total = sources.length;
+  let dbStarted = false; // track whether audio has ever started
 
   // Use HTMLAudioElement — browser streams natively, no full download needed
   sources.forEach((src, i) => {
     const audio = new Audio();
     audio.src = src;
-    audio.loop = true;
+    audio.loop = false; // Manual loop control for sync
     audio.preload = "auto";
     dbAudios.push(audio);
 
@@ -1027,6 +1037,13 @@ window.initDeepBluePlayer = () => {
     };
     audio.addEventListener('canplaythrough', onReady, { once: true });
     if (audio.readyState >= 4) onReady();
+  });
+
+  // Sync loop: when reference track ends, restart ALL tracks at the same time
+  dbAudios[0].addEventListener('ended', () => {
+    if (dbAudioPlaying) {
+      dbAudios.forEach(a => { a.currentTime = 0; a.play().catch(() => {}); });
+    }
   });
 
   // Create AudioContext only on first PLAY (requires user gesture)
@@ -1056,7 +1073,8 @@ window.initDeepBluePlayer = () => {
 
     if (!dbAudioPlaying) {
       // Sync: start all tracks in the same synchronous loop tick
-      dbAudios.forEach(a => { a.currentTime = 0; a.play().catch(e => {}); });
+      dbAudios.forEach(a => { a.currentTime = 0; a.play().catch(() => {}); });
+      dbStarted = true;
       playBtn.innerText = "PAUSE";
       playBtn.style.color = "#000";
       playBtn.style.background = "#00b4d8";
