@@ -235,6 +235,13 @@
         <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #aa00ff; font-size: 1.1rem;">NOX</h3>
         <button class="start-view-btn btn-violet fade-in" onclick="enterSection(10)">Enter</button>
       </section>
+
+      <!-- Node 11: Evolution -->
+      <section class="gallery-node" id="node-11">
+        <h2 class="fade-in theme-glow-evo" style="margin-bottom:0;">LISTENING</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #00ffcc; font-size: 1.1rem;">EVOLUTION</h3>
+        <button class="start-view-btn btn-evo fade-in" onclick="enterSection(11)">Enter</button>
+      </section>
       
     </div>
 
@@ -640,6 +647,48 @@
       <div class="g1-outro" style="margin-top: 10vh; height: auto;">
         <button class="g1-btn" onclick="exitSection()">Return to Main</button>
         <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(10, 9)" style="border-color: #00b4d8; color: #00b4d8;">&larr; DEEP BLUE</button>
+        <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(10, 11)" style="border-color: #00ffcc; color: #00ffcc;">EVOLUTION &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===============================
+       GALLERY 11: EVOLUTION (VINYL PLAYER)
+       =============================== -->
+  <div id="gallery-11-container" class="fullscreen-container evo-container" style="display:none; opacity:0; overflow:hidden;">
+    <!-- Cosmic background canvas -->
+    <canvas id="evo-bg-canvas"></canvas>
+    <!-- Vinyl record canvas -->
+    <canvas id="evo-vinyl-canvas"></canvas>
+
+    <div class="lang-switch-global">
+      <a href="index-ru.html" onclick="localStorage.setItem('lang_selected', 'true')">RU</a>
+      <span>/</span>
+      <a href="index.html" class="active" onclick="localStorage.setItem('lang_selected', 'true')">EN</a>
+    </div>
+
+    <!-- Main UI overlay -->
+    <div class="evo-ui">
+      <div class="evo-header">
+        <div class="g1-elegant-title" style="font-size:0.75rem; color:#00ffcc; opacity:0.7;">LISTENING <span>#11</span></div>
+        <h1 class="evo-title">EVOLUTION</h1>
+        <p class="evo-subtitle">VAN LAX &nbsp;&mdash;&nbsp; 2024</p>
+      </div>
+
+      <div class="evo-controls">
+        <button id="evo-play-btn" class="evo-play-btn" disabled>LOADING...</button>
+        <div class="evo-progress-wrap">
+          <div class="evo-time" id="evo-time-current">0:00</div>
+          <div class="evo-progress-bar">
+            <div class="evo-progress-fill" id="evo-progress-fill"></div>
+          </div>
+          <div class="evo-time" id="evo-time-total">0:00</div>
+        </div>
+      </div>
+
+      <div class="evo-nav">
+        <button class="g1-btn" onclick="exitSection()">Return to Main</button>
+        <button class="g1-btn g1-btn-primary track-switch-btn" onclick="switchTrack(11, 10)" style="border-color: #aa00ff; color: #aa00ff;">&larr; NOX</button>
       </div>
     </div>
   </div>

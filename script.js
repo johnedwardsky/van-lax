@@ -18,7 +18,7 @@ let targetCameraZ = 0;
 
 // Shift these up so they are ready for any function calls
 const nodeSpacing = 200; 
-const totalNodes = 11; 
+const totalNodes = 12; 
 const spiralLength = nodeSpacing * (totalNodes - 1);
 const nodes = document.querySelectorAll('.gallery-node');
 
@@ -300,6 +300,11 @@ function executeEnterSection(nodeIndex, isInstant = false) {
       if(nodeIndex === 10) {
         initNoxPlayer();
       }
+
+      // If it's the Evolution gallery, initialize its player
+      if(nodeIndex === 11) {
+        initEvolutionPlayer();
+      }
     }
 };
 
@@ -516,6 +521,7 @@ const nodeColors = [
   new THREE.Color(0xff8800), // node 8 (Contacts)
   new THREE.Color(0x00b4d8), // node 9 (Deep Blue)
   new THREE.Color(0xaa00ff), // node 10 (NOX)
+  new THREE.Color(0x00ffcc), // node 11 (Evolution)
 ];
 
 let currentNodeIndex = 0;
@@ -757,6 +763,10 @@ window.pauseAllAudio = () => {
       const noxBtn = document.getElementById('nox-play-btn');
       if(noxBtn) noxBtn.click();
     }
+    if(evoAudioPlaying) {
+      const evoBtn = document.getElementById('evo-play-btn');
+      if(evoBtn) evoBtn.click();
+    }
 };
 
 // Switch between track pages (pause current audio, cross-fade containers)
@@ -774,11 +784,16 @@ window.switchTrack = (fromSection, toSection) => {
     const btn = document.getElementById('nox-play-btn');
     if(btn) btn.click();
   }
+  if(fromSection === 11 && evoAudioPlaying) {
+    const btn = document.getElementById('evo-play-btn');
+    if(btn) btn.click();
+  }
 
   // Init player for destination if not already done
   if(toSection === 9)  initDeepBluePlayer();
   if(toSection === 4)  initMusicPlayer();
   if(toSection === 10) initNoxPlayer();
+  if(toSection === 11) initEvolutionPlayer();
 
   const fromEl = document.getElementById(`gallery-${fromSection}-container`);
   const toEl   = document.getElementById(`gallery-${toSection}-container`);
@@ -1222,3 +1237,343 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+// ==========================================
+// 11. EVOLUTION VINYL PLAYER
+// ==========================================
+let evoInitialized = false;
+let evoAudioPlaying = false;
+let evoAudio = null;
+let evoAudioCtx = null;
+let evoAnalyser = null;
+let evoCtxReady = false;
+let evoAnimFrame = null;
+let evoBgFrame = null;
+let evoVinylAngle = 0;
+let evoWaveformData = null; // pre-sampled waveform for vinyl drawing
+
+window.initEvolutionPlayer = () => {
+  if (evoInitialized) return;
+  evoInitialized = true;
+
+  const playBtn  = document.getElementById('evo-play-btn');
+  const fillEl   = document.getElementById('evo-progress-fill');
+  const timeCur  = document.getElementById('evo-time-current');
+  const timeTotal= document.getElementById('evo-time-total');
+  if (!playBtn) return;
+
+  playBtn.disabled = true;
+  playBtn.innerText = 'LOADING...';
+  playBtn.style.opacity = '0.45';
+
+  evoAudio = new Audio();
+  evoAudio.src = 'Evolution/evolution.mp3';
+  evoAudio.preload = 'auto';
+  evoAudio.loop = true;
+
+  const fmt = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2,'0')}`;
+  };
+
+  evoAudio.addEventListener('canplaythrough', () => {
+    playBtn.disabled = false;
+    playBtn.innerText = 'PLAY';
+    playBtn.style.opacity = '1';
+    timeTotal.textContent = fmt(evoAudio.duration || 0);
+  }, { once: true });
+
+  evoAudio.addEventListener('timeupdate', () => {
+    const pct = evoAudio.duration ? (evoAudio.currentTime / evoAudio.duration) * 100 : 0;
+    fillEl.style.width = pct + '%';
+    timeCur.textContent = fmt(evoAudio.currentTime);
+  });
+
+  // Progress bar click to seek
+  const barEl = document.querySelector('.evo-progress-bar');
+  if (barEl) {
+    barEl.addEventListener('click', (e) => {
+      if (!evoAudio.duration) return;
+      const rect = barEl.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      evoAudio.currentTime = pct * evoAudio.duration;
+    });
+  }
+
+  // AudioContext created on first PLAY
+  const setupEvoCtx = () => {
+    if (evoCtxReady) return;
+    evoCtxReady = true;
+    evoAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    evoAnalyser = evoAudioCtx.createAnalyser();
+    evoAnalyser.fftSize = 2048;
+    const src = evoAudioCtx.createMediaElementSource(evoAudio);
+    src.connect(evoAnalyser);
+    evoAnalyser.connect(evoAudioCtx.destination);
+    // Pre-sample waveform for vinyl rings (decorative static rings)
+    evoWaveformData = new Float32Array(256).fill(0).map((_,i) => Math.sin(i * 0.4) * 0.3 + Math.random() * 0.7);
+  };
+
+  const toggleEvo = (e) => {
+    if (e && e.type === 'touchstart') e.preventDefault();
+    if (playBtn.disabled) return;
+    setupEvoCtx();
+    if (evoAudioCtx.state === 'suspended') evoAudioCtx.resume();
+
+    if (!evoAudioPlaying) {
+      evoAudio.play().catch(() => {});
+      playBtn.innerText = 'PAUSE';
+      playBtn.classList.add('playing');
+      evoAudioPlaying = true;
+      startEvoVisualizer();
+    } else {
+      evoAudio.pause();
+      playBtn.innerText = 'PLAY';
+      playBtn.classList.remove('playing');
+      evoAudioPlaying = false;
+      cancelAnimationFrame(evoAnimFrame);
+    }
+  };
+
+  playBtn.addEventListener('click', toggleEvo);
+  playBtn.addEventListener('touchstart', toggleEvo);
+
+  // Start background cosmic particles immediately
+  startEvoBgParticles();
+  // Draw static vinyl immediately
+  drawStaticVinyl();
+};
+
+// ---- Vinyl Record Canvas ----
+function drawStaticVinyl(rotation = 0) {
+  const canvas = document.getElementById('evo-vinyl-canvas');
+  if (!canvas) return;
+  const size = Math.min(window.innerWidth * 0.55, window.innerHeight * 0.55, 500);
+  canvas.width = size;
+  canvas.height = size;
+  const c = canvas.getContext('2d');
+  const cx = size / 2, cy = size / 2, R = size / 2 - 4;
+
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(rotation);
+
+  // Outer vinyl disc — deep black with subtle gradient
+  const discGrad = c.createRadialGradient(0, 0, R * 0.05, 0, 0, R);
+  discGrad.addColorStop(0, '#1a1a2e');
+  discGrad.addColorStop(0.35, '#0d0d1a');
+  discGrad.addColorStop(1, '#050510');
+  c.beginPath();
+  c.arc(0, 0, R, 0, Math.PI * 2);
+  c.fillStyle = discGrad;
+  c.fill();
+
+  // Grooves — concentric rings with waveform modulation
+  const grooveCount = 60;
+  for (let g = 0; g < grooveCount; g++) {
+    const t = g / grooveCount;
+    const r = R * (0.22 + t * 0.72);
+    const waveAmp = evoWaveformData ? evoWaveformData[g % evoWaveformData.length] * 2.5 : 1.5;
+    const alpha = 0.08 + t * 0.12;
+    const grooveRad = 1.2 + waveAmp * 0.4;
+
+    c.beginPath();
+    // Modulate radius with waveform to draw "recorded waves" on the groove
+    const steps = 200;
+    for (let s = 0; s <= steps; s++) {
+      const angle = (s / steps) * Math.PI * 2;
+      const waveIdx = Math.floor((s / steps) * (evoWaveformData ? evoWaveformData.length : 1));
+      const amp = evoWaveformData ? evoWaveformData[waveIdx % evoWaveformData.length] * waveAmp * 0.5 : 0;
+      const rr = r + amp;
+      if (s === 0) c.moveTo(Math.cos(angle) * rr, Math.sin(angle) * rr);
+      else c.lineTo(Math.cos(angle) * rr, Math.sin(angle) * rr);
+    }
+    c.closePath();
+    c.strokeStyle = `rgba(0,255,204,${alpha})`;
+    c.lineWidth = grooveRad * 0.35;
+    c.stroke();
+  }
+
+  // Sheen highlight — light reflection arc
+  const sheenGrad = c.createLinearGradient(-R * 0.5, -R * 0.5, R * 0.3, R * 0.2);
+  sheenGrad.addColorStop(0, 'rgba(255,255,255,0.06)');
+  sheenGrad.addColorStop(0.5, 'rgba(255,255,255,0.02)');
+  sheenGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  c.beginPath();
+  c.arc(0, 0, R, 0, Math.PI * 2);
+  c.fillStyle = sheenGrad;
+  c.fill();
+
+  // Center label — cosmic teal circle
+  const labelR = R * 0.185;
+  const labelGrad = c.createRadialGradient(0, 0, 0, 0, 0, labelR);
+  labelGrad.addColorStop(0, '#003322');
+  labelGrad.addColorStop(0.6, '#001a11');
+  labelGrad.addColorStop(1, '#000a08');
+  c.beginPath();
+  c.arc(0, 0, labelR, 0, Math.PI * 2);
+  c.fillStyle = labelGrad;
+  c.fill();
+  c.strokeStyle = 'rgba(0,255,204,0.5)';
+  c.lineWidth = 1.5;
+  c.stroke();
+
+  // Label text
+  c.fillStyle = '#00ffcc';
+  c.font = `bold ${labelR * 0.32}px Montserrat, sans-serif`;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillText('VAN LAX', 0, -labelR * 0.2);
+  c.font = `${labelR * 0.2}px Montserrat, sans-serif`;
+  c.fillStyle = 'rgba(0,255,204,0.6)';
+  c.fillText('EVOLUTION', 0, labelR * 0.2);
+
+  // Spindle hole
+  c.beginPath();
+  c.arc(0, 0, R * 0.018, 0, Math.PI * 2);
+  c.fillStyle = '#000';
+  c.fill();
+
+  // Outer ring glow
+  c.beginPath();
+  c.arc(0, 0, R, 0, Math.PI * 2);
+  c.strokeStyle = 'rgba(0,255,204,0.25)';
+  c.lineWidth = 2;
+  c.stroke();
+
+  c.restore();
+}
+
+function startEvoVisualizer() {
+  const canvas = document.getElementById('evo-vinyl-canvas');
+  if (!canvas) return;
+  const dataArray = new Uint8Array(evoAnalyser.frequencyBinCount);
+
+  const draw = () => {
+    if (!evoAudioPlaying) {
+      drawStaticVinyl(evoVinylAngle);
+      return;
+    }
+    evoAnimFrame = requestAnimationFrame(draw);
+
+    // Rotate based on time
+    evoVinylAngle += 0.004;
+
+    // Get live audio data
+    evoAnalyser.getByteFrequencyData(dataArray);
+
+    // Map frequency data onto waveform rings
+    const mapped = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      mapped[i] = dataArray[Math.floor(i * dataArray.length / 256)] / 255;
+    }
+    evoWaveformData = mapped;
+
+    drawStaticVinyl(evoVinylAngle);
+  };
+  draw();
+}
+
+// ---- Cosmic Background Particles ----
+function startEvoBgParticles() {
+  const canvas = document.getElementById('evo-bg-canvas');
+  if (!canvas) return;
+  const c = canvas.getContext('2d');
+
+  // Generate stars
+  const stars = Array.from({length: 220}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: Math.random() * 1.5 + 0.2,
+    speed: Math.random() * 0.00015 + 0.00005,
+    phase: Math.random() * Math.PI * 2,
+    hue: Math.random() < 0.15 ? 165 + Math.random() * 30 : 200 + Math.random() * 40,
+  }));
+
+  // Nebula blobs
+  const nebulae = Array.from({length: 5}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: 0.15 + Math.random() * 0.2,
+    hue: Math.random() < 0.5 ? 165 : 220,
+    alpha: 0.03 + Math.random() * 0.04,
+  }));
+
+  const drawBg = () => {
+    evoBgFrame = requestAnimationFrame(drawBg);
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const W = canvas.width, H = canvas.height;
+    const t = Date.now() * 0.001;
+
+    // Deep space background
+    const bgGrad = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.7);
+    bgGrad.addColorStop(0, '#060618');
+    bgGrad.addColorStop(0.5, '#020210');
+    bgGrad.addColorStop(1, '#000005');
+    c.fillStyle = bgGrad;
+    c.fillRect(0, 0, W, H);
+
+    // Nebula blobs
+    nebulae.forEach(n => {
+      const nx = n.x * W + Math.sin(t * 0.05 + n.phase) * 20;
+      const ny = n.y * H + Math.cos(t * 0.04 + n.phase) * 15;
+      const nr = n.r * Math.min(W, H);
+      const ng = c.createRadialGradient(nx, ny, 0, nx, ny, nr);
+      ng.addColorStop(0, `hsla(${n.hue}, 100%, 60%, ${n.alpha * 2})`);
+      ng.addColorStop(1, `hsla(${n.hue}, 100%, 50%, 0)`);
+      c.beginPath();
+      c.arc(nx, ny, nr, 0, Math.PI * 2);
+      c.fillStyle = ng;
+      c.fill();
+    });
+
+    // Stars with twinkle
+    stars.forEach(s => {
+      const sx = s.x * W;
+      const sy = s.y * H;
+      const twinkle = 0.5 + 0.5 * Math.sin(t * s.speed * 1000 + s.phase);
+      c.beginPath();
+      c.arc(sx, sy, s.r * (0.7 + twinkle * 0.5), 0, Math.PI * 2);
+      c.fillStyle = `hsla(${s.hue}, 80%, 90%, ${0.4 + twinkle * 0.6})`;
+      c.fill();
+    });
+
+    // Reactive rings from analyser (if playing)
+    if (evoCtxReady && evoAudioPlaying && evoAnalyser) {
+      const freqData = new Uint8Array(evoAnalyser.frequencyBinCount);
+      evoAnalyser.getByteFrequencyData(freqData);
+      const bass = freqData.slice(0, 8).reduce((a, b) => a + b, 0) / 8 / 255;
+      const mid  = freqData.slice(8, 40).reduce((a, b) => a + b, 0) / 32 / 255;
+
+      // 3 reactive rings around the vinyl
+      [bass, mid, bass * mid].forEach((amp, ri) => {
+        const ringR = Math.min(W, H) * (0.32 + ri * 0.06) + amp * 30;
+        c.beginPath();
+        c.arc(W/2, H/2, ringR, 0, Math.PI * 2);
+        c.strokeStyle = `rgba(0,255,204,${0.04 + amp * 0.18})`;
+        c.lineWidth = 1 + amp * 3;
+        c.stroke();
+      });
+
+      // Frequency bars in a circle (behind vinyl)
+      const barCount = 64;
+      const minR = Math.min(W, H) * 0.31;
+      for (let i = 0; i < barCount; i++) {
+        const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
+        const val = freqData[Math.floor(i * freqData.length / barCount)] / 255;
+        const barH = val * Math.min(W, H) * 0.09;
+        const x1 = W/2 + Math.cos(angle) * minR;
+        const y1 = H/2 + Math.sin(angle) * minR;
+        const x2 = W/2 + Math.cos(angle) * (minR + barH);
+        const y2 = H/2 + Math.sin(angle) * (minR + barH);
+        c.beginPath();
+        c.moveTo(x1, y1);
+        c.lineTo(x2, y2);
+        c.strokeStyle = `hsla(${160 + val * 40}, 100%, 65%, ${0.3 + val * 0.7})`;
+        c.lineWidth = 2;
+        c.stroke();
+      }
+    }
+  };
+  drawBg();
+}
