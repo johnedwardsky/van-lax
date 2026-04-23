@@ -802,15 +802,17 @@ window.switchTrack = (fromSection, toSection) => {
 };
 
 // ==========================================
-// 8. NOX STEM PLAYER (5 TRACKS)
+// 8. NOX STEM PLAYER (5 TRACKS) — AudioBuffer sync
 // ==========================================
 let noxInitialized = false;
-let noxAudios = [];
 let noxGainNodes = [];
 let noxAudioCtx;
 let noxAnalyser;
 let noxAudioPlaying = false;
-let noxCtxReady = false;
+let noxSourceNodes = [];
+let noxBuffers = [];
+let noxStartTime = 0;    // ctx.currentTime when playback began
+let noxPauseOffset = 0;  // seconds into the track when paused
 
 window.initNoxPlayer = () => {
   if (noxInitialized) return;
@@ -827,80 +829,85 @@ window.initNoxPlayer = () => {
   const playBtn = document.getElementById('nox-play-btn');
   if (!playBtn) return;
 
-  // Block play until all stems are ready
+  // Block until all decoded
   playBtn.disabled = true;
   playBtn.innerText = "LOADING...";
   playBtn.style.opacity = "0.5";
   playBtn.style.cursor = "not-allowed";
 
-  let noxReadyCount = 0;
-  const noxTotal = sources.length;
+  // Single AudioContext for all stems
+  noxAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  noxAnalyser = noxAudioCtx.createAnalyser();
+  noxAnalyser.fftSize = 512;
+  noxAnalyser.connect(noxAudioCtx.destination);
 
-  sources.forEach((src) => {
-    const audio = new Audio();
-    audio.crossOrigin = "anonymous";
-    audio.src = src;
-    audio.loop = true;
-    audio.preload = "auto";
-    noxAudios.push(audio);
-
-    const onReady = () => {
-      noxReadyCount++;
-      if (noxReadyCount === noxTotal) {
-        // All tracks buffered — unlock the button
-        playBtn.disabled = false;
-        playBtn.innerText = "PLAY";
-        playBtn.style.opacity = "1";
-        playBtn.style.cursor = "pointer";
-      }
-    };
-    audio.addEventListener('canplaythrough', onReady, { once: true });
-    // Fallback: if already cached, readyState >= 4
-    if (audio.readyState >= 4) onReady();
+  // Create gain nodes (one per stem)
+  sources.forEach(() => {
+    const g = noxAudioCtx.createGain();
+    g.connect(noxAnalyser);
+    noxGainNodes.push(g);
   });
 
-  const setupNoxCtx = () => {
-    if (noxCtxReady) return;
-    noxCtxReady = true;
-    noxAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    noxAnalyser = noxAudioCtx.createAnalyser();
-    noxAnalyser.fftSize = 512;
-    noxAnalyser.connect(noxAudioCtx.destination);
+  // Fetch + decode all stems as AudioBuffer
+  let loadedCount = 0;
+  sources.forEach((src, i) => {
+    fetch(src)
+      .then(r => r.arrayBuffer())
+      .then(ab => noxAudioCtx.decodeAudioData(ab))
+      .then(buffer => {
+        noxBuffers[i] = buffer;
+        loadedCount++;
+        // Show progress
+        playBtn.innerText = `LOADING ${loadedCount}/${sources.length}...`;
+        if (loadedCount === sources.length) {
+          playBtn.disabled = false;
+          playBtn.innerText = "PLAY";
+          playBtn.style.opacity = "1";
+          playBtn.style.cursor = "pointer";
+        }
+      })
+      .catch(err => console.error('NOX load error:', src, err));
+  });
 
-    noxAudios.forEach((audio) => {
-      const sourceNode = noxAudioCtx.createMediaElementSource(audio);
-      const gainNode = noxAudioCtx.createGain();
-      sourceNode.connect(gainNode);
-      gainNode.connect(noxAnalyser);
-      noxGainNodes.push(gainNode);
+  const startNox = () => {
+    if (noxAudioCtx.state === 'suspended') noxAudioCtx.resume();
+    noxSourceNodes = noxBuffers.map((buffer, i) => {
+      const node = noxAudioCtx.createBufferSource();
+      node.buffer = buffer;
+      node.loop = true;
+      node.connect(noxGainNodes[i]);
+      return node;
     });
+    // Start ALL at exactly the same future moment
+    const startAt = noxAudioCtx.currentTime + 0.05;
+    noxSourceNodes.forEach(n => n.start(startAt, noxPauseOffset % noxBuffers[0].duration));
+    noxStartTime = startAt - noxPauseOffset;
+    noxAudioPlaying = true;
+  };
+
+  const stopNox = () => {
+    noxPauseOffset = (noxAudioCtx.currentTime - noxStartTime) % noxBuffers[0].duration;
+    noxSourceNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+    noxSourceNodes = [];
+    noxAudioPlaying = false;
   };
 
   const toggleNoxPlay = (e) => {
     if (e.type === 'touchstart') e.preventDefault();
     if (playBtn.disabled) return;
-    setupNoxCtx();
-
-    if (noxAudioCtx.state === 'suspended') noxAudioCtx.resume();
-
     if (!noxAudioPlaying) {
-      const playPromises = noxAudios.map(a => a.play());
-      Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("NOX Play blocked:", err)) : Promise.resolve()))
-        .then(() => {
-          playBtn.innerText = "PAUSE";
-          playBtn.style.color = "#000";
-          playBtn.style.background = "#aa00ff";
-          playBtn.style.borderColor = "#aa00ff";
-          noxAudioPlaying = true;
-          startNoxVisualizer();
-        });
+      startNox();
+      playBtn.innerText = "PAUSE";
+      playBtn.style.color = "#000";
+      playBtn.style.background = "#aa00ff";
+      playBtn.style.borderColor = "#aa00ff";
+      startNoxVisualizer();
     } else {
-      noxAudios.forEach(a => a.pause());
+      stopNox();
       playBtn.innerText = "PLAY";
       playBtn.style.color = "#aa00ff";
       playBtn.style.background = "transparent";
       playBtn.style.borderColor = "#aa00ff";
-      noxAudioPlaying = false;
     }
   };
 
@@ -910,17 +917,17 @@ window.initNoxPlayer = () => {
   document.querySelectorAll('.nox-stem-mute-btn').forEach(btn => {
     const toggleStem = (e) => {
       if (e.type === 'touchstart') e.preventDefault();
-      if (!noxCtxReady) return;
       const idx = parseInt(e.target.getAttribute('data-index'));
       const isRu = window.location.pathname.includes('-ru');
+      const gain = noxGainNodes[idx];
       if (e.target.classList.contains('active')) {
         e.target.classList.remove('active');
         e.target.innerText = isRu ? "ВЫКЛ" : "MUTED";
-        gsap.to(noxGainNodes[idx].gain, { value: 0, duration: 0.5 });
+        gain.gain.setTargetAtTime(0, noxAudioCtx.currentTime, 0.08);
       } else {
         e.target.classList.add('active');
         e.target.innerText = isRu ? "ВКЛ" : "ACTIVE";
-        gsap.to(noxGainNodes[idx].gain, { value: 1, duration: 0.5 });
+        gain.gain.setTargetAtTime(1, noxAudioCtx.currentTime, 0.08);
       }
     };
     btn.addEventListener('click', toggleStem);
@@ -976,16 +983,17 @@ function startNoxVisualizer() {
 }
 
 // ==========================================
-// 7. DEEP BLUE STEM PLAYER (4 TRACKS)
+// 7. DEEP BLUE STEM PLAYER (4 TRACKS) — AudioBuffer sync
 // ==========================================
 let dbInitialized = false;
-let dbAudios = [];
 let dbGainNodes = [];
 let dbAudioCtx;
 let dbAnalyser;
 let dbAudioPlaying = false;
-let dbVisFrame;
-let dbCtxReady = false;
+let dbSourceNodes = [];
+let dbBuffers = [];
+let dbStartTime = 0;
+let dbPauseOffset = 0;
 
 window.initDeepBluePlayer = () => {
   if (dbInitialized) return;
@@ -1001,78 +1009,84 @@ window.initDeepBluePlayer = () => {
   const playBtn = document.getElementById('deep-blue-play-btn');
   if (!playBtn) return;
 
-  // Block play until all stems are ready
+  // Block until all decoded
   playBtn.disabled = true;
   playBtn.innerText = "LOADING...";
   playBtn.style.opacity = "0.5";
   playBtn.style.cursor = "not-allowed";
 
-  let dbReadyCount = 0;
-  const dbTotal = sources.length;
+  // Single AudioContext for all stems
+  dbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  dbAnalyser = dbAudioCtx.createAnalyser();
+  dbAnalyser.fftSize = 512;
+  dbAnalyser.connect(dbAudioCtx.destination);
 
-  sources.forEach((src) => {
-    const audio = new Audio();
-    audio.crossOrigin = "anonymous";
-    audio.src = src;
-    audio.loop = true;
-    audio.preload = "auto";
-    dbAudios.push(audio);
-
-    const onReady = () => {
-      dbReadyCount++;
-      if (dbReadyCount === dbTotal) {
-        // All tracks buffered — unlock the button
-        playBtn.disabled = false;
-        playBtn.innerText = "PLAY";
-        playBtn.style.opacity = "1";
-        playBtn.style.cursor = "pointer";
-      }
-    };
-    audio.addEventListener('canplaythrough', onReady, { once: true });
-    // Fallback: if already cached, readyState >= 4
-    if (audio.readyState >= 4) onReady();
+  // Create gain nodes (one per stem)
+  sources.forEach(() => {
+    const g = dbAudioCtx.createGain();
+    g.connect(dbAnalyser);
+    dbGainNodes.push(g);
   });
 
-  const setupDbCtx = () => {
-    if (dbCtxReady) return;
-    dbCtxReady = true;
-    dbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    dbAnalyser = dbAudioCtx.createAnalyser();
-    dbAnalyser.fftSize = 512;
-    dbAnalyser.connect(dbAudioCtx.destination);
+  // Fetch + decode all stems as AudioBuffer
+  let loadedCount = 0;
+  sources.forEach((src, i) => {
+    fetch(src)
+      .then(r => r.arrayBuffer())
+      .then(ab => dbAudioCtx.decodeAudioData(ab))
+      .then(buffer => {
+        dbBuffers[i] = buffer;
+        loadedCount++;
+        playBtn.innerText = `LOADING ${loadedCount}/${sources.length}...`;
+        if (loadedCount === sources.length) {
+          playBtn.disabled = false;
+          playBtn.innerText = "PLAY";
+          playBtn.style.opacity = "1";
+          playBtn.style.cursor = "pointer";
+        }
+      })
+      .catch(err => console.error('Deep Blue load error:', src, err));
+  });
 
-    dbAudios.forEach((audio) => {
-      const sourceNode = dbAudioCtx.createMediaElementSource(audio);
-      const gainNode = dbAudioCtx.createGain();
-      sourceNode.connect(gainNode);
-      gainNode.connect(dbAnalyser);
-      dbGainNodes.push(gainNode);
+  const startDb = () => {
+    if (dbAudioCtx.state === 'suspended') dbAudioCtx.resume();
+    dbSourceNodes = dbBuffers.map((buffer, i) => {
+      const node = dbAudioCtx.createBufferSource();
+      node.buffer = buffer;
+      node.loop = true;
+      node.connect(dbGainNodes[i]);
+      return node;
     });
+    // Start ALL at exactly the same future moment
+    const startAt = dbAudioCtx.currentTime + 0.05;
+    dbSourceNodes.forEach(n => n.start(startAt, dbPauseOffset % dbBuffers[0].duration));
+    dbStartTime = startAt - dbPauseOffset;
+    dbAudioPlaying = true;
+  };
+
+  const stopDb = () => {
+    dbPauseOffset = (dbAudioCtx.currentTime - dbStartTime) % dbBuffers[0].duration;
+    dbSourceNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+    dbSourceNodes = [];
+    dbAudioPlaying = false;
   };
 
   const toggleDbPlay = (e) => {
     if (e.type === 'touchstart') e.preventDefault();
     if (playBtn.disabled) return;
-    setupDbCtx();
-
-    if (dbAudioCtx.state === 'suspended') dbAudioCtx.resume();
-
     if (!dbAudioPlaying) {
-      const playPromises = dbAudios.map(a => a.play());
-      Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("DB Play blocked:", err)) : Promise.resolve()))
-        .then(() => {
-          playBtn.innerText = "PAUSE";
-          playBtn.style.color = "#000";
-          playBtn.style.background = "var(--gold)";
-          dbAudioPlaying = true;
-          startDbVisualizer();
-        });
+      startDb();
+      playBtn.innerText = "PAUSE";
+      playBtn.style.color = "#000";
+      playBtn.style.background = "#00b4d8";
+      playBtn.style.borderColor = "#00b4d8";
+      startDbVisualizer();
     } else {
-      dbAudios.forEach(a => a.pause());
+      stopDb();
       playBtn.innerText = "PLAY";
-      playBtn.style.color = "var(--gold)";
+      playBtn.style.color = "#00b4d8";
       playBtn.style.background = "transparent";
-      dbAudioPlaying = false;
+      playBtn.style.borderColor = "#00b4d8";
     }
   };
 
@@ -1082,17 +1096,17 @@ window.initDeepBluePlayer = () => {
   document.querySelectorAll('.db-stem-mute-btn').forEach(btn => {
     const toggleStem = (e) => {
       if (e.type === 'touchstart') e.preventDefault();
-      if (!dbCtxReady) return;
       const idx = parseInt(e.target.getAttribute('data-index'));
       const isRu = window.location.pathname.includes('-ru');
+      const gain = dbGainNodes[idx];
       if (e.target.classList.contains('active')) {
         e.target.classList.remove('active');
         e.target.innerText = isRu ? "ВЫКЛ" : "MUTED";
-        gsap.to(dbGainNodes[idx].gain, { value: 0, duration: 0.5 });
+        gain.gain.setTargetAtTime(0, dbAudioCtx.currentTime, 0.08);
       } else {
         e.target.classList.add('active');
         e.target.innerText = isRu ? "ВКЛ" : "ACTIVE";
-        gsap.to(dbGainNodes[idx].gain, { value: 1, duration: 0.5 });
+        gain.gain.setTargetAtTime(1, dbAudioCtx.currentTime, 0.08);
       }
     };
     btn.addEventListener('click', toggleStem);
