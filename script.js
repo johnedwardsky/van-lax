@@ -1481,218 +1481,232 @@ function startEvoBgParticles() {
   if (!canvas) return;
   const c = canvas.getContext('2d');
 
-  // ── Generate crystal shards ──────────────────────────────────────────
-  const crystals = Array.from({length: 80}, () => {
-    const vertCount = 4 + Math.floor(Math.random() * 4); // 4–7 vertices
-    const verts = Array.from({length: vertCount}, (_, v) => ({
-      angle: (v / vertCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.9,
-      dist:  0.35 + Math.random() * 0.65,
-    }));
-
-    const rayCount = 2 + Math.floor(Math.random() * 3); // 2–4 rays (fewer)
-    const baseHue = Math.random() * 360;
-    const rays = Array.from({length: rayCount}, (_, r) => ({
-      angle:   Math.random() * Math.PI * 2,
-      lenMult: 4 + Math.random() * 8,    // length multiplier
-      width:   0.05 + Math.random() * 0.10, // thinner rays
-      hue:     (baseHue + r * (280 / rayCount) + (Math.random() - 0.5) * 40 + 360) % 360,
-      curve:   (Math.random() - 0.5) * 0.4,
-      backLen: 0.2 + Math.random() * 0.4,
-    }));
+  // ── Crystal stars: each has a core point + independent diffraction spikes ──
+  const crystals = Array.from({length: 110}, () => {
+    const spikeCount = 3 + Math.floor(Math.random() * 4); // 3-6 spikes
+    const baseAngle  = Math.random() * Math.PI;            // orientation
 
     return {
       x: Math.random(), y: Math.random(),
       ox: 0, oy: 0,
-      baseR:    1.5 + Math.random() * 3,   // smaller shards: 1.5–4.5 px
-      rotation: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.002, // slower rotation
-      phase:    Math.random() * Math.PI * 2,
-      freqBin:  Math.floor(Math.random() * 200),
-      driftX:   (Math.random() - 0.5) * 0.00008,
-      driftY:   (Math.random() - 0.5) * 0.00008,
-      energy:   0,
-      verts, rays, baseHue,
+      // Visual size: most tiny, a few larger (like real sky)
+      baseR:   Math.random() < 0.12 ? 1.8 + Math.random() * 2.0   // bright
+             : Math.random() < 0.35 ? 0.9 + Math.random() * 0.9   // medium
+             :                        0.3 + Math.random() * 0.6,   // dim
+
+      baseHue:  Math.random() * 360,
+      hueSpeed: (Math.random() - 0.5) * 0.04,  // very slow color drift
+
+      // Four independent phases for multi-frequency scintillation
+      ph:  [
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+      ],
+      // Each spike has its own scintillation phases
+      spikeCount,
+      baseAngle,
+      spikePh: Array.from({length: spikeCount}, () => [
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+      ]),
+
+      freqBin: Math.floor(Math.random() * 200),
+      driftX:  (Math.random() - 0.5) * 0.00005,
+      driftY:  (Math.random() - 0.5) * 0.00005,
+      energy:  0,
     };
   });
 
-  // ── Nebula blobs (subtle, behind crystals) ───────────────────────────
-  const nebulae = Array.from({length: 4}, () => ({
+  // ── Nebulae ──────────────────────────────────────────────────────────────
+  const nebulae = Array.from({length: 3}, () => ({
     x: Math.random(), y: Math.random(),
-    r: 0.12 + Math.random() * 0.18,
-    hue: Math.random() < 0.5 ? 165 : 270,
-    alpha: 0.025 + Math.random() * 0.03,
-    phase: Math.random() * Math.PI * 2,
+    r:     0.10 + Math.random() * 0.14,
+    hue:   Math.random() < 0.5 ? 165 : 260,
+    alpha: 0.018 + Math.random() * 0.022,
+    ph:    Math.random() * Math.PI * 2,
   }));
 
   let freqData = new Uint8Array(1024);
   let bass = 0, mid = 0, treble = 0;
 
-  // ── Draw a single prismatic ray — fades deep into darkness ──────────
-  const drawRay = (cx, cy, angle, len, width, hue, alpha, bend) => {
-    c.save();
-    c.translate(cx, cy);
-    c.rotate(angle);
+  // ── Single diffraction spike ──────────────────────────────────────────────
+  const drawSpike = (cx, cy, angle, len, halfW, hue, alpha) => {
+    // Draw both directions for bidirectional spike
+    [0, Math.PI].forEach((offset, di) => {
+      const L = di === 0 ? len : len * (0.45 + Math.random() * 0.3);
+      c.save();
+      c.translate(cx, cy);
+      c.rotate(angle + offset);
 
-    const t2 = Date.now() * 0.0003;
-    const mid1Y = width * (-0.3 + Math.sin(t2 + hue * 0.05) * 0.2 + bend);
-    const mid2Y = width * ( 0.3 + Math.cos(t2 + hue * 0.05) * 0.2 + bend);
+      const grad = c.createLinearGradient(0, 0, L, 0);
+      grad.addColorStop(0,    `hsla(${hue},        60%, 100%, ${alpha})`);
+      grad.addColorStop(0.06, `hsla(${(hue+15)%360}, 80%, 90%, ${alpha * 0.55})`);
+      grad.addColorStop(0.18, `hsla(${(hue+40)%360}, 90%, 80%, ${alpha * 0.18})`);
+      grad.addColorStop(0.40, `hsla(${(hue+80)%360}, 100%, 70%, ${alpha * 0.04})`);
+      grad.addColorStop(1,    'transparent');
 
-    // Very steep falloff — bright only at origin, almost gone by 20% of length
-    const grad = c.createLinearGradient(0, 0, len, 0);
-    grad.addColorStop(0,    `hsla(${hue},           100%, 90%, ${alpha})`);
-    grad.addColorStop(0.12, `hsla(${(hue+20)%360},  100%, 80%, ${alpha * 0.45})`);
-    grad.addColorStop(0.35, `hsla(${(hue+50)%360},  100%, 70%, ${alpha * 0.12})`);
-    grad.addColorStop(0.65, `hsla(${(hue+90)%360},  100%, 60%, ${alpha * 0.03})`);
-    grad.addColorStop(1,    'transparent');
-
-    c.beginPath();
-    c.moveTo(0, 0);
-    c.quadraticCurveTo(len * 0.35, mid1Y, len, 0);
-    c.quadraticCurveTo(len * 0.35, mid2Y, 0, 0);
-    c.fillStyle = grad;
-    c.fill();
-    c.restore();
+      c.beginPath();
+      c.moveTo(0,  halfW);
+      c.quadraticCurveTo(L * 0.12, halfW * 0.4, L, 0);
+      c.quadraticCurveTo(L * 0.12, -halfW * 0.4, 0, -halfW);
+      c.closePath();
+      c.fillStyle = grad;
+      c.fill();
+      c.restore();
+    });
   };
 
   const drawBg = () => {
     evoBgFrame = requestAnimationFrame(drawBg);
     const W = window.innerWidth, H = window.innerHeight;
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = W; canvas.height = H;
     const t = Date.now() * 0.001;
 
-    // ── Audio sampling ────────────────────────────────────────────────
+    // ── Audio ────────────────────────────────────────────────────────────
     if (evoCtxReady && evoAudioPlaying && evoAnalyser) {
       freqData = new Uint8Array(evoAnalyser.frequencyBinCount);
       evoAnalyser.getByteFrequencyData(freqData);
-      const rawBass   = freqData.slice(0,6).reduce((a,b)=>a+b,0) / 6 / 255;
-      const rawMid    = freqData.slice(6,40).reduce((a,b)=>a+b,0) / 34 / 255;
-      const rawTreble = freqData.slice(40,100).reduce((a,b)=>a+b,0) / 60 / 255;
-      bass   = bass   * 0.75 + rawBass   * 0.25;
-      mid    = mid    * 0.75 + rawMid    * 0.25;
-      treble = treble * 0.75 + rawTreble * 0.25;
+      const rb = freqData.slice(0,6).reduce((a,b)=>a+b,0)/6/255;
+      const rm = freqData.slice(6,40).reduce((a,b)=>a+b,0)/34/255;
+      const rt = freqData.slice(40,100).reduce((a,b)=>a+b,0)/60/255;
+      bass   = bass   * 0.75 + rb * 0.25;
+      mid    = mid    * 0.75 + rm * 0.25;
+      treble = treble * 0.75 + rt * 0.25;
     } else { bass = mid = treble = 0; }
 
-    // ── Deep space background ─────────────────────────────────────────
-    const bg = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H) * 0.8);
-    bg.addColorStop(0, `rgba(8,6,${Math.floor(22 + bass*35)},1)`);
-    bg.addColorStop(0.45, '#020210');
-    bg.addColorStop(1,    '#000005');
+    // ── Deep space background ────────────────────────────────────────────
+    const bg = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.8);
+    bg.addColorStop(0,    `rgba(6,5,${Math.floor(18+bass*30)},1)`);
+    bg.addColorStop(0.5,  '#010108');
+    bg.addColorStop(1,    '#000003');
     c.fillStyle = bg;
     c.fillRect(0, 0, W, H);
 
-    // ── Nebulae ───────────────────────────────────────────────────────
+    // ── Nebulae ──────────────────────────────────────────────────────────
     nebulae.forEach(n => {
-      const nx = n.x * W + Math.sin(t*0.05 + n.phase) * 22;
-      const ny = n.y * H + Math.cos(t*0.04 + n.phase) * 16;
-      const nr = n.r * Math.min(W,H) * (1 + mid * 0.25);
+      const nx = n.x*W + Math.sin(t*0.04+n.ph)*18;
+      const ny = n.y*H + Math.cos(t*0.03+n.ph)*12;
+      const nr = n.r * Math.min(W,H) * (1 + mid*0.2);
       const ng = c.createRadialGradient(nx, ny, 0, nx, ny, nr);
-      ng.addColorStop(0, `hsla(${n.hue},100%,60%,${n.alpha*(1+mid*2)*2})`);
+      ng.addColorStop(0, `hsla(${n.hue},100%,55%,${n.alpha*(1+mid*1.5)*2})`);
       ng.addColorStop(1, 'transparent');
-      c.beginPath();
-      c.arc(nx, ny, nr, 0, Math.PI*2);
-      c.fillStyle = ng;
-      c.fill();
+      c.beginPath(); c.arc(nx, ny, nr, 0, Math.PI*2);
+      c.fillStyle = ng; c.fill();
     });
 
-    // ── Crystal shards ────────────────────────────────────────────────
+    // ── Crystal stars ────────────────────────────────────────────────────
     crystals.forEach(cr => {
-      // Personal audio energy
+      // Audio energy
       let binVal = 0;
       if (evoCtxReady && evoAudioPlaying && freqData.length > cr.freqBin)
         binVal = freqData[cr.freqBin] / 255;
-      cr.energy = cr.energy * 0.65 + binVal * 0.35;
+      cr.energy = cr.energy * 0.7 + binVal * 0.3;
       const e = cr.energy;
 
       // Drift
-      cr.ox += cr.driftX * (1 + bass * 6);
-      cr.oy += cr.driftY * (1 + bass * 5);
-      cr.ox *= 0.999; cr.oy *= 0.999;
+      cr.ox += cr.driftX * (1 + bass * 4);
+      cr.oy += cr.driftY * (1 + bass * 4);
+      cr.ox *= 0.9995; cr.oy *= 0.9995;
 
       const cx = (cr.x + cr.ox) * W;
       const cy = (cr.y + cr.oy) * H;
-      const twinkle = 0.5 + 0.5 * Math.sin(t * 1.0 + cr.phase);
-      // Size barely changes at rest — energy only lifts it slightly
-      const size = cr.baseR * (1.0 + twinkle * 0.15 + e * 2.5 + bass * 1.2);
 
-      // Very slow rotation
-      cr.rotation += cr.rotSpeed * (1 + e * 1.5);
+      // ── Multi-frequency scintillation (non-repeating twinkling) ──────
+      // Use 4 incommensurable frequencies so pattern never loops
+      const [p0,p1,p2,p3] = cr.ph;
+      const sc = (
+        Math.sin(t * 3.73  + p0)        +
+        Math.sin(t * 7.11  + p1) * 0.50 +
+        Math.sin(t * 13.37 + p2) * 0.25 +
+        Math.sin(t * 19.91 + p3) * 0.12
+      ) / 1.87;  // range ≈ -1..1
 
-      // ── Prismatic rays — drawn faint, darkness swallows them ──────
-      cr.rays.forEach(ray => {
-        const rayAngle = ray.angle + cr.rotation * 0.15;
-        const rayLen   = size * (ray.lenMult + e * 10 + bass * 6 + twinkle * 1.5);
-        const rayW     = size * (ray.width + e * 0.2 + bass * 0.1);
-        // Very low base alpha — only music lifts it
-        const alpha    = Math.min(0.025 + twinkle * 0.03 + e * 0.25 + bass * 0.18, 0.45);
+      // Brightness: dips to nearly off, flares to full
+      const bright = Math.max(0.05, 0.45 + 0.55 * sc);  // 0.05..1.0
 
-        drawRay(cx, cy, rayAngle, rayLen, rayW, ray.hue, alpha, ray.curve);
-        // Opposite ray even fainter
-        drawRay(cx, cy, rayAngle + Math.PI, rayLen * ray.backLen * 0.7, rayW * 0.5,
-                (ray.hue + 160) % 360, alpha * 0.4, -ray.curve * 0.4);
-      });
+      // Hue slow drift + scintillation color shift (like chromatic dispersion)
+      cr.baseHue = (cr.baseHue + cr.hueSpeed + 360) % 360;
+      const hue = (cr.baseHue + sc * 18 + 360) % 360;
 
-      // ── Crystal shard polygon ────────────────────────────────────
-      c.save();
-      c.translate(cx, cy);
-      c.rotate(cr.rotation);
+      const size = cr.baseR * (1 + e * 1.8 + bass * 1.0);
 
-      c.beginPath();
-      cr.verts.forEach((v, i) => {
-        const vx = Math.cos(v.angle) * size * v.dist;
-        const vy = Math.sin(v.angle) * size * v.dist;
-        if (i === 0) c.moveTo(vx, vy);
-        else         c.lineTo(vx, vy);
-      });
-      c.closePath();
+      // ── Diffraction spikes ───────────────────────────────────────────
+      for (let s = 0; s < cr.spikeCount; s++) {
+        const angle = cr.baseAngle + (s / cr.spikeCount) * Math.PI;
+        const [sp0, sp1] = cr.spikePh[s];
 
-      // Interior — nearly transparent, just a whisper of colour
-      const inner = c.createRadialGradient(size*0.1, size*-0.1, 0, 0, 0, size * 1.1);
-      inner.addColorStop(0,    `hsla(${cr.baseHue},            60%, 100%, ${0.25 + e*0.35})`);
-      inner.addColorStop(0.4,  `hsla(${(cr.baseHue+80)%360},   80%, 90%,  ${0.08 + e*0.2})`);
-      inner.addColorStop(1,    `hsla(${(cr.baseHue+160)%360}, 100%, 75%,  0)`);
-      c.fillStyle = inner;
-      c.fill();
+        // Each spike scintillates at its own frequency pair
+        const spSc = (
+          Math.sin(t * (5.1 + s*1.87) + sp0)        +
+          Math.sin(t * (11.3 + s*2.41) + sp1) * 0.5
+        ) / 1.5;
+        const spBright = Math.max(0, 0.5 * spSc + 0.5); // 0..1
 
-      // Edge — fine bright line, flickers with twinkle
-      c.strokeStyle = `hsla(${cr.baseHue}, 70%, 100%, ${0.15 + twinkle * 0.25 + e * 0.35})`;
-      c.lineWidth   = 0.4 + e * 0.6;
-      c.stroke();
+        // Spike length: based on star size + scintillation
+        const spikeLen = size * (9 + spBright * 12 + e * 15 + bass * 10);
+        const halfW    = size * (0.9 + spBright * 0.6);
+        const alpha    = Math.min(
+          0.04 + spBright * (0.08 + cr.baseR * 0.06) + e * 0.2 + bass * 0.14,
+          0.55
+        );
 
-      c.restore();
+        if (alpha > 0.015) {
+          drawSpike(cx, cy, angle, spikeLen, halfW, hue, alpha);
+        }
+      }
+
+      // ── Star core glow ───────────────────────────────────────────────
+      const coreAlpha = Math.min(
+        bright * (0.4 + cr.baseR * 0.25) + e * 0.35 + bass * 0.2,
+        0.95
+      );
+      const coreR = size * (2.5 + bright * 1.5);
+
+      const core = c.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+      core.addColorStop(0,    `hsla(${hue}, 20%, 100%, ${coreAlpha})`);        // white-hot
+      core.addColorStop(0.15, `hsla(${hue}, 70%, 95%,  ${coreAlpha * 0.5})`);
+      core.addColorStop(0.45, `hsla(${hue}, 90%, 80%,  ${coreAlpha * 0.1})`);
+      core.addColorStop(1,    'transparent');
+      c.beginPath(); c.arc(cx, cy, coreR, 0, Math.PI*2);
+      c.fillStyle = core; c.fill();
+
+      // Bright pinpoint
+      if (bright > 0.3) {
+        c.beginPath();
+        c.arc(cx, cy, Math.max(size * 0.35, 0.4), 0, Math.PI * 2);
+        c.fillStyle = `hsla(${hue}, 15%, 100%, ${Math.min(coreAlpha * 1.2, 1)})`;
+        c.fill();
+      }
     });
 
-    // ── Reactive rings + freq bars around vinyl ───────────────────────
+    // ── Reactive rings + freq bars around vinyl ──────────────────────────
     if (evoCtxReady && evoAudioPlaying && evoAnalyser) {
-      [bass * 1.2, mid, treble * 0.8].forEach((amp, ri) => {
-        const ringR = Math.min(W,H) * (0.29 + ri * 0.07) + amp * 35;
-        c.beginPath();
-        c.arc(W/2, H/2, ringR, 0, Math.PI*2);
-        c.strokeStyle = `rgba(0,255,204,${0.03 + amp*0.2})`;
-        c.lineWidth = 1 + amp * 4;
-        c.stroke();
+      [bass*1.1, mid*0.9, treble*0.7].forEach((amp, ri) => {
+        const ringR = Math.min(W,H) * (0.29 + ri*0.07) + amp*30;
+        c.beginPath(); c.arc(W/2, H/2, ringR, 0, Math.PI*2);
+        c.strokeStyle = `rgba(0,255,204,${0.025 + amp*0.18})`;
+        c.lineWidth = 1 + amp*3.5; c.stroke();
       });
 
-      const barCount = 80;
-      const minR = Math.min(W,H) * 0.30;
+      const barCount = 80, minR = Math.min(W,H)*0.30;
       for (let i = 0; i < barCount; i++) {
-        const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
-        const val   = freqData[Math.floor(i * freqData.length / barCount)] / 255;
-        const barH  = val * Math.min(W,H) * 0.10;
+        const angle = (i/barCount)*Math.PI*2 - Math.PI/2;
+        const val = freqData[Math.floor(i*freqData.length/barCount)] / 255;
+        const bH = val * Math.min(W,H) * 0.09;
         c.beginPath();
-        c.moveTo(W/2 + Math.cos(angle) * minR,        H/2 + Math.sin(angle) * minR);
-        c.lineTo(W/2 + Math.cos(angle) * (minR+barH), H/2 + Math.sin(angle) * (minR+barH));
-        c.strokeStyle = `hsla(${155 + val*60},100%,65%,${0.25 + val*0.75})`;
-        c.lineWidth = 2;
-        c.stroke();
+        c.moveTo(W/2+Math.cos(angle)*minR,     H/2+Math.sin(angle)*minR);
+        c.lineTo(W/2+Math.cos(angle)*(minR+bH), H/2+Math.sin(angle)*(minR+bH));
+        c.strokeStyle = `hsla(${155+val*60},100%,65%,${0.2+val*0.7})`;
+        c.lineWidth = 2; c.stroke();
       }
 
       if (bass > 0.5) {
-        const flash = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H) * 0.6);
-        flash.addColorStop(0, `rgba(0,255,204,${(bass-0.5)*0.22})`);
-        flash.addColorStop(1, 'transparent');
-        c.fillStyle = flash;
-        c.fillRect(0, 0, W, H);
+        const fl = c.createRadialGradient(W/2,H/2,0, W/2,H/2, Math.max(W,H)*0.55);
+        fl.addColorStop(0, `rgba(0,255,204,${(bass-0.5)*0.18})`);
+        fl.addColorStop(1, 'transparent');
+        c.fillStyle = fl; c.fillRect(0,0,W,H);
       }
     }
   };
