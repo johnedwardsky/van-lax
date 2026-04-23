@@ -1481,13 +1481,17 @@ function startEvoBgParticles() {
   if (!canvas) return;
   const c = canvas.getContext('2d');
 
-  // Generate stars
-  const stars = Array.from({length: 220}, () => ({
+  // Generate stars — each gets a unique freq bin index and drift vector
+  const stars = Array.from({length: 280}, (_, si) => ({
     x: Math.random(), y: Math.random(),
-    r: Math.random() * 1.5 + 0.2,
-    speed: Math.random() * 0.00015 + 0.00005,
+    ox: 0, oy: 0,           // current offset (drift)
+    r: Math.random() * 1.6 + 0.3,
     phase: Math.random() * Math.PI * 2,
-    hue: Math.random() < 0.15 ? 165 + Math.random() * 30 : 200 + Math.random() * 40,
+    hue: Math.random() < 0.2 ? 165 + Math.random() * 30 : 200 + Math.random() * 50,
+    freqBin: Math.floor(Math.random() * 180), // which freq bin drives this star
+    driftX: (Math.random() - 0.5) * 0.00015,  // slow drift direction
+    driftY: (Math.random() - 0.5) * 0.00015,
+    energy: 0,              // smoothed audio energy for this star
   }));
 
   // Nebula blobs
@@ -1496,30 +1500,51 @@ function startEvoBgParticles() {
     r: 0.15 + Math.random() * 0.2,
     hue: Math.random() < 0.5 ? 165 : 220,
     alpha: 0.03 + Math.random() * 0.04,
+    phase: Math.random() * Math.PI * 2,
   }));
+
+  let freqData = new Uint8Array(1024);
+  let bass = 0, mid = 0, treble = 0;
 
   const drawBg = () => {
     evoBgFrame = requestAnimationFrame(drawBg);
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const W = canvas.width, H = canvas.height;
+    const W = window.innerWidth, H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
     const t = Date.now() * 0.001;
 
-    // Deep space background
-    const bgGrad = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.7);
-    bgGrad.addColorStop(0, '#060618');
-    bgGrad.addColorStop(0.5, '#020210');
+    // Sample audio if playing
+    if (evoCtxReady && evoAudioPlaying && evoAnalyser) {
+      freqData = new Uint8Array(evoAnalyser.frequencyBinCount);
+      evoAnalyser.getByteFrequencyData(freqData);
+      // Smooth bass / mid / treble
+      const rawBass   = freqData.slice(0, 6).reduce((a, b) => a + b, 0) / 6 / 255;
+      const rawMid    = freqData.slice(6, 40).reduce((a, b) => a + b, 0) / 34 / 255;
+      const rawTreble = freqData.slice(40, 100).reduce((a, b) => a + b, 0) / 60 / 255;
+      bass   = bass   * 0.75 + rawBass   * 0.25;
+      mid    = mid    * 0.75 + rawMid    * 0.25;
+      treble = treble * 0.75 + rawTreble * 0.25;
+    } else {
+      bass = mid = treble = 0;
+    }
+
+    // Deep space background — bass makes center brighter
+    const centerBright = 0.04 + bass * 0.08;
+    const bgGrad = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.75);
+    bgGrad.addColorStop(0, `rgba(6,6,${Math.floor(24 + bass * 40)},1)`);
+    bgGrad.addColorStop(0.4, '#020210');
     bgGrad.addColorStop(1, '#000005');
     c.fillStyle = bgGrad;
     c.fillRect(0, 0, W, H);
 
-    // Nebula blobs
+    // Nebulae — pulse with mid frequencies
     nebulae.forEach(n => {
-      const nx = n.x * W + Math.sin(t * 0.05 + n.phase) * 20;
-      const ny = n.y * H + Math.cos(t * 0.04 + n.phase) * 15;
-      const nr = n.r * Math.min(W, H);
+      const nx = n.x * W + Math.sin(t * 0.05 + n.phase) * 25;
+      const ny = n.y * H + Math.cos(t * 0.04 + n.phase) * 18;
+      const nr = n.r * Math.min(W, H) * (1 + mid * 0.3);
+      const alpha = n.alpha * (1 + mid * 2);
       const ng = c.createRadialGradient(nx, ny, 0, nx, ny, nr);
-      ng.addColorStop(0, `hsla(${n.hue}, 100%, 60%, ${n.alpha * 2})`);
+      ng.addColorStop(0, `hsla(${n.hue}, 100%, 65%, ${alpha * 2.5})`);
       ng.addColorStop(1, `hsla(${n.hue}, 100%, 50%, 0)`);
       c.beginPath();
       c.arc(nx, ny, nr, 0, Math.PI * 2);
@@ -1527,41 +1552,76 @@ function startEvoBgParticles() {
       c.fill();
     });
 
-    // Stars with twinkle
+    // Stars — each dances to its personal frequency bin
     stars.forEach(s => {
-      const sx = s.x * W;
-      const sy = s.y * H;
-      const twinkle = 0.5 + 0.5 * Math.sin(t * s.speed * 1000 + s.phase);
+      // Get this star's personal audio energy
+      let binVal = 0;
+      if (evoCtxReady && evoAudioPlaying && freqData.length > s.freqBin) {
+        binVal = freqData[s.freqBin] / 255;
+      }
+      // Smooth energy
+      s.energy = s.energy * 0.6 + binVal * 0.4;
+      const e = s.energy;
+
+      // Drift the star slowly, with audio pushing it harder
+      s.ox += s.driftX * (1 + bass * 8);
+      s.oy += s.driftY * (1 + bass * 6);
+      // Gentle pull back to origin
+      s.ox *= 0.998;
+      s.oy *= 0.998;
+
+      const sx = (s.x + s.ox) * W;
+      const sy = (s.y + s.oy) * H;
+
+      // Twinkle is now audio-driven: quiet = slow twinkle, loud = fast flash
+      const twinkle = 0.4 + 0.6 * Math.sin(t * 2 + s.phase + e * 8);
+
+      // Size: base + energy burst
+      const radius = s.r * (0.6 + twinkle * 0.4 + e * 2.5 + bass * 1.5);
+
+      // Brightness: dim normally, light up on beat
+      const alpha = 0.25 + twinkle * 0.3 + e * 0.8 + bass * 0.4;
+
+      // Hue shift on high energy: shift toward teal
+      const hue = s.hue + e * 30 * (s.hue > 190 ? -1 : 1);
+
+      // Draw star with glow on beats
+      if (e > 0.35 || bass > 0.4) {
+        // Glow corona
+        const glow = c.createRadialGradient(sx, sy, 0, sx, sy, radius * 4);
+        glow.addColorStop(0, `hsla(${hue}, 100%, 85%, ${Math.min(e * 0.6 + bass * 0.3, 0.7)})`);
+        glow.addColorStop(1, 'transparent');
+        c.beginPath();
+        c.arc(sx, sy, radius * 4, 0, Math.PI * 2);
+        c.fillStyle = glow;
+        c.fill();
+      }
+
+      // Star core
       c.beginPath();
-      c.arc(sx, sy, s.r * (0.7 + twinkle * 0.5), 0, Math.PI * 2);
-      c.fillStyle = `hsla(${s.hue}, 80%, 90%, ${0.4 + twinkle * 0.6})`;
+      c.arc(sx, sy, Math.max(radius, 0.3), 0, Math.PI * 2);
+      c.fillStyle = `hsla(${hue}, 85%, 92%, ${Math.min(alpha, 1)})`;
       c.fill();
     });
 
-    // Reactive rings from analyser (if playing)
+    // Reactive rings around vinyl center
     if (evoCtxReady && evoAudioPlaying && evoAnalyser) {
-      const freqData = new Uint8Array(evoAnalyser.frequencyBinCount);
-      evoAnalyser.getByteFrequencyData(freqData);
-      const bass = freqData.slice(0, 8).reduce((a, b) => a + b, 0) / 8 / 255;
-      const mid  = freqData.slice(8, 40).reduce((a, b) => a + b, 0) / 32 / 255;
-
-      // 3 reactive rings around the vinyl
-      [bass, mid, bass * mid].forEach((amp, ri) => {
-        const ringR = Math.min(W, H) * (0.32 + ri * 0.06) + amp * 30;
+      [bass * 1.2, mid, treble * 0.8].forEach((amp, ri) => {
+        const ringR = Math.min(W, H) * (0.29 + ri * 0.07) + amp * 35;
         c.beginPath();
         c.arc(W/2, H/2, ringR, 0, Math.PI * 2);
-        c.strokeStyle = `rgba(0,255,204,${0.04 + amp * 0.18})`;
-        c.lineWidth = 1 + amp * 3;
+        c.strokeStyle = `rgba(0,255,204,${0.03 + amp * 0.22})`;
+        c.lineWidth = 1 + amp * 4;
         c.stroke();
       });
 
-      // Frequency bars in a circle (behind vinyl)
-      const barCount = 64;
-      const minR = Math.min(W, H) * 0.31;
+      // Frequency bars in circle around vinyl
+      const barCount = 80;
+      const minR = Math.min(W, H) * 0.30;
       for (let i = 0; i < barCount; i++) {
         const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
         const val = freqData[Math.floor(i * freqData.length / barCount)] / 255;
-        const barH = val * Math.min(W, H) * 0.09;
+        const barH = val * Math.min(W, H) * 0.10;
         const x1 = W/2 + Math.cos(angle) * minR;
         const y1 = H/2 + Math.sin(angle) * minR;
         const x2 = W/2 + Math.cos(angle) * (minR + barH);
@@ -1569,11 +1629,21 @@ function startEvoBgParticles() {
         c.beginPath();
         c.moveTo(x1, y1);
         c.lineTo(x2, y2);
-        c.strokeStyle = `hsla(${160 + val * 40}, 100%, 65%, ${0.3 + val * 0.7})`;
+        c.strokeStyle = `hsla(${155 + val * 50}, 100%, 65%, ${0.25 + val * 0.75})`;
         c.lineWidth = 2;
         c.stroke();
+      }
+
+      // Bass flash — full-screen glow pulse on strong beat
+      if (bass > 0.55) {
+        const flash = c.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.6);
+        flash.addColorStop(0, `rgba(0,255,204,${(bass - 0.55) * 0.25})`);
+        flash.addColorStop(1, 'transparent');
+        c.fillStyle = flash;
+        c.fillRect(0, 0, W, H);
       }
     }
   };
   drawBg();
 }
+
