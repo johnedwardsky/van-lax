@@ -824,6 +824,18 @@ window.initNoxPlayer = () => {
     "NOX/5.mp3"
   ];
 
+  const playBtn = document.getElementById('nox-play-btn');
+  if (!playBtn) return;
+
+  // Block play until all stems are ready
+  playBtn.disabled = true;
+  playBtn.innerText = "LOADING...";
+  playBtn.style.opacity = "0.5";
+  playBtn.style.cursor = "not-allowed";
+
+  let noxReadyCount = 0;
+  const noxTotal = sources.length;
+
   sources.forEach((src) => {
     const audio = new Audio();
     audio.crossOrigin = "anonymous";
@@ -831,10 +843,21 @@ window.initNoxPlayer = () => {
     audio.loop = true;
     audio.preload = "auto";
     noxAudios.push(audio);
-  });
 
-  const playBtn = document.getElementById('nox-play-btn');
-  if (!playBtn) return;
+    const onReady = () => {
+      noxReadyCount++;
+      if (noxReadyCount === noxTotal) {
+        // All tracks buffered — unlock the button
+        playBtn.disabled = false;
+        playBtn.innerText = "PLAY";
+        playBtn.style.opacity = "1";
+        playBtn.style.cursor = "pointer";
+      }
+    };
+    audio.addEventListener('canplaythrough', onReady, { once: true });
+    // Fallback: if already cached, readyState >= 4
+    if (audio.readyState >= 4) onReady();
+  });
 
   const setupNoxCtx = () => {
     if (noxCtxReady) return;
@@ -855,12 +878,12 @@ window.initNoxPlayer = () => {
 
   const toggleNoxPlay = (e) => {
     if (e.type === 'touchstart') e.preventDefault();
+    if (playBtn.disabled) return;
     setupNoxCtx();
 
     if (noxAudioCtx.state === 'suspended') noxAudioCtx.resume();
 
     if (!noxAudioPlaying) {
-      playBtn.innerText = "LOADING...";
       const playPromises = noxAudios.map(a => a.play());
       Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("NOX Play blocked:", err)) : Promise.resolve()))
         .then(() => {
@@ -975,6 +998,18 @@ window.initDeepBluePlayer = () => {
     "DEEP BLUE/4.mp3"
   ];
 
+  const playBtn = document.getElementById('deep-blue-play-btn');
+  if (!playBtn) return;
+
+  // Block play until all stems are ready
+  playBtn.disabled = true;
+  playBtn.innerText = "LOADING...";
+  playBtn.style.opacity = "0.5";
+  playBtn.style.cursor = "not-allowed";
+
+  let dbReadyCount = 0;
+  const dbTotal = sources.length;
+
   sources.forEach((src) => {
     const audio = new Audio();
     audio.crossOrigin = "anonymous";
@@ -982,10 +1017,21 @@ window.initDeepBluePlayer = () => {
     audio.loop = true;
     audio.preload = "auto";
     dbAudios.push(audio);
-  });
 
-  const playBtn = document.getElementById('deep-blue-play-btn');
-  if (!playBtn) return;
+    const onReady = () => {
+      dbReadyCount++;
+      if (dbReadyCount === dbTotal) {
+        // All tracks buffered — unlock the button
+        playBtn.disabled = false;
+        playBtn.innerText = "PLAY";
+        playBtn.style.opacity = "1";
+        playBtn.style.cursor = "pointer";
+      }
+    };
+    audio.addEventListener('canplaythrough', onReady, { once: true });
+    // Fallback: if already cached, readyState >= 4
+    if (audio.readyState >= 4) onReady();
+  });
 
   const setupDbCtx = () => {
     if (dbCtxReady) return;
@@ -1006,12 +1052,12 @@ window.initDeepBluePlayer = () => {
 
   const toggleDbPlay = (e) => {
     if (e.type === 'touchstart') e.preventDefault();
+    if (playBtn.disabled) return;
     setupDbCtx();
 
     if (dbAudioCtx.state === 'suspended') dbAudioCtx.resume();
 
     if (!dbAudioPlaying) {
-      playBtn.innerText = "LOADING...";
       const playPromises = dbAudios.map(a => a.play());
       Promise.all(playPromises.map(p => p ? p.catch(err => console.warn("DB Play blocked:", err)) : Promise.resolve()))
         .then(() => {
