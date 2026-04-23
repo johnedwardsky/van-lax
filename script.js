@@ -1605,10 +1605,11 @@ function startEvoBgParticles() {
       cr.energy = cr.energy * 0.7 + binVal * 0.3;
       const e = cr.energy;
 
-      // Drift
-      cr.ox += cr.driftX * (1 + bass * 4);
-      cr.oy += cr.driftY * (1 + bass * 4);
-      cr.ox *= 0.9995; cr.oy *= 0.9995;
+      // Drift — much stronger with music (stars fly around)
+      const driftBoost = 1 + e * 20 + bass * 35 + mid * 12;
+      cr.ox += cr.driftX * driftBoost;
+      cr.oy += cr.driftY * driftBoost;
+      cr.ox *= 0.992; cr.oy *= 0.992; // pull back faster so they don't escape
 
       const cx = (cr.x + cr.ox) * W;
       const cy = (cr.y + cr.oy) * H;
@@ -1630,7 +1631,8 @@ function startEvoBgParticles() {
       cr.baseHue = (cr.baseHue + cr.hueSpeed + 360) % 360;
       const hue = (cr.baseHue + sc * 18 + 360) % 360;
 
-      const size = cr.baseR * (1 + e * 1.8 + bass * 1.0);
+      // Size FIXED — stays a point, no bloat with music
+      const size = cr.baseR;
 
       // ── Diffraction spikes ───────────────────────────────────────────
       for (let s = 0; s < cr.spikeCount; s++) {
@@ -1644,12 +1646,13 @@ function startEvoBgParticles() {
         ) / 1.5;
         const spBright = Math.max(0, 0.5 * spSc + 0.5); // 0..1
 
-        // Spike length: based on star size + scintillation
-        const spikeLen = size * (9 + spBright * 12 + e * 15 + bass * 10);
-        const halfW    = size * (0.9 + spBright * 0.6);
+        // Spike length: scintillation-driven, music makes spikes longer
+        const spikeLen = size * (9 + spBright * 12 + e * 22 + bass * 18);
+        const halfW    = size * (0.9 + spBright * 0.5);
+        // Rays much more visible with music
         const alpha    = Math.min(
-          0.04 + spBright * (0.08 + cr.baseR * 0.06) + e * 0.2 + bass * 0.14,
-          0.55
+          0.04 + spBright * (0.09 + cr.baseR * 0.07) + e * 0.45 + bass * 0.35,
+          0.75
         );
 
         if (alpha > 0.015) {
@@ -1657,28 +1660,26 @@ function startEvoBgParticles() {
         }
       }
 
-      // ── Star core glow ───────────────────────────────────────────────
+      // Core glow — slightly brighter with music, but stays tiny
       const coreAlpha = Math.min(
-        bright * (0.4 + cr.baseR * 0.25) + e * 0.35 + bass * 0.2,
+        bright * (0.45 + cr.baseR * 0.28) + e * 0.2 + bass * 0.15,
         0.95
       );
-      const coreR = size * (2.5 + bright * 1.5);
+      const coreR = size * (2.2 + bright * 1.2); // fixed, not music-scaled
 
       const core = c.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-      core.addColorStop(0,    `hsla(${hue}, 20%, 100%, ${coreAlpha})`);        // white-hot
-      core.addColorStop(0.15, `hsla(${hue}, 70%, 95%,  ${coreAlpha * 0.5})`);
-      core.addColorStop(0.45, `hsla(${hue}, 90%, 80%,  ${coreAlpha * 0.1})`);
+      core.addColorStop(0,    `hsla(${hue}, 20%, 100%, ${coreAlpha})`);
+      core.addColorStop(0.15, `hsla(${hue}, 70%, 95%,  ${coreAlpha * 0.45})`);
+      core.addColorStop(0.45, `hsla(${hue}, 90%, 80%,  ${coreAlpha * 0.08})`);
       core.addColorStop(1,    'transparent');
       c.beginPath(); c.arc(cx, cy, coreR, 0, Math.PI*2);
       c.fillStyle = core; c.fill();
 
-      // Bright pinpoint
-      if (bright > 0.3) {
-        c.beginPath();
-        c.arc(cx, cy, Math.max(size * 0.35, 0.4), 0, Math.PI * 2);
-        c.fillStyle = `hsla(${hue}, 15%, 100%, ${Math.min(coreAlpha * 1.2, 1)})`;
-        c.fill();
-      }
+      // Pinpoint — always tiny, just brighter with music
+      c.beginPath();
+      c.arc(cx, cy, Math.max(size * 0.3, 0.35), 0, Math.PI * 2);
+      c.fillStyle = `hsla(${hue}, 10%, 100%, ${Math.min(coreAlpha * 1.3 + e*0.2, 1)})`;
+      c.fill();
     });
 
     // ── Reactive rings + freq bars around vinyl ──────────────────────────
