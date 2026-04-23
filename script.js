@@ -1482,16 +1482,16 @@ function startEvoBgParticles() {
   const c = canvas.getContext('2d');
 
   // Generate stars — each gets a unique freq bin index and drift vector
-  const stars = Array.from({length: 280}, (_, si) => ({
+  const stars = Array.from({length: 320}, (_, si) => ({
     x: Math.random(), y: Math.random(),
-    ox: 0, oy: 0,           // current offset (drift)
-    r: Math.random() * 1.6 + 0.3,
+    ox: 0, oy: 0,
+    r: Math.random() * 2.8 + 0.8,       // bigger: 0.8–3.6px base
     phase: Math.random() * Math.PI * 2,
     hue: Math.random() < 0.2 ? 165 + Math.random() * 30 : 200 + Math.random() * 50,
-    freqBin: Math.floor(Math.random() * 180), // which freq bin drives this star
-    driftX: (Math.random() - 0.5) * 0.00015,  // slow drift direction
-    driftY: (Math.random() - 0.5) * 0.00015,
-    energy: 0,              // smoothed audio energy for this star
+    freqBin: Math.floor(Math.random() * 180),
+    driftX: (Math.random() - 0.5) * 0.00018,
+    driftY: (Math.random() - 0.5) * 0.00018,
+    energy: 0,
   }));
 
   // Nebula blobs
@@ -1574,33 +1574,32 @@ function startEvoBgParticles() {
       const sy = (s.y + s.oy) * H;
 
       // Twinkle is now audio-driven: quiet = slow twinkle, loud = fast flash
-      const twinkle = 0.4 + 0.6 * Math.sin(t * 2 + s.phase + e * 8);
+      const twinkle = 0.5 + 0.5 * Math.sin(t * 1.5 + s.phase + e * 8);
 
-      // Size: base + energy burst
-      const radius = s.r * (0.6 + twinkle * 0.4 + e * 2.5 + bass * 1.5);
+      // Size: large base + energy burst
+      const radius = s.r * (1.0 + twinkle * 0.5 + e * 3.0 + bass * 2.0);
 
-      // Brightness: dim normally, light up on beat
-      const alpha = 0.25 + twinkle * 0.3 + e * 0.8 + bass * 0.4;
+      // Brightness: clearly visible always, flare on beat
+      const alpha = Math.min(0.55 + twinkle * 0.35 + e * 0.8 + bass * 0.4, 1.0);
 
-      // Hue shift on high energy: shift toward teal
+      // Hue shift toward teal on high energy
       const hue = s.hue + e * 30 * (s.hue > 190 ? -1 : 1);
 
-      // Draw star with glow on beats
-      if (e > 0.35 || bass > 0.4) {
-        // Glow corona
-        const glow = c.createRadialGradient(sx, sy, 0, sx, sy, radius * 4);
-        glow.addColorStop(0, `hsla(${hue}, 100%, 85%, ${Math.min(e * 0.6 + bass * 0.3, 0.7)})`);
-        glow.addColorStop(1, 'transparent');
-        c.beginPath();
-        c.arc(sx, sy, radius * 4, 0, Math.PI * 2);
-        c.fillStyle = glow;
-        c.fill();
-      }
+      // Always draw soft glow, bigger burst on beats
+      const coronaScale = e > 0.2 || bass > 0.25 ? 5 : 3;
+      const coronaAlpha = Math.min(twinkle * 0.15 + e * 0.5 + bass * 0.3, 0.65);
+      const glow = c.createRadialGradient(sx, sy, 0, sx, sy, radius * coronaScale);
+      glow.addColorStop(0, `hsla(${hue}, 100%, 85%, ${coronaAlpha})`);
+      glow.addColorStop(1, 'transparent');
+      c.beginPath();
+      c.arc(sx, sy, radius * coronaScale, 0, Math.PI * 2);
+      c.fillStyle = glow;
+      c.fill();
 
       // Star core
       c.beginPath();
-      c.arc(sx, sy, Math.max(radius, 0.3), 0, Math.PI * 2);
-      c.fillStyle = `hsla(${hue}, 85%, 92%, ${Math.min(alpha, 1)})`;
+      c.arc(sx, sy, Math.max(radius, 0.8), 0, Math.PI * 2);
+      c.fillStyle = `hsla(${hue}, 90%, 95%, ${Math.min(alpha, 1)})`;
       c.fill();
     });
 
