@@ -1,9 +1,3 @@
-// Language detection for Home link
-const homeLinks = document.querySelectorAll('a[href="index.html"]');
-if (window.location.pathname.includes('-ru') || document.documentElement.lang === 'ru') {
-    homeLinks.forEach(link => link.href = 'index-ru.html');
-}
-
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const randomizeBtn = document.getElementById('randomize');
@@ -88,8 +82,21 @@ function getIntersections(c1, c2) {
     return [{ x: x2 + rx, y: y2 + ry }, { x: x2 - rx, y: y2 - ry }];
 }
 
-const adjectives = ['Сияющий', 'Вечный', 'Сакральный', 'Гармоничный', 'Бесконечный', 'Тайный', 'Золотой', 'Эфирный', 'Кристаллический', 'Звездный'];
-const nouns = ['Кристалл', 'Цветок', 'Портал', 'Чертеж', 'Орнамент', 'Источник', 'Сгусток', 'Фрактал', 'Вихрь', 'Свет'];
+const translations = {
+    ru: {
+        adjectives: ['Сияющий', 'Вечный', 'Сакральный', 'Гармоничный', 'Бесконечный', 'Тайный', 'Золотой', 'Эфирный', 'Кристаллический', 'Звездный'],
+        nouns: ['Кристалл', 'Цветок', 'Портал', 'Чертеж', 'Орнамент', 'Источник', 'Сгусток', 'Фрактал', 'Вихрь', 'Свет'],
+        projection: 'Текущая проекция: '
+    },
+    en: {
+        adjectives: ['Radiant', 'Eternal', 'Sacred', 'Harmonic', 'Infinite', 'Secret', 'Golden', 'Ethereal', 'Crystalline', 'Stellar'],
+        nouns: ['Crystal', 'Flower', 'Portal', 'Blueprint', 'Ornament', 'Source', 'Clump', 'Fractal', 'Vortex', 'Light'],
+        projection: 'Current projection: '
+    }
+};
+
+const currentLang = document.documentElement.lang || 'en';
+const t = translations[currentLang] || translations.en;
 
 function generateInfiniteGeometry() {
     const config = [];
@@ -131,10 +138,10 @@ function generateInfiniteGeometry() {
     });
 
     // Generate Poetic Name
-    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const adj = t.adjectives[Math.floor(Math.random() * t.adjectives.length)];
+    const noun = t.nouns[Math.floor(Math.random() * t.nouns.length)];
     const ratioName = ['φ', '√2', '√3'][Math.floor(Math.random() * 3)];
-    shapeNameEl.textContent = `${adj} ${noun} ${ratioName}`;
+    shapeNameEl.innerHTML = `<span style="opacity: 0.5; font-weight: 200;">${t.projection}</span> ${adj} ${noun} ${ratioName}`;
     
     document.getElementById('val-phi').textContent = PHI.toFixed(3);
     document.getElementById('val-sqrt2').textContent = SQRT2.toFixed(3);
