@@ -107,6 +107,10 @@
               <span class="gold-num">3</span> 
               <span class="nav-text">ГЕНЕРАТИВНАЯ ГАЛЕРЕЯ</span>
             </li>
+            <li onclick="window.location.href='phi-geometry.html'">
+              <span class="gold-num">φ</span> 
+              <span class="nav-text">ГЕОМЕТРИЯ ФИ</span>
+            </li>
           </ul>
           
           <button class="odyssey-btn" onclick="flyThrough(1)">НАЧАТЬ ОДИССЕЮ</button>
@@ -510,6 +514,7 @@
 
     <div class="g1-outro" style="margin-bottom: 80px;">
       <button class="g1-btn" onclick="exitSection()">На главную</button>
+      <a href="phi-geometry.html" class="g1-btn g1-btn-primary" style="text-decoration: none;">Геометрия Фи</a>
       <button class="g1-btn g1-btn-primary" onclick="nextSection(3)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
     </div>
   </div>
@@ -883,5 +888,18 @@
   </div>
 
   <script src="script.js" defer></script>
+  <script>
+    // Deep linking for specific sections
+    window.addEventListener('load', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const section = urlParams.get('section');
+      if (section === '3') {
+        setTimeout(() => {
+          if (typeof flyThrough === 'function') flyThrough(3, true);
+          if (typeof enterSection === 'function') enterSection(3, true);
+        }, 500);
+      }
+    });
+  </script>
 </body>
 </html>

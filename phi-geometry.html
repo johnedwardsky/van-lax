@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phi Geometry | Generative Sacred Art</title>
+    <meta name="description" content="Интерактивная генеративная геометрия, основанная на законах Фи, золотом сечении и сакральных пропорциях.">
+    <link rel="stylesheet" href="phi-geometry.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="title-group">
+                <h1>Геометрия Фи</h1>
+                <p class="subtitle">Интерактивные спирали и пересечения колец: √2, √3, φ</p>
+            </div>
+        </header>
+
+        <canvas id="canvas"></canvas>
+
+        <div class="controls">
+            <div class="shape-indicator">Текущая проекция: <span id="shape-name">Гармония</span></div>
+            <div class="btn-group">
+                <a href="index.html" class="btn secondary link-btn">На главную</a>
+                <button id="randomize" class="btn">Трансформировать форму</button>
+                <button id="toggle-points" class="btn secondary">Точки пересечения</button>
+                <a href="index.html?section=3" class="btn secondary link-btn">Галлерея AMUSE</a>
+            </div>
+            <div class="info-panel">
+                <div class="stat"><span class="label">φ</span> <span id="val-phi">1.618</span></div>
+                <div class="stat"><span class="label">√2</span> <span id="val-sqrt2">1.414</span></div>
+                <div class="stat"><span class="label">√3</span> <span id="val-sqrt3">1.732</span></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Исследование гармонии через математику и свет</p>
+        </footer>
+    </div>
+
+    <script src="phi-geometry.js"></script>
+</body>
+</html>
