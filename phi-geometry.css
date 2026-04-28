@@ -33,6 +33,29 @@ body {
     z-index: 1;
 }
 
+/* Language Switch — top right (matches main site) */
+.lang-switch-global {
+    position: fixed;
+    top: 25px;
+    right: 30px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-family: var(--font-main);
+    font-size: 12px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    z-index: 200;
+}
+.lang-switch-global a {
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    transition: 0.3s;
+}
+.lang-switch-global a:hover { color: var(--accent-gold); }
+.lang-switch-global a.active { color: var(--accent-gold); font-weight: 500; pointer-events: none; }
+.lang-switch-global span { color: rgba(255,255,255,0.2); }
+
 header {
     padding: 2rem;
     position: absolute;
