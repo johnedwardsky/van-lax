@@ -13,6 +13,7 @@ const parallaxLayer = document.getElementById('hub-parallax-layer');
 const webGLContainer = document.getElementById('webgl-container');
 let is3DActive = false;
 let isGallery1 = false;
+let isTransitioning = false; // New state to prevent overlapping transitions
 let scrollPercent = 0;
 let targetCameraZ = 0;
 
@@ -97,9 +98,14 @@ window.closeTaleModal = (e) => {
 };
 
 window.flyThrough = (targetNode, isInstant = false) => {
-  if (is3DActive) return;
+  if (is3DActive || isTransitioning) return;
+  
+  const hub = document.getElementById('hub-wrapper');
+  if (!hub) return;
+
   is3DActive = true;
-  document.getElementById('hub-wrapper').style.pointerEvents = 'none';
+  isTransitioning = true;
+  hub.style.pointerEvents = 'none';
 
   if (isInstant) {
       document.getElementById('hub-wrapper').style.opacity = '0';
@@ -148,6 +154,7 @@ window.flyThrough = (targetNode, isInstant = false) => {
           
           // Trigger node update logic manually once
           updateNodes(scrollPercent);
+          isTransitioning = false;
         }
       });
   }
@@ -360,7 +367,9 @@ window.nextSection = (sectionIndex) => {
 };
 
 window.returnToHub = () => {
-  is3DActive = false;
+  if (isTransitioning) return;
+  isTransitioning = true;
+
   gsap.to(webGLContainer, {
     opacity: 0, duration: 1,
     onComplete: () => {
@@ -370,7 +379,11 @@ window.returnToHub = () => {
       // Restore the hub wrapper itself + all UI elements
       gsap.to(hubWrapper, { opacity: 1, duration: 1 });
       gsap.to(['#hub-bg-img', '#ui-panels', '.van-lax-overlay', ...document.querySelectorAll('.hotspot')], {
-        opacity: 1, duration: 1, stagger: 0.1
+        opacity: 1, duration: 1, stagger: 0.1,
+        onComplete: () => {
+          is3DActive = false;
+          isTransitioning = false;
+        }
       });
       nodes.forEach(n => n.classList.remove('active'));
     }
@@ -437,7 +450,8 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-const PARTICLE_COUNT = 15000;
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 900;
+const PARTICLE_COUNT = isMobileDevice ? 4000 : 15000;
 const geometry = new THREE.BufferGeometry();
 const basePositions = new Float32Array(PARTICLE_COUNT * 3);
 const targetPositions = new Float32Array(PARTICLE_COUNT * 3);
