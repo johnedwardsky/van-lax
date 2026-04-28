@@ -921,6 +921,17 @@ window.initNoxPlayer = () => {
     }
   });
 
+  // Active sync checker: prevent stems from drifting out of sync (fixes iOS Safari issues)
+  noxAudios[0].addEventListener('timeupdate', () => {
+    if (!noxAudioPlaying) return;
+    const masterTime = noxAudios[0].currentTime;
+    for (let i = 1; i < noxAudios.length; i++) {
+      if (Math.abs(noxAudios[i].currentTime - masterTime) > 0.15) {
+        noxAudios[i].currentTime = masterTime;
+      }
+    }
+  });
+
   // Create AudioContext only on first PLAY (requires user gesture)
   const setupNoxCtx = () => {
     if (noxCtxReady) return;
@@ -978,10 +989,17 @@ window.initNoxPlayer = () => {
       if (e.target.classList.contains('active')) {
         e.target.classList.remove('active');
         e.target.innerText = isRu ? "ВЫКЛ" : "MUTED";
-        noxGainNodes[idx].gain.setTargetAtTime(0, noxAudioCtx.currentTime, 0.08);
+        // Use 0.001 instead of 0 to prevent iOS from suspending the silent stream
+        noxGainNodes[idx].gain.setTargetAtTime(0.001, noxAudioCtx.currentTime, 0.08);
       } else {
         e.target.classList.add('active');
         e.target.innerText = isRu ? "ВКЛ" : "ACTIVE";
+        
+        // Force snap to master time when unmuting to guarantee perfect sync
+        if (Math.abs(noxAudios[idx].currentTime - noxAudios[0].currentTime) > 0.1) {
+            noxAudios[idx].currentTime = noxAudios[0].currentTime;
+        }
+        
         noxGainNodes[idx].gain.setTargetAtTime(1, noxAudioCtx.currentTime, 0.08);
       }
     };
@@ -1101,6 +1119,17 @@ window.initDeepBluePlayer = () => {
     }
   });
 
+  // Active sync checker: prevent stems from drifting out of sync
+  dbAudios[0].addEventListener('timeupdate', () => {
+    if (!dbAudioPlaying) return;
+    const masterTime = dbAudios[0].currentTime;
+    for (let i = 1; i < dbAudios.length; i++) {
+      if (Math.abs(dbAudios[i].currentTime - masterTime) > 0.15) {
+        dbAudios[i].currentTime = masterTime;
+      }
+    }
+  });
+
   // Create AudioContext only on first PLAY (requires user gesture)
   const setupDbCtx = () => {
     if (dbCtxReady) return;
@@ -1158,10 +1187,17 @@ window.initDeepBluePlayer = () => {
       if (e.target.classList.contains('active')) {
         e.target.classList.remove('active');
         e.target.innerText = isRu ? "ВЫКЛ" : "MUTED";
-        dbGainNodes[idx].gain.setTargetAtTime(0, dbAudioCtx.currentTime, 0.08);
+        // Use 0.001 instead of 0 to prevent iOS from suspending the silent stream
+        dbGainNodes[idx].gain.setTargetAtTime(0.001, dbAudioCtx.currentTime, 0.08);
       } else {
         e.target.classList.add('active');
         e.target.innerText = isRu ? "ВКЛ" : "ACTIVE";
+        
+        // Force snap to master time when unmuting to guarantee perfect sync
+        if (Math.abs(dbAudios[idx].currentTime - dbAudios[0].currentTime) > 0.1) {
+            dbAudios[idx].currentTime = dbAudios[0].currentTime;
+        }
+        
         dbGainNodes[idx].gain.setTargetAtTime(1, dbAudioCtx.currentTime, 0.08);
       }
     };
