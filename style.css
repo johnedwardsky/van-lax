@@ -339,7 +339,9 @@ body, html {
    =============================== */
 .fullscreen-container {
   position: fixed; top: 0; left: 0;
-  width: 100vw; height: 100vh;
+  width: 100vw; 
+  height: 100vh; /* Fallback */
+  height: 100dvh; /* Dynamic viewport height to handle mobile browser bars */
   z-index: 100;
   overflow-y: scroll;
   overflow-x: hidden;
@@ -626,10 +628,10 @@ body, html {
   .g1-outro {
     flex-wrap: wrap;
     gap: 15px;
-    padding: 0 20px;
+    padding: 0 20px 10vh; /* Extra padding to overscroll past browser bars */
     box-sizing: border-box;
     height: auto;
-    min-height: 30vh;
+    min-height: 40vh;
   }
   .g1-btn {
     font-size: 0.77rem;
