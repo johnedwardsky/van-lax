@@ -24,6 +24,44 @@ const spiralLength = nodeSpacing * (totalNodes - 1);
 const nodes = document.querySelectorAll('.gallery-node');
 
 // ==========================================
+// SCROLL DOWN HINT AUTO-HIDE
+// ==========================================
+function initScrollHints() {
+  const containers = [
+    document.getElementById('gallery-1-container'),
+    document.getElementById('gallery-2-container')
+  ];
+  containers.forEach(c => attachScrollHint(c));
+}
+
+function attachScrollHint(container) {
+  if (!container) return;
+  const hint = container.querySelector('.scroll-down-hint');
+  if (!hint) return;
+
+  // Reset hint state
+  gsap.set(hint, { opacity: 1, y: 0, visibility: 'visible' });
+  container.scrollTop = 0;
+
+  const onScroll = function() {
+    if (container.scrollTop > 50) {
+      gsap.to(hint, { 
+        opacity: 0, 
+        y: -20, 
+        duration: 0.8, 
+        ease: "power2.out",
+        onComplete: () => {
+          hint.style.visibility = 'hidden';
+        }
+      });
+      container.removeEventListener('scroll', onScroll);
+    }
+  };
+
+  container.addEventListener('scroll', onScroll);
+}
+
+// ==========================================
 // TALES MODAL LOGIC
 // ==========================================
 const tales = {
@@ -282,6 +320,9 @@ function executeEnterSection(nodeIndex, isInstant = false) {
           );
         }
       }
+
+      // Re-attach scroll hint listener for this container
+      attachScrollHint(container);
 
       // If it's gallery 1, initialize scroll tracking
       if(nodeIndex === 1) {
@@ -1249,6 +1290,9 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
+
+  // Initialize scroll hints
+  initScrollHints();
 });
 
 
