@@ -444,37 +444,38 @@ function initSacredGalleryScroll() {
     const plaque = spotlight.querySelector('.seal-plaque');
     const imgWrap = spotlight.querySelector('.seal-img-wrap');
     
-    // 1. Framed painting slightly zooms and fades in from center like an exhibition piece
+    // 1. Framed painting smoothly zooms and fades in from center
     gsap.fromTo(imgWrap, 
-      { scale: 0.95, opacity: 0 },
+      { scale: 0.95, opacity: 0, filter: 'blur(15px)' },
       {
         scrollTrigger: {
           scroller: '.sacred-scroll-content',
           trigger: spotlight,
-          start: 'top 85%',
-          end: 'top 35%',
-          scrub: 1.5
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
         },
         scale: 1,
         opacity: 1,
-        ease: 'power2.out'
+        filter: 'blur(0px)',
+        duration: 1.8,
+        ease: 'power3.out'
       }
     );
 
-    // 2. Museum Plaque slides up slightly
+    // 2. Museum Plaque smoothly slides in
     gsap.fromTo(plaque,
-      { y: 50, opacity: 0 },
+      { y: 40, opacity: 0 },
       {
         scrollTrigger: {
           scroller: '.sacred-scroll-content',
           trigger: spotlight,
           start: 'top 75%',
-          end: 'top 40%',
-          scrub: 1.5
+          toggleActions: 'play none none reverse'
         },
         y: 0, 
         opacity: 1,
-        ease: 'power2.out'
+        duration: 1.4,
+        ease: 'power3.out'
       }
     );
   });
