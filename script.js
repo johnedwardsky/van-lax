@@ -49,6 +49,7 @@ function attachScrollHint(container) {
   const onScroll = function() {
     // Threshold reduced to 20px for more immediate response after user starts scrolling
     if (scrollTarget.scrollTop > 20) {
+      gsap.killTweensOf(hint); // Prevent delayed intro animations from reviving the text
       gsap.to(hint, { 
         opacity: 0, 
         y: -20, 
