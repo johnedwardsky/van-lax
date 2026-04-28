@@ -359,25 +359,9 @@ function executeEnterSection(nodeIndex, isInstant = false) {
 window.exitSection = () => {
   if (typeof window.pauseAllAudio === 'function') window.pauseAllAudio();
   
-  // Hide all gallery containers
-  const containers = document.querySelectorAll('.fullscreen-container, #gallery-1-container');
-  containers.forEach(c => {
-    if(c.style.display !== 'none') {
-      gsap.to(c, { opacity: 0, duration: 1, onComplete: () => c.style.display = 'none' });
-    }
-  });
-  
-  // Also hide the cinematic node UI (3D headings)
-  const ui = document.getElementById('ui-container');
-  if(ui && ui.style.display !== 'none') {
-    gsap.to(ui, { opacity: 0, duration: 1, onComplete: () => ui.style.display = 'none' });
-  }
-
-  // Restore DNA opacity
-  gsap.to(particles.material, { opacity: 0.8, duration: 2 });
-  isGallery1 = false;
-  currentNodeIndex = 0;
-  window.returnToHub();
+  // Return user to the absolute main page of the website
+  const isRu = window.location.pathname.includes('-ru.html');
+  window.location.href = isRu ? 'index-ru.html' : 'index.html';
 };
 
 window.nextSection = (sectionIndex) => {
