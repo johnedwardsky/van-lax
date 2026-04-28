@@ -39,26 +39,33 @@ function attachScrollHint(container) {
   const hint = container.querySelector('.scroll-down-hint');
   if (!hint) return;
 
+  // In Sacred Gallery, the scrollable element is .sacred-scroll-content, not the container itself.
+  const scrollTarget = container.querySelector('.sacred-scroll-content') || container;
+
   // Reset hint state
   gsap.set(hint, { opacity: 1, y: 0, visibility: 'visible' });
-  container.scrollTop = 0;
+  scrollTarget.scrollTop = 0;
 
   const onScroll = function() {
-    if (container.scrollTop > 50) {
+    // Threshold reduced to 20px for more immediate response after user starts scrolling
+    if (scrollTarget.scrollTop > 20) {
       gsap.to(hint, { 
         opacity: 0, 
         y: -20, 
         duration: 0.8, 
         ease: "power2.out",
+        onStart: () => {
+          hint.style.animation = 'none';
+        },
         onComplete: () => {
           hint.style.visibility = 'hidden';
         }
       });
-      container.removeEventListener('scroll', onScroll);
+      scrollTarget.removeEventListener('scroll', onScroll);
     }
   };
 
-  container.addEventListener('scroll', onScroll);
+  scrollTarget.addEventListener('scroll', onScroll);
 }
 
 // ==========================================
