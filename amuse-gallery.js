@@ -1,355 +1,425 @@
 // ============================================================
-// ABRAKADABRA — Generative Gallery Engine v3
-// Layer 1: Static spirograph (Hypotrochoid / Epitrochoid)
-// Layer 2: Ghost duplicates — rotating transparent copies
-// Layer 3: Particle riders — travel along curve, geometric trails
+// ABRAKADABRA — Multi-Mode Generative Engine v4
+//  A: Spirograph  (Hypotrochoid / Epitrochoid)
+//  B: Linkage     (Mechanical Arms — Amuse original)
+//  C: Cymatics    (Chladni Plate particle sim — Amuse)
+//  D: Lissajous + Rose curves
 // ============================================================
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
 
-// ── Canvases ─────────────────────────────────────────────────
-const canvas  = document.getElementById('canvas');
-const ctx     = canvas.getContext('2d');
-
-// Overlay canvas for ghost + particle dynamics
 const overlay = document.createElement('canvas');
 overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;';
 canvas.parentNode.insertBefore(overlay, canvas.nextSibling);
 const oCtx = overlay.getContext('2d');
 
-const playPauseBtn = document.getElementById('play-pause');
-const randomizeBtn = document.getElementById('randomize');
-const shapeNameEl  = document.getElementById('shape-name');
-const valLrpmEl    = document.getElementById('val-lrpm');
-const valRrpmEl    = document.getElementById('val-rrpm');
-const valSymmetryEl= document.getElementById('val-symmetry');
+const playPauseBtn  = document.getElementById('play-pause');
+const randomizeBtn  = document.getElementById('randomize');
+const shapeNameEl   = document.getElementById('shape-name');
+const valLrpmEl     = document.getElementById('val-lrpm');
+const valRrpmEl     = document.getElementById('val-rrpm');
+const valSymmetryEl = document.getElementById('val-symmetry');
 
-let width, height, centerX, centerY;
-let isPlaying = true;
+let W, H, cx, cy, isPlaying = true;
+const k = Math.PI / 180;
 
-// ── Current curve parameters ──────────────────────────────────
-let p = {
-    R: 180, r: 60, d: 90,
-    mode: 0,     // 0 = hypotrochoid, 1 = epitrochoid
-    symmetry: 1,
-    speed: 0.008
-};
-
-// ── Drawing state (Layer 1) ───────────────────────────────────
-let t = 0, prevX = null, prevY = null;
-let totalPoints = 0, maxPoints = 0;
-let isComplete = false;
-let baseHue = 0;
-
-// ── Ghost layer state (Layer 2) ───────────────────────────────
-const GHOST_COUNT  = 4;
-const GHOST_STEPS  = 300;  // points per ghost render
-let   ghostAngle   = 0;    // master rotation angle
-let   ghostPhase   = 0;    // slow oscillation for scale pulse
-
-// ── Particle riders (Layer 3) ─────────────────────────────────
-const PARTICLE_COUNT = 6;
-let particles = [];
-
-// Each particle: { t, trailLen, trailShape, speed, hue, size }
-const TRAIL_SHAPES = ['triangle', 'square', 'diamond', 'hexagon'];
-
-function initParticles() {
-    particles = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-        particles.push({
-            t:          (i / PARTICLE_COUNT) * Math.PI * 2,
-            speed:      p.speed * (0.4 + Math.random() * 0.6),
-            trailLen:   4 + Math.floor(Math.random() * 6),
-            trailShape: TRAIL_SHAPES[Math.floor(Math.random() * TRAIL_SHAPES.length)],
-            hue:        (baseHue + i * 60) % 360,
-            size:       3 + Math.random() * 4,
-            history:    []
-        });
-    }
-}
-
-// ── Preset library ────────────────────────────────────────────
+// ── All presets ───────────────────────────────────────────────
 const PRESETS = [
-    [160, 120,  80, 0, 1, 'Star of Aries'],
-    [200, 130, 130, 0, 1, 'Rose Mandala'],
-    [180,  60,  90, 0, 1, 'Celestial Bloom'],
-    [200,  40, 160, 0, 1, 'Spiral Crown'],
-    [180,  45, 180, 0, 1, 'Sacred Lotus'],
-    [200,  60, 200, 0, 1, 'Solar Cross'],
-    [160,  50, 130, 0, 1, 'Inner Star'],
-    [200,  75, 150, 0, 1, 'Harmonic Ring'],
-    [180,  36, 100, 0, 1, 'Fibonacci Echo'],
-    [200,  80, 200, 1, 1, 'Outer Vortex'],
-    [160, 100, 160, 1, 1, 'Cosmic Petal'],
-    [200, 130, 150, 1, 1, 'Eternal Spiral'],
-    [180, 120, 180, 1, 1, 'Galaxy Core'],
-    [200, 150, 200, 1, 1, 'Quantum Ring'],
-    [160, 110, 130, 1, 1, 'Aurora Pattern'],
-    [200, 170, 160, 1, 1, 'Sacred Helix'],
-    [180, 140, 120, 0, 1, 'Vesica Piscis'],
-    [200,  30, 200, 0, 1, 'Phoenix Star'],
-    [180,  90, 180, 0, 1, 'Diamond Pulse'],
-    [160,  80, 140, 1, 1, 'Infinity Wave']
+  // SPIROGRAPH  { type, R, r, d, hypo, name }
+  { type:'spiro', R:160, r:120, d:80,  hypo:true,  name:'Star of Aries'    },
+  { type:'spiro', R:200, r:130, d:130, hypo:true,  name:'Rose Mandala'     },
+  { type:'spiro', R:180, r:60,  d:90,  hypo:true,  name:'Celestial Bloom'  },
+  { type:'spiro', R:200, r:40,  d:160, hypo:true,  name:'Spiral Crown'     },
+  { type:'spiro', R:180, r:45,  d:180, hypo:true,  name:'Sacred Lotus'     },
+  { type:'spiro', R:200, r:80,  d:200, hypo:false, name:'Outer Vortex'     },
+  { type:'spiro', R:180, r:120, d:180, hypo:false, name:'Galaxy Core'      },
+  { type:'spiro', R:200, r:30,  d:200, hypo:true,  name:'Phoenix Star'     },
+
+  // LINKAGE  { type, lrpm, rrpm, larm1, larm2, rarm1, rarm2, handdist, rarmext, name }
+  { type:'link', lrpm:2,  rrpm:-3, larm1:100, larm2:200, rarm1:90,  rarm2:180, handdist:220, rarmext:30, name:'Cosmic Dance'  },
+  { type:'link', lrpm:3,  rrpm:-5, larm1:80,  larm2:200, rarm1:80,  rarm2:180, handdist:200, rarmext:20, name:'Star Weave'    },
+  { type:'link', lrpm:1,  rrpm:-3, larm1:100, larm2:220, rarm1:100, rarm2:200, handdist:220, rarmext:40, name:'Trefoil Gate'  },
+  { type:'link', lrpm:4,  rrpm:-3, larm1:90,  larm2:190, rarm1:85,  rarm2:170, handdist:200, rarmext:25, name:'Seven Petals'  },
+  { type:'link', lrpm:2,  rrpm:-5, larm1:100, larm2:200, rarm1:90,  rarm2:180, handdist:210, rarmext:30, name:'Seven Crown'   },
+  { type:'link', lrpm:3,  rrpm:-4, larm1:80,  larm2:180, rarm1:80,  rarm2:160, handdist:190, rarmext:20, name:'Sacred Grid'   },
+
+  // CYMATICS  { type, N, M, name }
+  { type:'cymatics', N:1, M:2, name:'Chladni I·II'   },
+  { type:'cymatics', N:2, M:3, name:'Chladni II·III'  },
+  { type:'cymatics', N:3, M:4, name:'Chladni III·IV'  },
+  { type:'cymatics', N:2, M:5, name:'Chladni II·V'    },
+  { type:'cymatics', N:3, M:5, name:'Chladni III·V'   },
+  { type:'cymatics', N:4, M:7, name:'Chladni IV·VII'  },
+
+  // LISSAJOUS  { type, a, b, delta, name }
+  { type:'liss', a:1, b:2, delta:Math.PI/2,   name:'Lissajous 1:2'  },
+  { type:'liss', a:2, b:3, delta:Math.PI/4,   name:'Lissajous 2:3'  },
+  { type:'liss', a:3, b:4, delta:Math.PI/6,   name:'Lissajous 3:4'  },
+  { type:'liss', a:4, b:5, delta:Math.PI/3,   name:'Lissajous 4:5'  },
+  { type:'liss', a:5, b:6, delta:Math.PI/4,   name:'Lissajous 5:6'  },
+
+  // ROSE  { type, n, d, name }
+  { type:'rose', n:3, d:1, name:'Rose 3'   },
+  { type:'rose', n:5, d:2, name:'Rose 5/2' },
+  { type:'rose', n:7, d:3, name:'Rose 7/3' },
+  { type:'rose', n:4, d:1, name:'Rose 4'   },
+  { type:'rose', n:5, d:1, name:'Rose 5'   },
 ];
 
 let searchIndex = 0;
+let preset = PRESETS[0];
 
+// ── State per mode ────────────────────────────────────────────
+let spiro  = {};
+let link   = {};
+let cym    = {};
+let liss   = {};
+let rose   = {};
+let baseHue = 0;
+let isComplete = false;
+let modeTimer  = 0;
+
+// ── Ghost overlay ─────────────────────────────────────────────
+let ghostAngle = 0, ghostPhase = 0;
+const GHOST_COUNT = 3, GHOST_STEPS = 280;
+
+// ── Helpers ───────────────────────────────────────────────────
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function lcm(a, b) { return (a * b) / gcd(a, b); }
 
-function computeMaxPoints(R, r) {
-    const g = gcd(Math.round(R), Math.round(r));
-    const periods = Math.round(R) / g;
-    return Math.ceil((Math.PI * 2 * periods) / p.speed) + 10;
-}
-
-// ── Resize ────────────────────────────────────────────────────
 function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    width  = window.innerWidth;
-    height = window.innerHeight;
-
-    [canvas, overlay].forEach(c => {
-        c.width  = width  * dpr;
-        c.height = height * dpr;
-    });
-    ctx.scale(dpr, dpr);
-    oCtx.scale(dpr, dpr);
-
-    centerX = width  / 2;
-    centerY = height / 2;
-
-    clearCanvas();
-    resetDrawing();
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth; H = window.innerHeight;
+  [canvas, overlay].forEach(c => { c.width = W*dpr; c.height = H*dpr; });
+  ctx.scale(dpr, dpr); oCtx.scale(dpr, dpr);
+  cx = W/2; cy = H/2;
+  clearAll(); initMode();
 }
 window.addEventListener('resize', resize);
 
-function clearCanvas() {
-    ctx.fillStyle = '#06060f';
-    ctx.fillRect(0, 0, width, height);
-    oCtx.clearRect(0, 0, width, height);
+function clearAll() {
+  ctx.fillStyle = '#06060f';
+  ctx.fillRect(0, 0, W, H);
+  oCtx.clearRect(0, 0, W, H);
 }
 
-function resetDrawing() {
-    t = 0; prevX = null; prevY = null;
-    totalPoints = 0; isComplete = false;
-    baseHue = Math.random() * 360;
-    ghostAngle = 0;
+// ── Mode init ─────────────────────────────────────────────────
+function initMode() {
+  isComplete = false; modeTimer = 0;
+  baseHue = Math.random() * 360;
+  ghostAngle = 0; ghostPhase = 0;
+  const p = preset;
 
-    const maxR  = Math.min(width, height) * 0.42;
+  if (p.type === 'spiro') {
+    const maxR  = Math.min(W, H) * 0.42;
     const scale = maxR / (p.R + Math.abs(p.d));
-    p._R = p.R * scale;
-    p._r = p.r * scale;
-    p._d = p.d * scale;
-
-    maxPoints = computeMaxPoints(p.R, p.r);
-    initParticles();
+    spiro = {
+      _R: p.R*scale, _r: p.r*scale, _d: p.d*scale, hypo: p.hypo,
+      t: 0, prevX: null, prevY: null,
+      maxT: Math.PI * 2 * Math.round(p.R / gcd(Math.round(p.R), Math.round(p.r))),
+      step: 0.008
+    };
+    updateStats(p.R, p.r, 1);
+  }
+  else if (p.type === 'link') {
+    const scale = Math.min(W, H) / 900;
+    link = {
+      lrpm: p.lrpm, rrpm: p.rrpm,
+      larm1: p.larm1*scale, larm2: p.larm2*scale,
+      rarm1: p.rarm1*scale, rarm2: p.rarm2*scale,
+      handdist: p.handdist*scale, rarmext: p.rarmext*scale,
+      lrot: 0, rrot: 0, prevX: null, prevY: null,
+      step: 0.3,
+      maxSteps: lcm(Math.abs(p.lrpm), Math.abs(p.rrpm)) * Math.round(360 / 0.3) + 10
+    };
+    updateStats(p.lrpm, p.rrpm, 1);
+  }
+  else if (p.type === 'cymatics') {
+    const count = 2500;
+    const pts = [];
+    for (let i = 0; i < count; i++) {
+      pts.push({ x: Math.random()*W, y: Math.random()*H, vx:0, vy:0 });
+    }
+    cym = { N: p.N, M: p.M, pts, frame: 0, maxFrames: 320 };
+    updateStats(p.N, p.M, 0);
+  }
+  else if (p.type === 'liss') {
+    const R = Math.min(W, H) * 0.42;
+    liss = {
+      a: p.a, b: p.b, delta: p.delta, R,
+      t: 0, step: 0.005,
+      maxT: Math.PI * 2, prevX: null, prevY: null
+    };
+    updateStats(p.a, p.b, 0);
+  }
+  else if (p.type === 'rose') {
+    const R = Math.min(W, H) * 0.42;
+    const denom = p.d;
+    const numer = p.n;
+    const period = (numer * denom % 2 === 0) ? Math.PI * 2 * denom : Math.PI * denom;
+    rose = {
+      n: numer/denom, R,
+      t: 0, step: 0.004,
+      maxT: period, prevX: null, prevY: null
+    };
+    updateStats(p.n, p.d, 0);
+  }
 }
 
-// ── Core curve math ───────────────────────────────────────────
-function curvePoint(tVal, cx, cy) {
-    const { _R: R, _r: r, _d: d, mode } = p;
-    let x, y;
-    if (mode === 0) {
-        x = (R - r) * Math.cos(tVal) + d * Math.cos(((R - r) / r) * tVal);
-        y = (R - r) * Math.sin(tVal) - d * Math.sin(((R - r) / r) * tVal);
+function updateStats(a, b, s) {
+  if (valLrpmEl)    valLrpmEl.textContent    = a;
+  if (valRrpmEl)    valRrpmEl.textContent    = b;
+  if (valSymmetryEl)valSymmetryEl.textContent = s;
+  if (shapeNameEl)  shapeNameEl.textContent  = preset.name;
+}
+
+// ── Spirograph point ──────────────────────────────────────────
+function spiroPoint(t) {
+  const {_R:R, _r:r, _d:d, hypo} = spiro;
+  let x, y;
+  if (hypo) {
+    x = (R-r)*Math.cos(t) + d*Math.cos(((R-r)/r)*t);
+    y = (R-r)*Math.sin(t) - d*Math.sin(((R-r)/r)*t);
+  } else {
+    x = (R+r)*Math.cos(t) - d*Math.cos(((R+r)/r)*t);
+    y = (R+r)*Math.sin(t) - d*Math.sin(((R+r)/r)*t);
+  }
+  return { x: cx+x, y: cy+y };
+}
+
+// ── Draw step: Spirograph ─────────────────────────────────────
+function stepSpiro() {
+  const s = spiro;
+  for (let i = 0; i < 10; i++) {
+    if (s.t >= s.maxT) { isComplete = true; return; }
+    const pt = spiroPoint(s.t);
+    baseHue = (baseHue + 0.07) % 360;
+    ctx.strokeStyle = `hsla(${baseHue},85%,65%,0.75)`;
+    ctx.lineWidth = 1.2;
+    if (s.prevX !== null) {
+      ctx.beginPath(); ctx.moveTo(s.prevX, s.prevY); ctx.lineTo(pt.x, pt.y); ctx.stroke();
+    }
+    s.prevX = pt.x; s.prevY = pt.y;
+    s.t += s.step;
+  }
+}
+
+// ── Draw step: Linkage ────────────────────────────────────────
+function stepLink() {
+  const l = link;
+  for (let i = 0; i < 8; i++) {
+    if (modeTimer++ >= l.maxSteps) { isComplete = true; return; }
+    l.lrot += l.lrpm * l.step;
+    l.rrot += l.rrpm * l.step;
+
+    const h1x = cx - l.handdist/2, h2x = cx + l.handdist/2;
+    const a1x = h1x + Math.cos(l.lrot*k)*l.larm1;
+    const a1y = cy  + Math.sin(l.lrot*k)*l.larm1;
+    const a2x = h2x + Math.cos(l.rrot*k)*l.rarm1;
+    const a2y = cy  + Math.sin(l.rrot*k)*l.rarm1;
+
+    const dx = a2x-a1x, dy = a2y-a1y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const L2 = l.larm2, R2 = l.rarm2;
+
+    if (dist > 0.1 && dist < L2+R2 && dist > Math.abs(L2-R2)) {
+      const cosA = (L2*L2 + dist*dist - R2*R2) / (2*L2*dist);
+      const alpha = Math.acos(Math.max(-1, Math.min(1, cosA)));
+      const ang = Math.atan2(dy, dx);
+      const penX = a1x + Math.cos(ang - alpha) * (L2 + l.rarmext);
+      const penY = a1y + Math.sin(ang - alpha) * (L2 + l.rarmext);
+
+      // Rainbow from Amuse source
+      const r = Math.floor((Math.sin(k*l.lrot+Math.PI*.666)*127+127 + Math.sin(k*l.rrot+Math.PI*.666)*127+127) / 2);
+      const g = Math.floor((Math.sin(k*l.lrot+Math.PI*.333)*127+127 + Math.sin(k*l.rrot+Math.PI*.333)*127+127) / 2);
+      const b = Math.floor((Math.sin(k*l.lrot)*127+127 + Math.sin(k*l.rrot)*127+127) / 2);
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.6)`;
+      ctx.lineWidth = 1.0;
+
+      if (l.prevX !== null) {
+        ctx.beginPath(); ctx.moveTo(l.prevX, l.prevY); ctx.lineTo(penX, penY); ctx.stroke();
+      }
+      l.prevX = penX; l.prevY = penY;
     } else {
-        x = (R + r) * Math.cos(tVal) - d * Math.cos(((R + r) / r) * tVal);
-        y = (R + r) * Math.sin(tVal) - d * Math.sin(((R + r) / r) * tVal);
+      l.prevX = null;
     }
-    return { x: cx + x, y: cy + y };
+  }
 }
 
-// ── Apply a preset ────────────────────────────────────────────
-function applyPreset(idx) {
-    const [R, r, d, mode, sym, name] = PRESETS[idx];
-    p.R = R; p.r = r; p.d = d; p.mode = mode; p.symmetry = sym;
+// ── Draw step: Cymatics (Chladni plate) ───────────────────────
+function stepCymatics() {
+  const c = cym;
+  if (c.frame++ >= c.maxFrames) { isComplete = true; return; }
 
-    if (valLrpmEl)   valLrpmEl.textContent   = R;
-    if (valRrpmEl)   valRrpmEl.textContent   = r;
-    if (valSymmetryEl) valSymmetryEl.textContent = sym;
-    if (shapeNameEl) shapeNameEl.textContent = name;
+  // Ghost trail
+  ctx.fillStyle = 'rgba(6,6,15,0.08)';
+  ctx.fillRect(0, 0, W, H);
 
-    clearCanvas();
-    resetDrawing();
+  const N = c.N, M = c.M;
+  const fw = W, fh = H;
+
+  for (const pt of c.pts) {
+    // Chladni equation: f(x,y) = cos(N*π*x)*cos(M*π*y) − cos(M*π*x)*cos(N*π*y)
+    const nx = pt.x / fw, ny = pt.y / fh;
+    const f  = Math.cos(N*Math.PI*nx)*Math.cos(M*Math.PI*ny) - Math.cos(M*Math.PI*nx)*Math.cos(N*Math.PI*ny);
+
+    // Gradient (finite difference)
+    const eps = 0.002;
+    const fx2 = Math.cos(N*Math.PI*(nx+eps))*Math.cos(M*Math.PI*ny) - Math.cos(M*Math.PI*(nx+eps))*Math.cos(N*Math.PI*ny);
+    const fy2 = Math.cos(N*Math.PI*nx)*Math.cos(M*Math.PI*(ny+eps)) - Math.cos(M*Math.PI*nx)*Math.cos(N*Math.PI*(ny+eps));
+    const gx  = (fx2-f)/eps, gy = (fy2-f)/eps;
+
+    // Move toward zero crossing (nodal line)
+    const force = 0.0004;
+    pt.vx += -Math.sign(f)*gx*force;
+    pt.vy += -Math.sign(f)*gy*force;
+    pt.vx *= 0.92; pt.vy *= 0.92;
+    pt.x  += pt.vx; pt.y += pt.vy;
+
+    // Wrap edges
+    if (pt.x < 0) pt.x = W; if (pt.x > W) pt.x = 0;
+    if (pt.y < 0) pt.y = H; if (pt.y > H) pt.y = 0;
+
+    // Color by f value
+    const hue = (baseHue + Math.abs(f)*180) % 360;
+    const alpha = 0.5 + Math.abs(f)*0.4;
+    ctx.fillStyle = `hsla(${hue},90%,65%,${alpha})`;
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, 1.2, 0, Math.PI*2); ctx.fill();
+  }
 }
 
-// ── Search button ─────────────────────────────────────────────
-randomizeBtn.addEventListener('click', () => {
-    searchIndex = (searchIndex + 1) % PRESETS.length;
-    applyPreset(searchIndex);
-});
-
-// ── Play / Pause ──────────────────────────────────────────────
-playPauseBtn.addEventListener('click', () => {
-    isPlaying = !isPlaying;
-    playPauseBtn.textContent = isPlaying ? 'Pause' : 'Play';
-});
-
-// ── Draw a geometric shape at a point ─────────────────────────
-function drawShape(ctx, shape, x, y, size, hue, alpha) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.strokeStyle = `hsla(${hue}, 90%, 70%, ${alpha})`;
-    ctx.fillStyle   = `hsla(${hue}, 90%, 70%, ${alpha * 0.3})`;
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-
-    if (shape === 'triangle') {
-        for (let i = 0; i < 3; i++) {
-            const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
-            i === 0 ? ctx.moveTo(Math.cos(a) * size, Math.sin(a) * size)
-                    : ctx.lineTo(Math.cos(a) * size, Math.sin(a) * size);
-        }
-    } else if (shape === 'square') {
-        ctx.rect(-size, -size, size * 2, size * 2);
-    } else if (shape === 'diamond') {
-        ctx.moveTo(0, -size); ctx.lineTo(size, 0);
-        ctx.lineTo(0,  size); ctx.lineTo(-size, 0);
-    } else { // hexagon
-        for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * Math.PI * 2;
-            i === 0 ? ctx.moveTo(Math.cos(a) * size, Math.sin(a) * size)
-                    : ctx.lineTo(Math.cos(a) * size, Math.sin(a) * size);
-        }
+// ── Draw step: Lissajous ──────────────────────────────────────
+function stepLiss() {
+  const l = liss;
+  for (let i = 0; i < 12; i++) {
+    if (l.t >= l.maxT) { isComplete = true; return; }
+    const x = cx + l.R * Math.sin(l.a*l.t + l.delta);
+    const y = cy + l.R * Math.sin(l.b*l.t);
+    baseHue = (baseHue + 0.15) % 360;
+    ctx.strokeStyle = `hsla(${baseHue},85%,65%,0.75)`;
+    ctx.lineWidth = 1.5;
+    if (l.prevX !== null) {
+      ctx.beginPath(); ctx.moveTo(l.prevX, l.prevY); ctx.lineTo(x, y); ctx.stroke();
     }
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fill();
-    ctx.restore();
+    l.prevX = x; l.prevY = y;
+    l.t += l.step;
+  }
 }
 
-// ── Layer 2: Render ghost copies ──────────────────────────────
+// ── Draw step: Rose curve ─────────────────────────────────────
+function stepRose() {
+  const r = rose;
+  for (let i = 0; i < 12; i++) {
+    if (r.t >= r.maxT) { isComplete = true; return; }
+    const rad = r.R * Math.cos(r.n * r.t);
+    const x = cx + rad * Math.cos(r.t);
+    const y = cy + rad * Math.sin(r.t);
+    baseHue = (baseHue + 0.12) % 360;
+    ctx.strokeStyle = `hsla(${baseHue},85%,65%,0.75)`;
+    ctx.lineWidth = 1.5;
+    if (r.prevX !== null) {
+      ctx.beginPath(); ctx.moveTo(r.prevX, r.prevY); ctx.lineTo(x, y); ctx.stroke();
+    }
+    r.prevX = x; r.prevY = y;
+    r.t += r.step;
+  }
+}
+
+// ── Ghost overlay (Spirograph only — skip for Cymatics) ───────
 function renderGhosts() {
-    oCtx.save();
+  const p = preset;
+  if (p.type === 'cymatics') return; // Cymatics has its own trail
 
-    ghostAngle += 0.003;
-    ghostPhase += 0.007;
+  ghostAngle += 0.003; ghostPhase += 0.007;
+  const period = p.type === 'spiro'
+    ? Math.PI * 2 * Math.round(p.R / gcd(Math.round(p.R), Math.round(p.r)))
+    : Math.PI * 2;
 
-    for (let g = 0; g < GHOST_COUNT; g++) {
-        const phase   = (g / GHOST_COUNT) * Math.PI * 2;
-        const angle   = ghostAngle + phase;
-        const scale   = 1.0 + Math.sin(ghostPhase + phase) * 0.06;
-        const opacity = 0.08 - g * 0.015;
-        const gHue    = (baseHue + g * 45) % 360;
+  for (let g = 0; g < GHOST_COUNT; g++) {
+    const phase   = (g / GHOST_COUNT) * Math.PI * 2;
+    const angle   = ghostAngle + phase;
+    const scale   = 1.0 + Math.sin(ghostPhase + phase) * 0.05;
+    const opacity = 0.07 - g * 0.02;
+    const gHue    = (baseHue + g*50) % 360;
 
-        // Offset center travels along a small polygon path
-        const polyR  = 6 + g * 4;
-        const sides  = 3 + g;           // triangle, square, pentagon, hexagon
-        const polyA  = ghostAngle * (1 + g * 0.3);
-        const snapA  = Math.round(polyA / (Math.PI * 2 / sides)) * (Math.PI * 2 / sides);
-        const lerpA  = polyA + (snapA - polyA) * 0.08; // soft snap to polygon vertices
-        const offX   = Math.cos(lerpA) * polyR;
-        const offY   = Math.sin(lerpA) * polyR;
+    oCtx.strokeStyle = `hsla(${gHue},80%,65%,${opacity})`;
+    oCtx.lineWidth = 0.8;
+    oCtx.beginPath();
 
-        const gcx = centerX + offX;
-        const gcy = centerY + offY;
+    for (let i = 0; i <= GHOST_STEPS; i++) {
+      const t = (i / GHOST_STEPS) * period;
+      let x, y;
 
-        oCtx.strokeStyle = `hsla(${gHue}, 80%, 65%, ${opacity})`;
-        oCtx.lineWidth   = 0.8;
-        oCtx.beginPath();
-
-        let first = true;
-        for (let i = 0; i <= GHOST_STEPS; i++) {
-            const tg = (i / GHOST_STEPS) * Math.PI * 2 * Math.round(p.R / gcd(Math.round(p.R), Math.round(p.r)));
-            const pt = curvePoint(tg, gcx, gcy);
-
-            // Rotate copy around centre by `angle`, scale from centre
-            const dx = (pt.x - gcx) * scale;
-            const dy = (pt.y - gcy) * scale;
-            const rx = gcx + dx * Math.cos(angle) - dy * Math.sin(angle);
-            const ry = gcy + dx * Math.sin(angle) + dy * Math.cos(angle);
-
-            if (first) { oCtx.moveTo(rx, ry); first = false; }
-            else oCtx.lineTo(rx, ry);
+      if (p.type === 'spiro') {
+        const {_R:R, _r:r, _d:d, hypo} = spiro;
+        if (hypo) {
+          x = (R-r)*Math.cos(t) + d*Math.cos(((R-r)/r)*t);
+          y = (R-r)*Math.sin(t) - d*Math.sin(((R-r)/r)*t);
+        } else {
+          x = (R+r)*Math.cos(t) - d*Math.cos(((R+r)/r)*t);
+          y = (R+r)*Math.sin(t) - d*Math.sin(((R+r)/r)*t);
         }
-        oCtx.stroke();
+      } else if (p.type === 'liss') {
+        x = liss.R * Math.sin(liss.a*t + liss.delta);
+        y = liss.R * Math.sin(liss.b*t);
+      } else if (p.type === 'rose') {
+        const rad = rose.R * Math.cos(rose.n * t);
+        x = rad * Math.cos(t); y = rad * Math.sin(t);
+      } else { continue; }
+
+      const dx = x*scale, dy = y*scale;
+      const rx = cx + dx*Math.cos(angle) - dy*Math.sin(angle);
+      const ry = cy + dx*Math.sin(angle) + dy*Math.cos(angle);
+      i === 0 ? oCtx.moveTo(rx, ry) : oCtx.lineTo(rx, ry);
     }
-    oCtx.restore();
-}
-
-// ── Layer 3: Render particle riders ──────────────────────────
-function renderParticles() {
-    for (const part of particles) {
-        const pt = curvePoint(part.t, centerX, centerY);
-
-        // Store history
-        part.history.push({ x: pt.x, y: pt.y });
-        if (part.history.length > part.trailLen) part.history.shift();
-
-        // Draw geometric trail (lines connecting history points)
-        if (part.history.length > 1) {
-            oCtx.beginPath();
-            oCtx.strokeStyle = `hsla(${part.hue}, 90%, 70%, 0.5)`;
-            oCtx.lineWidth = 1;
-            oCtx.moveTo(part.history[0].x, part.history[0].y);
-            for (let i = 1; i < part.history.length; i++) {
-                oCtx.lineTo(part.history[i].x, part.history[i].y);
-            }
-            oCtx.stroke();
-
-            // Connect first to last for geometric (closed) shape feel
-            if (part.history.length >= 3) {
-                oCtx.beginPath();
-                oCtx.setLineDash([2, 4]);
-                oCtx.strokeStyle = `hsla(${part.hue}, 90%, 80%, 0.2)`;
-                oCtx.moveTo(part.history[0].x, part.history[0].y);
-                oCtx.lineTo(part.history[part.history.length - 1].x, part.history[part.history.length - 1].y);
-                oCtx.stroke();
-                oCtx.setLineDash([]);
-            }
-        }
-
-        // Draw shape at current position
-        drawShape(oCtx, part.trailShape, pt.x, pt.y, part.size, part.hue, 0.8);
-
-        // Advance particle along curve
-        part.t  += part.speed;
-        part.hue = (part.hue + 0.3) % 360;
-    }
+    oCtx.stroke();
+  }
 }
 
 // ── Main loop ─────────────────────────────────────────────────
-const STEPS_PER_FRAME = 8;
-
 function draw() {
-    requestAnimationFrame(draw);
-    if (!isPlaying) return;
+  requestAnimationFrame(draw);
+  if (!isPlaying) return;
 
-    // ── Layer 1: Draw main spirograph incrementally ────────────
-    if (!isComplete) {
-        for (let i = 0; i < STEPS_PER_FRAME; i++) {
-            const pt  = curvePoint(t, centerX, centerY);
-            baseHue   = (baseHue + 0.06) % 360;
+  if (!isComplete) {
+    const t = preset.type;
+    if (t === 'spiro')    stepSpiro();
+    else if (t === 'link')     stepLink();
+    else if (t === 'cymatics') stepCymatics();
+    else if (t === 'liss')     stepLiss();
+    else if (t === 'rose')     stepRose();
 
-            ctx.strokeStyle = `hsla(${baseHue}, 85%, 65%, 0.7)`;
-            ctx.lineWidth   = 1.2;
-
-            if (prevX !== null) {
-                ctx.beginPath();
-                ctx.moveTo(prevX, prevY);
-                ctx.lineTo(pt.x,  pt.y);
-                ctx.stroke();
-            }
-
-            prevX = pt.x; prevY = pt.y;
-            t += p.speed;
-            totalPoints++;
-
-            if (totalPoints >= maxPoints) {
-                isComplete = true;
-                setTimeout(() => {
-                    searchIndex = (searchIndex + 1) % PRESETS.length;
-                    applyPreset(searchIndex);
-                }, 4000);
-                break;
-            }
-        }
+    if (isComplete) {
+      setTimeout(() => {
+        searchIndex = (searchIndex + 1) % PRESETS.length;
+        applyPreset(searchIndex);
+      }, 3500);
     }
+  }
 
-    // ── Layer 2+3: Always animate overlays ────────────────────
-    oCtx.clearRect(0, 0, width, height);
+  if (preset.type !== 'cymatics') {
+    oCtx.clearRect(0, 0, W, H);
     renderGhosts();
-    renderParticles();
+  }
 }
+
+// ── Apply preset ──────────────────────────────────────────────
+function applyPreset(idx) {
+  preset = PRESETS[idx];
+  clearAll();
+  initMode();
+}
+
+// ── Buttons ───────────────────────────────────────────────────
+randomizeBtn.addEventListener('click', () => {
+  searchIndex = (searchIndex + 1) % PRESETS.length;
+  applyPreset(searchIndex);
+});
+
+playPauseBtn.addEventListener('click', () => {
+  isPlaying = !isPlaying;
+  playPauseBtn.textContent = isPlaying ? 'Pause' : 'Play';
+});
 
 // ── Boot ──────────────────────────────────────────────────────
 resize();
