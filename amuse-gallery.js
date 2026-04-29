@@ -24,8 +24,9 @@ let rotors = {
     prevPoints: []
 };
 
-// Current parameters (Linkage / ORIGINAL mode from Amuse)
+// Current parameters
 let params = {
+    mode: 'linkage', // 'linkage', 'knot', 'harmonic'
     acceleration: 80,
     rotorRPM: 4,
     handdist: 350,
@@ -40,7 +41,13 @@ let params = {
     symmetry: 1,
     zoom: 1.0,
     baseoffsy: 0,
-    autoEvolve: true // Enabled by default for "continuously generate"
+    autoEvolve: true,
+    // Chaos / Knot Parameters
+    knotP: 3,
+    knotQ: 2,
+    lfoFreq: 0.1,
+    lfoAmp: 50,
+    thickness: 0.8
 };
 
 // Target parameters for smooth interpolation
@@ -70,35 +77,50 @@ function randomize() {
     const y = (min, max) => Math.random() * (max - min) + min;
     const M = () => (Math.random() > 0.5 ? 1 : -1) * y(0.01, 50);
 
-    // Chaos Mode (Rand B) Logic:
-    targetParams.symmetry = 1; // Chaos usually starts with 1 branch
-    targetParams.rotorRPM = M() / 4;
+    // Pick a mode
+    const modeRoll = Math.random();
+    if (modeRoll < 0.6) targetParams.mode = 'linkage';
+    else if (modeRoll < 0.85) targetParams.mode = 'knot';
+    else targetParams.mode = 'harmonic';
+
+    // Base parameters
+    targetParams.symmetry = Math.random() > 0.7 ? Math.floor(y(2, 8)) : 1;
+    targetParams.rotorRPM = M() / 10;
     targetParams.lrpm = M();
     targetParams.rrpm = M();
     
-    targetParams.baseoffsx = y(-100, 100);
-    targetParams.baseoffsy = y(-200, 200);
-    targetParams.handdist = y(50, 300); // Reduced from 500
+    targetParams.baseoffsx = y(-50, 50);
+    targetParams.baseoffsy = y(-100, 100);
+    targetParams.handdist = y(50, 400);
     
-    targetParams.larm1 = y(20, 150); // Reduced from 200
-    targetParams.rarm1 = y(20, 150); // Reduced from 200
-    targetParams.larm2 = y(100, 300); // Reduced from 400
-    targetParams.rarm2 = y(100, 300); // Reduced from 400
-    targetParams.rarmext = y(0, 100); // Reduced from 150
+    targetParams.larm1 = y(20, 200);
+    targetParams.rarm1 = y(20, 200);
+    targetParams.larm2 = y(100, 400);
+    targetParams.rarm2 = y(100, 400);
+    targetParams.rarmext = y(0, 150);
     targetParams.larma = y(0, 360);
     
-    targetParams.acceleration = Math.floor(y(100, 250)); // Higher acceleration for chaos patterns
+    // Knot/LFO specific
+    targetParams.knotP = Math.floor(y(2, 12));
+    targetParams.knotQ = Math.floor(y(2, 12));
+    targetParams.lfoFreq = y(0.01, 0.5);
+    targetParams.lfoAmp = y(0, 150);
+    targetParams.thickness = y(0.3, 1.2);
     
-    const adjs = ['Infinite', 'Eternal', 'Celestial', 'Quantum', 'Sacred', 'Harmonic', 'Ethereal', 'Cosmic'];
-    const names = ['Spiral', 'Vortex', 'Flow', 'Geometry', 'Manifestation', 'Universe', 'Symmetry', 'Pattern'];
+    targetParams.acceleration = Math.floor(y(150, 350));
+    
+    const adjs = ['Infinite', 'Eternal', 'Celestial', 'Quantum', 'Sacred', 'Harmonic', 'Ethereal', 'Cosmic', 'Abyssal', 'Primordial'];
+    const names = ['Spiral', 'Vortex', 'Flow', 'Geometry', 'Manifestation', 'Universe', 'Symmetry', 'Pattern', 'Abrakadabra', 'Echo'];
     shapeNameEl.innerHTML = `<span style="opacity: 0.5; font-weight: 200;">Flow: </span> ${adjs[Math.floor(Math.random()*adjs.length)]} ${names[Math.floor(Math.random()*names.length)]}`;
 }
 
 function updateParams() {
-    const lerp = 0.01; // Smooth transitions
+    const lerp = 0.02; // Slightly faster transitions
     for (let key in params) {
         if (typeof params[key] === 'number') {
             params[key] += (targetParams[key] - params[key]) * lerp;
+        } else {
+            params[key] = targetParams[key]; // Instant for strings like 'mode'
         }
     }
     
@@ -116,16 +138,12 @@ function draw() {
 
     updateParams();
 
-    // Local copies for the loop
-    let { acceleration, rotorRPM, handdist, lrpm, larma, larm1, larm2, rrpm, rarm1, rarm2, rarmext, symmetry, zoom, baseoffsy, autoEvolve } = params;
-    const baseScale = (Math.min(width, height) / 1200) * zoom; // Increased divisor for more padding
+    // Local copies
+    let { mode, acceleration, rotorRPM, handdist, lrpm, larma, larm1, larm2, rrpm, rarm1, rarm2, rarmext, symmetry, zoom, baseoffsy, autoEvolve, knotP, knotQ, lfoFreq, lfoAmp, thickness } = params;
+    const baseScale = (Math.min(width, height) / 1200) * zoom;
 
-    // Apply autoEvolve logic from Amuse (smooth micro-changes over time)
     if (autoEvolve) {
         autoEvolveTime += 0.0001;
-        larm2 += Math.sin(autoEvolveTime * 300) * 50 * baseScale;
-        rarm2 += Math.cos(autoEvolveTime * 200) * 50 * baseScale;
-        handdist += Math.sin(autoEvolveTime * 150) * 30 * baseScale;
     }
 
     for (let i = 0; i < acceleration; i++) {
@@ -134,50 +152,66 @@ function draw() {
         rotors.rrot += rrpm * 0.1;
         rotors.crot += rotorRPM * 0.1;
 
-        // Base points for the two main arms (Linkage System)
-        const h1x = centerX - (handdist / 2) * baseScale;
-        const h1y = centerY + baseoffsy * baseScale;
-        const h2x = centerX + (handdist / 2) * baseScale;
-        const h2y = centerY + baseoffsy * baseScale;
+        let penX, penY, valid = false;
 
-        // Ends of the first arms
-        const l1x = h1x + Math.cos((rotors.lrot + larma) * k) * larm1 * baseScale;
-        const l1y = h1y + Math.sin((rotors.lrot + larma) * k) * larm1 * baseScale;
-        
-        const r1x = h2x + Math.cos(rotors.rrot * k) * rarm1 * baseScale;
-        const r1y = h2y + Math.sin(rotors.rrot * k) * rarm1 * baseScale;
+        // Apply LFO modulation to arm length
+        const currentLfo = Math.sin(autoEvolveTime * 1000 + rotors.lrot * k * lfoFreq) * lfoAmp * baseScale;
+        const modLarm2 = larm2 * baseScale + currentLfo;
+        const modRarm2 = rarm2 * baseScale + currentLfo;
 
-        // Intersection of the second arms (Law of Cosines)
-        const dx = r1x - l1x;
-        const dy = r1y - l1y;
-        const distSq = dx * dx + dy * dy;
-        const dist = Math.sqrt(distSq);
+        if (mode === 'linkage') {
+            const h1x = centerX - (handdist / 2) * baseScale;
+            const h1y = centerY + baseoffsy * baseScale;
+            const h2x = centerX + (handdist / 2) * baseScale;
+            const h2y = centerY + baseoffsy * baseScale;
 
-        const L2 = larm2 * baseScale;
-        const R2 = rarm2 * baseScale;
-        
-        // Only draw if the linkage is mathematically possible (arms can reach)
-        if (dist > 0.1 && dist < L2 + R2 && dist > Math.abs(L2 - R2)) {
-            const cosAlpha = (L2 * L2 + distSq - R2 * R2) / (2 * L2 * dist);
-            const alpha = Math.acos(Math.max(-1, Math.min(1, cosAlpha)));
-            const angleToR = Math.atan2(dy, dx);
+            const l1x = h1x + Math.cos((rotors.lrot + larma) * k) * larm1 * baseScale;
+            const l1y = h1y + Math.sin((rotors.lrot + larma) * k) * larm1 * baseScale;
             
-            // Intersection point (the "pen")
-            const penX = l1x + Math.cos(angleToR - alpha) * (L2 + rarmext * baseScale);
-            const penY = l1y + Math.sin(angleToR - alpha) * (L2 + rarmext * baseScale);
+            const r1x = h2x + Math.cos(rotors.rrot * k) * rarm1 * baseScale;
+            const r1y = h2y + Math.sin(rotors.rrot * k) * rarm1 * baseScale;
 
-            // Apply global rotation and symmetry branches
+            const dx = r1x - l1x;
+            const dy = r1y - l1y;
+            const distSq = dx * dx + dy * dy;
+            const dist = Math.sqrt(distSq);
+
+            const L2 = modLarm2;
+            const R2 = modRarm2;
+            
+            if (dist > 0.1 && dist < L2 + R2 && dist > Math.abs(L2 - R2)) {
+                const cosAlpha = (L2 * L2 + distSq - R2 * R2) / (2 * L2 * dist);
+                const alpha = Math.acos(Math.max(-1, Math.min(1, cosAlpha)));
+                const angleToR = Math.atan2(dy, dx);
+                
+                penX = l1x + Math.cos(angleToR - alpha) * (L2 + rarmext * baseScale);
+                penY = l1y + Math.sin(angleToR - alpha) * (L2 + rarmext * baseScale);
+                valid = true;
+            }
+        } else if (mode === 'knot') {
+            // Torus Knot Logic
+            const theta = rotors.lrot * k;
+            const r = (larm1 + larm2 * Math.cos(knotP * theta)) * baseScale;
+            penX = centerX + r * Math.cos(knotQ * theta);
+            penY = centerY + r * Math.sin(knotQ * theta);
+            valid = true;
+        } else if (mode === 'harmonic') {
+            // Summation of 3 Harmonics (Triple Linkage Simulation)
+            penX = centerX + (Math.cos(rotors.lrot * k) * larm1 + Math.cos(rotors.rrot * k) * rarm1 + Math.cos(rotors.lrot * k * 0.5) * rarmext) * baseScale;
+            penY = centerY + (Math.sin(rotors.lrot * k) * larm1 + Math.sin(rotors.rrot * k) * rarm1 + Math.sin(rotors.rrot * k * 0.5) * rarmext) * baseScale;
+            valid = true;
+        }
+
+        if (valid) {
             const symCount = Math.round(symmetry);
             for (let s = 0; s < symCount; s++) {
                 const sAngle = (s / symCount) * Math.PI * 2 + rotors.crot * k;
-                
                 const rx = penX - centerX;
                 const ry = penY - centerY;
                 
                 const finalX = centerX + rx * Math.cos(sAngle) - ry * Math.sin(sAngle);
                 const finalY = centerY + rx * Math.sin(sAngle) + ry * Math.cos(sAngle);
 
-                // Rainbow color algorithm based on rotor positions (from Amuse)
                 const n1 = Math.sin(k * rotors.lrot + Math.PI * 0.666) * 127 + 127;
                 const n2 = Math.sin(k * rotors.lrot + Math.PI * 0.333) * 127 + 127;
                 const n3 = Math.sin(k * rotors.lrot) * 127 + 127;
@@ -190,18 +224,16 @@ function draw() {
                 const b = Math.floor((n3 + e3) / 2);
 
                 ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
-                ctx.lineWidth = 0.8;
+                ctx.lineWidth = thickness;
                 
                 if (rotors.lx !== null) {
                     if (!rotors.prevPoints[s]) {
                         rotors.prevPoints[s] = {x: finalX, y: finalY};
                     }
-                    
                     ctx.beginPath();
                     ctx.moveTo(rotors.prevPoints[s].x, rotors.prevPoints[s].y);
                     ctx.lineTo(finalX, finalY);
                     ctx.stroke();
-                    
                     rotors.prevPoints[s] = {x: finalX, y: finalY};
                 } else {
                     rotors.prevPoints[s] = {x: finalX, y: finalY};
@@ -210,7 +242,6 @@ function draw() {
             rotors.lx = penX;
             rotors.ly = penY;
         } else {
-            // Linkage broken, reset previous point to avoid long streaks across screen
             rotors.lx = null;
             rotors.prevPoints = [];
         }
