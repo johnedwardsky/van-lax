@@ -129,6 +129,54 @@ const ARCHETYPES = [
             volume: [0.5, 1.5],
             hby: [-300, 100]
         }
+    },
+    {
+        name: 'Golden Ratio Pulse', ruName: 'Пульс Золотого Сечения',
+        p: {
+            crota: [-PHI, PHI],
+            hdist: [500, 1000],
+            speedRatio: false,
+            lrota: [10 * PHI, 25 * PHI],
+            rrota: [-30 / PHI, -10 / PHI],
+            larm2: [600, 900],
+            rarm2: [700, 1100],
+            ext: [50, 200],
+            growth: [0.0001, 0.0002],
+            volume: [0.4, 0.8],
+            hby: [-500, -200]
+        }
+    },
+    {
+        name: 'Cosine Harmonic', ruName: 'Косинусная Гармоника',
+        p: {
+            crota: [2, 12],
+            hdist: [400, 900],
+            speedRatio: true,
+            lrotaBase: [25, 55],
+            rrotaRatio: [-Math.cos(1)*2, -Math.cos(2)*3, PHI/2], 
+            larm2: [800, 1200],
+            rarm2: [800, 1200],
+            ext: [100, 400],
+            growth: [0.0002, 0.0006],
+            volume: [0.6, 1.4],
+            hby: [-700, -400]
+        }
+    },
+    {
+        name: 'Phi Vortex', ruName: 'Вихрь Фи',
+        p: {
+            crota: [PHI * 5, PHI * 15],
+            hdist: [300, 600],
+            speedRatio: false,
+            lrota: [15, 45],
+            rrota: [-45, -15],
+            larm2: [900, 1300],
+            rarm2: [900, 1300],
+            ext: [200, 500],
+            growth: [0.0001 * PHI, 0.0003 * PHI],
+            volume: [0.8, 1.8],
+            hby: [-200, 100]
+        }
     }
 ];
 
@@ -266,7 +314,7 @@ function randomize() {
     // Scale Arm 1s
     const baseArm = rnd(80, 200) * (isMobile ? 0.7 : 1);
     targetParams.larm1 = baseArm;
-    targetParams.rarm1 = baseArm * (Math.random() > 0.5 ? PHI : 1); // Sometimes symmetrical arms
+    targetParams.rarm1 = baseArm * (Math.random() > 0.5 ? PHI : 1); 
     
     targetParams.larm2 = rnd(p.larm2[0], p.larm2[1]) * (isMobile ? 0.75 : 1);
     targetParams.rarm2 = rnd(p.rarm2[0], p.rarm2[1]) * (isMobile ? 0.75 : 1);
@@ -275,10 +323,11 @@ function randomize() {
     targetParams.growth = rnd(p.growth[0], p.growth[1]);
     targetParams.volume = rnd(p.volume[0], p.volume[1]);
     
+    // Using PHI for offset randomization
     targetParams.hbx = rnd(-100, 100) * (isMobile ? 0.5 : 1);
     targetParams.hby = isMobile ? rnd(-150, 50) : rnd(p.hby[0], p.hby[1]);
     targetParams.speed = Math.floor(rnd(60, 150)); 
-    targetParams.handlrot = rnd(0, 360);
+    targetParams.handlrot = rnd(0, 360 * PHI) % 360;
     targetParams.colormode = 4;
 
     const adjs  = isRu ? ['Абсолютный', 'Кристальный', 'Сакральный', 'Симметричный', 'Эфирный'] : ['Absolute', 'Crystal', 'Sacred', 'Symmetric', 'Ethereal'];
