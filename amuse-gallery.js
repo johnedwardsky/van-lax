@@ -1,19 +1,17 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const playPauseBtn = document.getElementById('play-pause');
-
-// Mode Buttons
-const randA = document.getElementById('rand-a');
-const randB = document.getElementById('rand-b');
-const randC = document.getElementById('rand-c');
-const randD = document.getElementById('rand-d');
+const randomizeBtn = document.getElementById('randomize');
 
 const shapeNameEl = document.getElementById('shape-name');
 
-// DOM elements for stats (ω₁, ω₂, S)
+// DOM elements for stats
 const valLrpmEl = document.getElementById('val-lrpm');
 const valRrpmEl = document.getElementById('val-rrpm');
 const valSymmetryEl = document.getElementById('val-symmetry');
+
+const MODES = ['A', 'B', 'C', 'D'];
+let lastMode = 'A';
 
 let width, height, centerX, centerY;
 let isPlaying = true;
@@ -262,11 +260,13 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
-// Button Listeners
-randA.addEventListener('click', () => randomize('A'));
-randB.addEventListener('click', () => randomize('B'));
-randC.addEventListener('click', () => randomize('C'));
-randD.addEventListener('click', () => randomize('D'));
+// Single Search button picks a random mode each time
+randomizeBtn.addEventListener('click', () => {
+    // Pick a random mode, never the same twice in a row
+    let modes = MODES.filter(m => m !== lastMode);
+    lastMode = modes[Math.floor(Math.random() * modes.length)];
+    randomize(lastMode);
+});
 
 playPauseBtn.addEventListener('click', () => {
     isPlaying = !isPlaying;
