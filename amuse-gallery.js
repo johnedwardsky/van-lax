@@ -1,10 +1,12 @@
 // ============================================================
-// ABRAKADABRA — Multi-Mode Generative Engine v4
-//  A: Spirograph  (Hypotrochoid / Epitrochoid)
-//  B: Linkage     (Mechanical Arms — Amuse original)
-//  C: Cymatics    (Chladni Plate particle sim — Amuse)
-//  D: Lissajous + Rose curves
+// ABRAKADABRA — Amuse Linkage Engine v6
+// Exact Amuse source math:
+//   crot += rotorRPM * step  (global ring rotation)
+//   baseoffsy offsets arm center → creates ring when rotated
+//   Rainbow: sin(lrot/rrot * phase offsets) * 127+127
+//   Rand A/B/C/D: exact parameter ranges from Amuse source
 // ============================================================
+
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
 
@@ -20,357 +22,341 @@ const valLrpmEl     = document.getElementById('val-lrpm');
 const valRrpmEl     = document.getElementById('val-rrpm');
 const valSymmetryEl = document.getElementById('val-symmetry');
 
-let W, H, cx, cy, isPlaying = true;
-const k = Math.PI / 180;
+let W, H, CX, CY;
+let isPlaying = true;
+const DEG = Math.PI / 180;
 
-// ── All presets ───────────────────────────────────────────────
+// ── Rotor state ───────────────────────────────────────────────
+let lrot = 0, rrot = 0, crot = 0;
+let prevPts = [];   // previous pen positions per symmetry branch
+let nt = 0;         // autoEvolve time
+let frame = 0;
+
+// ── Current live params (interpolate toward target) ───────────
+let cur = {}, tgt = {};
+
+// ── Amuse reference viewport scale ───────────────────────────
+// Original Amuse designed for ~900px canvas
+let SC = 1;
+
+function getScale() { return Math.min(W, H) / 900; }
+
+// ── Preset library ────────────────────────────────────────────
+// Based on exact Amuse defaults + curated presets
 const PRESETS = [
-  // SPIROGRAPH  { type, R, r, d, hypo, name }
-  { type:'spiro', R:160, r:120, d:80,  hypo:true,  name:'Star of Aries'    },
-  { type:'spiro', R:200, r:130, d:130, hypo:true,  name:'Rose Mandala'     },
-  { type:'spiro', R:180, r:60,  d:90,  hypo:true,  name:'Celestial Bloom'  },
-  { type:'spiro', R:200, r:40,  d:160, hypo:true,  name:'Spiral Crown'     },
-  { type:'spiro', R:180, r:45,  d:180, hypo:true,  name:'Sacred Lotus'     },
-  { type:'spiro', R:200, r:80,  d:200, hypo:false, name:'Outer Vortex'     },
-  { type:'spiro', R:180, r:120, d:180, hypo:false, name:'Galaxy Core'      },
-  { type:'spiro', R:200, r:30,  d:200, hypo:true,  name:'Phoenix Star'     },
+  // { lrpm, rrpm, rotorRPM, handdist, larm1, larm2, rarm1, rarm2,
+  //   rarmext, larma, baseoffsx, baseoffsy, symmetry, autoEvolve, name }
 
-  // LINKAGE  { type, lrpm, rrpm, larm1, larm2, rarm1, rarm2, handdist, rarmext, name }
-  { type:'link', lrpm:2,  rrpm:-3, larm1:100, larm2:200, rarm1:90,  rarm2:180, handdist:220, rarmext:30, name:'Cosmic Dance'  },
-  { type:'link', lrpm:3,  rrpm:-5, larm1:80,  larm2:200, rarm1:80,  rarm2:180, handdist:200, rarmext:20, name:'Star Weave'    },
-  { type:'link', lrpm:1,  rrpm:-3, larm1:100, larm2:220, rarm1:100, rarm2:200, handdist:220, rarmext:40, name:'Trefoil Gate'  },
-  { type:'link', lrpm:4,  rrpm:-3, larm1:90,  larm2:190, rarm1:85,  rarm2:170, handdist:200, rarmext:25, name:'Seven Petals'  },
-  { type:'link', lrpm:2,  rrpm:-5, larm1:100, larm2:200, rarm1:90,  rarm2:180, handdist:210, rarmext:30, name:'Seven Crown'   },
-  { type:'link', lrpm:3,  rrpm:-4, larm1:80,  larm2:180, rarm1:80,  rarm2:160, handdist:190, rarmext:20, name:'Sacred Grid'   },
+  // ── Amuse Classic Default ─────────────────────────────────
+  { lrpm:2,  rrpm:-3,  rotorRPM:4,  handdist:351, larm1:105, larm2:316,
+    rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
+    symmetry:1, autoEvolve:true,  name:'Amuse Classic'   },
 
-  // CYMATICS  { type, N, M, name }
-  { type:'cymatics', N:1, M:2, name:'Chladni I·II'   },
-  { type:'cymatics', N:2, M:3, name:'Chladni II·III'  },
-  { type:'cymatics', N:3, M:4, name:'Chladni III·IV'  },
-  { type:'cymatics', N:2, M:5, name:'Chladni II·V'    },
-  { type:'cymatics', N:3, M:5, name:'Chladni III·V'   },
-  { type:'cymatics', N:4, M:7, name:'Chladni IV·VII'  },
+  // ── Curated Linkage patterns ──────────────────────────────
+  { lrpm:3,  rrpm:-5,  rotorRPM:3,  handdist:300, larm1:100, larm2:280,
+    rarm1:90, rarm2:340, rarmext:40, larma:0, baseoffsx:0, baseoffsy:-320,
+    symmetry:1, autoEvolve:true,  name:'Star Weave'      },
 
-  // LISSAJOUS  { type, a, b, delta, name }
-  { type:'liss', a:1, b:2, delta:Math.PI/2,   name:'Lissajous 1:2'  },
-  { type:'liss', a:2, b:3, delta:Math.PI/4,   name:'Lissajous 2:3'  },
-  { type:'liss', a:3, b:4, delta:Math.PI/6,   name:'Lissajous 3:4'  },
-  { type:'liss', a:4, b:5, delta:Math.PI/3,   name:'Lissajous 4:5'  },
-  { type:'liss', a:5, b:6, delta:Math.PI/4,   name:'Lissajous 5:6'  },
+  { lrpm:1,  rrpm:-4,  rotorRPM:5,  handdist:380, larm1:90,  larm2:300,
+    rarm1:85, rarm2:360, rarmext:60, larma:0, baseoffsx:0, baseoffsy:-400,
+    symmetry:1, autoEvolve:true,  name:'Solar Crown'     },
 
-  // ROSE  { type, n, d, name }
-  { type:'rose', n:3, d:1, name:'Rose 3'   },
-  { type:'rose', n:5, d:2, name:'Rose 5/2' },
-  { type:'rose', n:7, d:3, name:'Rose 7/3' },
-  { type:'rose', n:4, d:1, name:'Rose 4'   },
-  { type:'rose', n:5, d:1, name:'Rose 5'   },
+  { lrpm:4,  rrpm:-3,  rotorRPM:2,  handdist:330, larm1:110, larm2:290,
+    rarm1:100,rarm2:350, rarmext:45, larma:0, baseoffsx:0, baseoffsy:-360,
+    symmetry:1, autoEvolve:true,  name:'Seven Spiral'    },
+
+  { lrpm:2,  rrpm:-5,  rotorRPM:6,  handdist:280, larm1:95,  larm2:260,
+    rarm1:88, rarm2:310, rarmext:35, larma:0, baseoffsx:0, baseoffsy:-300,
+    symmetry:1, autoEvolve:true,  name:'Celestial Ring'  },
+
+  { lrpm:5,  rrpm:-3,  rotorRPM:3,  handdist:310, larm1:120, larm2:300,
+    rarm1:95, rarm2:360, rarmext:50, larma:0, baseoffsx:0, baseoffsy:-340,
+    symmetry:1, autoEvolve:true,  name:'Phoenix Bloom'   },
+
+  { lrpm:3,  rrpm:-7,  rotorRPM:4,  handdist:350, larm1:100, larm2:310,
+    rarm1:92, rarm2:370, rarmext:55, larma:0, baseoffsx:0, baseoffsy:-380,
+    symmetry:1, autoEvolve:true,  name:'Harmonic Web'    },
+
+  { lrpm:2,  rrpm:-3,  rotorRPM:4,  handdist:351, larm1:105, larm2:316,
+    rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
+    symmetry:6, autoEvolve:true,  name:'Mandala Six'     },
+
+  // ── Chaos Rand A (sym=6) — exact Amuse source ─────────────
+  { type:'randA', name:'Chaos Rand A' },
+  { type:'randA', name:'Chaos Rand A' },
+
+  // ── Chaos Rand B (sym=1) — exact Amuse source ─────────────
+  { type:'randB', name:'Chaos Rand B' },
+  { type:'randB', name:'Chaos Rand B' },
+
+  // ── Chaos Rand C (flow, sym=3) ────────────────────────────
+  { type:'randC', name:'Chaos Rand C — Flow' },
+  { type:'randC', name:'Chaos Rand C — Flow' },
+
+  // ── Chaos Rand D (deep) ───────────────────────────────────
+  { type:'randD', name:'Chaos Rand D — Deep' },
+  { type:'randD', name:'Chaos Rand D — Deep' },
 ];
 
 let searchIndex = 0;
-let preset = PRESETS[0];
+let isComplete  = false;
+let maxFrames   = 0;
+let chaosMode   = false;
+let chaosRerandom = 0;  // frame counter for chaos re-randomize
 
-// ── State per mode ────────────────────────────────────────────
-let spiro  = {};
-let link   = {};
-let cym    = {};
-let liss   = {};
-let rose   = {};
-let baseHue = 0;
-let isComplete = false;
-let modeTimer  = 0;
+// ── Exact Amuse Rand functions from source ────────────────────
+// y = (O, Y) => Math.random() * (Y - O) + O
+// M = () => (Math.random() > .5 ? 1 : -1) * y(.01, 50)
+function randRange(lo, hi) { return Math.random() * (hi - lo) + lo; }
+function randM()           { return (Math.random() > .5 ? 1 : -1) * randRange(0.01, 50); }
 
-// ── Ghost overlay ─────────────────────────────────────────────
-let ghostAngle = 0, ghostPhase = 0;
-const GHOST_COUNT = 3, GHOST_STEPS = 280;
+function generateChaosParams(mode) {
+  const p = {
+    rotorRPM:   randM() / 4,
+    lrpm:       randM(),
+    rrpm:       randM(),
+    baseoffsx:  randRange(-200, 200),
+    baseoffsy:  randRange(-500, -100),   // Always upward offset!
+    handdist:   randRange(50, 500),
+    larm1:      randRange(20, 200),
+    rarm1:      randRange(20, 200),
+    larm2:      randRange(100, 400),
+    rarm2:      randRange(100, 400),
+    rarmext:    randRange(0, 150),
+    larma:      randRange(0, 360),
+    autoEvolve: true,
+  };
+  // Symmetry by mode (exact from Amuse source)
+  if      (mode === 'A') p.symmetry = 6;
+  else if (mode === 'B') p.symmetry = 1;
+  else if (mode === 'C') p.symmetry = 3;
+  else                   p.symmetry = Math.floor(randRange(1, 8));  // D: random deep
+  return p;
+}
 
-// ── Helpers ───────────────────────────────────────────────────
-function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
-function lcm(a, b) { return (a * b) / gcd(a, b); }
-
+// ── Resize ────────────────────────────────────────────────────
 function resize() {
   const dpr = window.devicePixelRatio || 1;
   W = window.innerWidth; H = window.innerHeight;
-  [canvas, overlay].forEach(c => { c.width = W*dpr; c.height = H*dpr; });
+  [canvas, overlay].forEach(c => {
+    c.width = W * dpr; c.height = H * dpr;
+  });
   ctx.scale(dpr, dpr); oCtx.scale(dpr, dpr);
-  cx = W/2; cy = H/2;
-  clearAll(); initMode();
+  CX = W / 2; CY = H / 2;
+  SC = getScale();
+  clearCanvas();
+  resetDrawing();
 }
 window.addEventListener('resize', resize);
 
-function clearAll() {
+function clearCanvas() {
   ctx.fillStyle = '#06060f';
   ctx.fillRect(0, 0, W, H);
   oCtx.clearRect(0, 0, W, H);
 }
 
-// ── Mode init ─────────────────────────────────────────────────
-function initMode() {
-  isComplete = false; modeTimer = 0;
-  baseHue = Math.random() * 360;
-  ghostAngle = 0; ghostPhase = 0;
-  const p = preset;
+// ── Apply preset ──────────────────────────────────────────────
+function applyPreset(idx) {
+  const p = PRESETS[idx];
+  chaosMode = !!(p.type);
 
-  if (p.type === 'spiro') {
-    const maxR  = Math.min(W, H) * 0.42;
-    const scale = maxR / (p.R + Math.abs(p.d));
-    spiro = {
-      _R: p.R*scale, _r: p.r*scale, _d: p.d*scale, hypo: p.hypo,
-      t: 0, prevX: null, prevY: null,
-      maxT: Math.PI * 2 * Math.round(p.R / gcd(Math.round(p.R), Math.round(p.r))),
-      step: 0.008
-    };
-    updateStats(p.R, p.r, 1);
-  }
-  else if (p.type === 'link') {
-    const scale = Math.min(W, H) / 900;
-    link = {
-      lrpm: p.lrpm, rrpm: p.rrpm,
-      larm1: p.larm1*scale, larm2: p.larm2*scale,
-      rarm1: p.rarm1*scale, rarm2: p.rarm2*scale,
-      handdist: p.handdist*scale, rarmext: p.rarmext*scale,
-      lrot: 0, rrot: 0, prevX: null, prevY: null,
-      step: 0.3,
-      maxSteps: lcm(Math.abs(p.lrpm), Math.abs(p.rrpm)) * Math.round(360 / 0.3) + 10
-    };
-    updateStats(p.lrpm, p.rrpm, 1);
-  }
-  else if (p.type === 'cymatics') {
-    const count = 2500;
-    const pts = [];
-    for (let i = 0; i < count; i++) {
-      pts.push({ x: Math.random()*W, y: Math.random()*H, vx:0, vy:0 });
-    }
-    cym = { N: p.N, M: p.M, pts, frame: 0, maxFrames: 320 };
-    updateStats(p.N, p.M, 0);
-  }
-  else if (p.type === 'liss') {
-    const R = Math.min(W, H) * 0.42;
-    liss = {
-      a: p.a, b: p.b, delta: p.delta, R,
-      t: 0, step: 0.005,
-      maxT: Math.PI * 2, prevX: null, prevY: null
-    };
-    updateStats(p.a, p.b, 0);
-  }
-  else if (p.type === 'rose') {
-    const R = Math.min(W, H) * 0.42;
-    const denom = p.d;
-    const numer = p.n;
-    const period = (numer * denom % 2 === 0) ? Math.PI * 2 * denom : Math.PI * denom;
-    rose = {
-      n: numer/denom, R,
-      t: 0, step: 0.004,
-      maxT: period, prevX: null, prevY: null
-    };
-    updateStats(p.n, p.d, 0);
-  }
-}
-
-function updateStats(a, b, s) {
-  if (valLrpmEl)    valLrpmEl.textContent    = a;
-  if (valRrpmEl)    valRrpmEl.textContent    = b;
-  if (valSymmetryEl)valSymmetryEl.textContent = s;
-  if (shapeNameEl)  shapeNameEl.textContent  = preset.name;
-}
-
-// ── Spirograph point ──────────────────────────────────────────
-function spiroPoint(t) {
-  const {_R:R, _r:r, _d:d, hypo} = spiro;
-  let x, y;
-  if (hypo) {
-    x = (R-r)*Math.cos(t) + d*Math.cos(((R-r)/r)*t);
-    y = (R-r)*Math.sin(t) - d*Math.sin(((R-r)/r)*t);
+  if (chaosMode) {
+    const mode = p.type.slice(-1).toUpperCase(); // 'A','B','C','D'
+    const cp = generateChaosParams(mode);
+    setTarget(cp);
+    snapToCurrent();
+    if (shapeNameEl) shapeNameEl.textContent = p.name;
+    if (valLrpmEl)   valLrpmEl.textContent   = cp.lrpm.toFixed(2);
+    if (valRrpmEl)   valRrpmEl.textContent   = cp.rrpm.toFixed(2);
+    if (valSymmetryEl) valSymmetryEl.textContent = cp.symmetry;
   } else {
-    x = (R+r)*Math.cos(t) - d*Math.cos(((R+r)/r)*t);
-    y = (R+r)*Math.sin(t) - d*Math.sin(((R+r)/r)*t);
+    setTarget(p);
+    snapToCurrent();
+    if (shapeNameEl) shapeNameEl.textContent = p.name;
+    if (valLrpmEl)   valLrpmEl.textContent   = p.lrpm;
+    if (valRrpmEl)   valRrpmEl.textContent   = p.rrpm;
+    if (valSymmetryEl) valSymmetryEl.textContent = p.symmetry;
   }
-  return { x: cx+x, y: cy+y };
+
+  clearCanvas();
+  resetDrawing();
 }
 
-// ── Draw step: Spirograph ─────────────────────────────────────
-function stepSpiro() {
-  const s = spiro;
-  for (let i = 0; i < 10; i++) {
-    if (s.t >= s.maxT) { isComplete = true; return; }
-    const pt = spiroPoint(s.t);
-    baseHue = (baseHue + 0.07) % 360;
-    ctx.strokeStyle = `hsla(${baseHue},85%,65%,0.75)`;
-    ctx.lineWidth = 1.2;
-    if (s.prevX !== null) {
-      ctx.beginPath(); ctx.moveTo(s.prevX, s.prevY); ctx.lineTo(pt.x, pt.y); ctx.stroke();
-    }
-    s.prevX = pt.x; s.prevY = pt.y;
-    s.t += s.step;
-  }
+function setTarget(p) {
+  tgt = { ...p };
 }
 
-// ── Draw step: Linkage ────────────────────────────────────────
-function stepLink() {
-  const l = link;
-  for (let i = 0; i < 8; i++) {
-    if (modeTimer++ >= l.maxSteps) { isComplete = true; return; }
-    l.lrot += l.lrpm * l.step;
-    l.rrot += l.rrpm * l.step;
+function snapToCurrent() {
+  cur = { ...tgt };
+}
 
-    const h1x = cx - l.handdist/2, h2x = cx + l.handdist/2;
-    const a1x = h1x + Math.cos(l.lrot*k)*l.larm1;
-    const a1y = cy  + Math.sin(l.lrot*k)*l.larm1;
-    const a2x = h2x + Math.cos(l.rrot*k)*l.rarm1;
-    const a2y = cy  + Math.sin(l.rrot*k)*l.rarm1;
+// ── Reset drawing state ───────────────────────────────────────
+function resetDrawing() {
+  lrot = 0; rrot = 0; crot = 0;
+  prevPts = [];
+  nt = 0; frame = 0;
+  isComplete = false;
+  chaosRerandom = 0;
 
-    const dx = a2x-a1x, dy = a2y-a1y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    const L2 = l.larm2, R2 = l.rarm2;
-
-    if (dist > 0.1 && dist < L2+R2 && dist > Math.abs(L2-R2)) {
-      const cosA = (L2*L2 + dist*dist - R2*R2) / (2*L2*dist);
-      const alpha = Math.acos(Math.max(-1, Math.min(1, cosA)));
-      const ang = Math.atan2(dy, dx);
-      const penX = a1x + Math.cos(ang - alpha) * (L2 + l.rarmext);
-      const penY = a1y + Math.sin(ang - alpha) * (L2 + l.rarmext);
-
-      // Rainbow from Amuse source
-      const r = Math.floor((Math.sin(k*l.lrot+Math.PI*.666)*127+127 + Math.sin(k*l.rrot+Math.PI*.666)*127+127) / 2);
-      const g = Math.floor((Math.sin(k*l.lrot+Math.PI*.333)*127+127 + Math.sin(k*l.rrot+Math.PI*.333)*127+127) / 2);
-      const b = Math.floor((Math.sin(k*l.lrot)*127+127 + Math.sin(k*l.rrot)*127+127) / 2);
-      ctx.strokeStyle = `rgba(${r},${g},${b},0.6)`;
-      ctx.lineWidth = 1.0;
-
-      if (l.prevX !== null) {
-        ctx.beginPath(); ctx.moveTo(l.prevX, l.prevY); ctx.lineTo(penX, penY); ctx.stroke();
-      }
-      l.prevX = penX; l.prevY = penY;
+  // For curated presets: compute approximate frame count for one pattern cycle
+  // LCM of |lrpm| and |rrpm| determines when it closes
+  if (!chaosMode) {
+    const lr = Math.abs(Math.round(cur.lrpm));
+    const rr = Math.abs(Math.round(cur.rrpm));
+    if (lr > 0 && rr > 0) {
+      const g = gcd(lr, rr);
+      const periods = (lr * rr) / g;
+      maxFrames = Math.ceil(periods * 360 / (Math.abs(cur.lrpm) * 0.3) / 73) + 60;
     } else {
-      l.prevX = null;
+      maxFrames = 800;
+    }
+  } else {
+    maxFrames = 600; // chaos runs for 600 frames then re-randomizes
+  }
+}
+
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+// ── Core Linkage draw (exact Amuse math) ─────────────────────
+const STEP = 0.3;  // angle increment per iteration (Amuse uses ~0.3°)
+const ACCEL = 73;  // iterations per frame (Amuse default acceleration)
+
+function drawLinkageFrame() {
+  SC = getScale();
+  const c = cur;
+  const sym = Math.max(1, Math.round(c.symmetry));
+
+  // AutoEvolve: subtle arm length oscillation (exact from Amuse source)
+  let larm2_e = c.larm2, rarm2_e = c.rarm2, hand_e = c.handdist;
+  if (c.autoEvolve) {
+    larm2_e += Math.sin(nt * 3) * 50;
+    rarm2_e += Math.cos(nt * 2) * 50;
+    hand_e  += Math.sin(nt * 1.5) * 30;
+    nt += 0.0001;
+  }
+
+  for (let i = 0; i < ACCEL; i++) {
+    // Advance rotors
+    lrot += c.lrpm  * STEP;
+    rrot += c.rrpm  * STEP;
+    crot += c.rotorRPM * STEP;
+
+    // Pivot points (scaled, offset from screen center)
+    const ox = CX + c.baseoffsx * SC;
+    const oy = CY + c.baseoffsy * SC;
+    const h1x = ox - (hand_e  * SC) / 2;
+    const h1y = oy;
+    const h2x = ox + (hand_e  * SC) / 2;
+    const h2y = oy;
+
+    // End of first arms
+    const a1x = h1x + Math.cos((lrot + c.larma) * DEG) * c.larm1 * SC;
+    const a1y = h1y + Math.sin((lrot + c.larma) * DEG) * c.larm1 * SC;
+    const a2x = h2x + Math.cos( rrot            * DEG) * c.rarm1 * SC;
+    const a2y = h2y + Math.sin( rrot            * DEG) * c.rarm1 * SC;
+
+    // Law of Cosines intersection
+    const dx = a2x - a1x, dy = a2y - a1y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const L2 = larm2_e * SC;
+    const R2 = rarm2_e * SC;
+
+    if (dist < 0.1 || dist >= L2 + R2 || dist <= Math.abs(L2 - R2)) {
+      // Linkage impossible — reset prev points to avoid streaks
+      prevPts = [];
+      continue;
+    }
+
+    const cosA   = (L2*L2 + dist*dist - R2*R2) / (2 * L2 * dist);
+    const alpha  = Math.acos(Math.max(-1, Math.min(1, cosA)));
+    const angToR = Math.atan2(dy, dx);
+    const penX   = a1x + Math.cos(angToR - alpha) * (L2 + c.rarmext * SC);
+    const penY   = a1y + Math.sin(angToR - alpha) * (L2 + c.rarmext * SC);
+
+    // Exact Amuse rainbow color from rotor positions
+    const n1 = Math.sin(DEG * lrot + Math.PI * 0.666) * 127 + 127;
+    const n2 = Math.sin(DEG * lrot + Math.PI * 0.333) * 127 + 127;
+    const n3 = Math.sin(DEG * lrot)                   * 127 + 127;
+    const e1 = Math.sin(DEG * rrot + Math.PI * 0.666) * 127 + 127;
+    const e2 = Math.sin(DEG * rrot + Math.PI * 0.333) * 127 + 127;
+    const e3 = Math.sin(DEG * rrot)                   * 127 + 127;
+    const r  = Math.floor((n1 + e1) / 2);
+    const g  = Math.floor((n2 + e2) / 2);
+    const b  = Math.floor((n3 + e3) / 2);
+
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.35)`;
+    ctx.lineWidth   = 0.6;
+
+    // Draw each symmetry branch (global rotation by crot)
+    for (let s = 0; s < sym; s++) {
+      const sAngle = (s / sym) * Math.PI * 2 + crot * DEG;
+      const rx = penX - CX, ry = penY - CY;
+      const fx = CX + rx * Math.cos(sAngle) - ry * Math.sin(sAngle);
+      const fy = CY + rx * Math.sin(sAngle) + ry * Math.cos(sAngle);
+
+      if (!prevPts[s]) { prevPts[s] = { x: fx, y: fy }; continue; }
+
+      ctx.beginPath();
+      ctx.moveTo(prevPts[s].x, prevPts[s].y);
+      ctx.lineTo(fx, fy);
+      ctx.stroke();
+      prevPts[s] = { x: fx, y: fy };
     }
   }
 }
 
-// ── Draw step: Cymatics (Chladni plate) ───────────────────────
-function stepCymatics() {
-  const c = cym;
-  if (c.frame++ >= c.maxFrames) { isComplete = true; return; }
-
-  // Ghost trail
-  ctx.fillStyle = 'rgba(6,6,15,0.08)';
-  ctx.fillRect(0, 0, W, H);
-
-  const N = c.N, M = c.M;
-  const fw = W, fh = H;
-
-  for (const pt of c.pts) {
-    // Chladni equation: f(x,y) = cos(N*π*x)*cos(M*π*y) − cos(M*π*x)*cos(N*π*y)
-    const nx = pt.x / fw, ny = pt.y / fh;
-    const f  = Math.cos(N*Math.PI*nx)*Math.cos(M*Math.PI*ny) - Math.cos(M*Math.PI*nx)*Math.cos(N*Math.PI*ny);
-
-    // Gradient (finite difference)
-    const eps = 0.002;
-    const fx2 = Math.cos(N*Math.PI*(nx+eps))*Math.cos(M*Math.PI*ny) - Math.cos(M*Math.PI*(nx+eps))*Math.cos(N*Math.PI*ny);
-    const fy2 = Math.cos(N*Math.PI*nx)*Math.cos(M*Math.PI*(ny+eps)) - Math.cos(M*Math.PI*nx)*Math.cos(N*Math.PI*(ny+eps));
-    const gx  = (fx2-f)/eps, gy = (fy2-f)/eps;
-
-    // Move toward zero crossing (nodal line)
-    const force = 0.0004;
-    pt.vx += -Math.sign(f)*gx*force;
-    pt.vy += -Math.sign(f)*gy*force;
-    pt.vx *= 0.92; pt.vy *= 0.92;
-    pt.x  += pt.vx; pt.y += pt.vy;
-
-    // Wrap edges
-    if (pt.x < 0) pt.x = W; if (pt.x > W) pt.x = 0;
-    if (pt.y < 0) pt.y = H; if (pt.y > H) pt.y = 0;
-
-    // Color by f value
-    const hue = (baseHue + Math.abs(f)*180) % 360;
-    const alpha = 0.5 + Math.abs(f)*0.4;
-    ctx.fillStyle = `hsla(${hue},90%,65%,${alpha})`;
-    ctx.beginPath(); ctx.arc(pt.x, pt.y, 1.2, 0, Math.PI*2); ctx.fill();
-  }
-}
-
-// ── Draw step: Lissajous ──────────────────────────────────────
-function stepLiss() {
-  const l = liss;
-  for (let i = 0; i < 12; i++) {
-    if (l.t >= l.maxT) { isComplete = true; return; }
-    const x = cx + l.R * Math.sin(l.a*l.t + l.delta);
-    const y = cy + l.R * Math.sin(l.b*l.t);
-    baseHue = (baseHue + 0.15) % 360;
-    ctx.strokeStyle = `hsla(${baseHue},85%,65%,0.75)`;
-    ctx.lineWidth = 1.5;
-    if (l.prevX !== null) {
-      ctx.beginPath(); ctx.moveTo(l.prevX, l.prevY); ctx.lineTo(x, y); ctx.stroke();
-    }
-    l.prevX = x; l.prevY = y;
-    l.t += l.step;
-  }
-}
-
-// ── Draw step: Rose curve ─────────────────────────────────────
-function stepRose() {
-  const r = rose;
-  for (let i = 0; i < 12; i++) {
-    if (r.t >= r.maxT) { isComplete = true; return; }
-    const rad = r.R * Math.cos(r.n * r.t);
-    const x = cx + rad * Math.cos(r.t);
-    const y = cy + rad * Math.sin(r.t);
-    baseHue = (baseHue + 0.12) % 360;
-    ctx.strokeStyle = `hsla(${baseHue},85%,65%,0.75)`;
-    ctx.lineWidth = 1.5;
-    if (r.prevX !== null) {
-      ctx.beginPath(); ctx.moveTo(r.prevX, r.prevY); ctx.lineTo(x, y); ctx.stroke();
-    }
-    r.prevX = x; r.prevY = y;
-    r.t += r.step;
-  }
-}
-
-// ── Ghost overlay (Spirograph only — skip for Cymatics) ───────
+// ── Ghost overlay (rotating transparent copy) ─────────────────
+let ghostAngle = 0;
 function renderGhosts() {
-  const p = preset;
-  if (p.type === 'cymatics') return; // Cymatics has its own trail
+  ghostAngle += 0.004;
+  const c = cur;
+  const sym = Math.max(1, Math.round(c.symmetry));
+  const steps = 200;
 
-  ghostAngle += 0.003; ghostPhase += 0.007;
-  const period = p.type === 'spiro'
-    ? Math.PI * 2 * Math.round(p.R / gcd(Math.round(p.R), Math.round(p.r)))
-    : Math.PI * 2;
-
-  for (let g = 0; g < GHOST_COUNT; g++) {
-    const phase   = (g / GHOST_COUNT) * Math.PI * 2;
+  for (let g = 0; g < 2; g++) {
+    const phase   = (g / 2) * Math.PI * 2;
     const angle   = ghostAngle + phase;
-    const scale   = 1.0 + Math.sin(ghostPhase + phase) * 0.05;
-    const opacity = 0.07 - g * 0.02;
-    const gHue    = (baseHue + g*50) % 360;
+    const scale   = 1.0 + Math.sin(ghostAngle * 1.5 + phase) * 0.04;
+    const opacity = 0.05 - g * 0.02;
 
-    oCtx.strokeStyle = `hsla(${gHue},80%,65%,${opacity})`;
-    oCtx.lineWidth = 0.8;
+    oCtx.strokeStyle = `rgba(120,180,255,${opacity})`;
+    oCtx.lineWidth = 0.6;
     oCtx.beginPath();
 
-    for (let i = 0; i <= GHOST_STEPS; i++) {
-      const t = (i / GHOST_STEPS) * period;
-      let x, y;
+    let firstGhost = true;
+    for (let i = 0; i <= steps; i++) {
+      const lt = (i / steps) * Math.PI * 2 * 6;
+      const rt = lt * (c.rrpm / c.lrpm || -1.5);
+      const ct = lt * (c.rotorRPM / Math.abs(c.lrpm || 1));
 
-      if (p.type === 'spiro') {
-        const {_R:R, _r:r, _d:d, hypo} = spiro;
-        if (hypo) {
-          x = (R-r)*Math.cos(t) + d*Math.cos(((R-r)/r)*t);
-          y = (R-r)*Math.sin(t) - d*Math.sin(((R-r)/r)*t);
-        } else {
-          x = (R+r)*Math.cos(t) - d*Math.cos(((R+r)/r)*t);
-          y = (R+r)*Math.sin(t) - d*Math.sin(((R+r)/r)*t);
-        }
-      } else if (p.type === 'liss') {
-        x = liss.R * Math.sin(liss.a*t + liss.delta);
-        y = liss.R * Math.sin(liss.b*t);
-      } else if (p.type === 'rose') {
-        const rad = rose.R * Math.cos(rose.n * t);
-        x = rad * Math.cos(t); y = rad * Math.sin(t);
-      } else { continue; }
+      const ox = CX + (c.baseoffsx||0) * SC;
+      const oy = CY + (c.baseoffsy||0) * SC;
+      const h1x = ox - (c.handdist * SC) / 2;
+      const h1y = oy;
+      const h2x = ox + (c.handdist * SC) / 2;
 
-      const dx = x*scale, dy = y*scale;
-      const rx = cx + dx*Math.cos(angle) - dy*Math.sin(angle);
-      const ry = cy + dx*Math.sin(angle) + dy*Math.cos(angle);
-      i === 0 ? oCtx.moveTo(rx, ry) : oCtx.lineTo(rx, ry);
+      const a1x = h1x + Math.cos(lt * DEG * 120) * c.larm1 * SC;
+      const a1y = h1y + Math.sin(lt * DEG * 120) * c.larm1 * SC;
+      const a2x = h2x + Math.cos(rt * DEG * 120) * c.rarm1 * SC;
+      const a2y = h1y + Math.sin(rt * DEG * 120) * c.rarm1 * SC;
+
+      const dx = a2x - a1x, dy = a2y - a1y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const L2 = c.larm2 * SC, R2 = c.rarm2 * SC;
+      if (dist < 0.1 || dist >= L2+R2 || dist <= Math.abs(L2-R2)) continue;
+
+      const cosA = (L2*L2 + dist*dist - R2*R2) / (2*L2*dist);
+      const alpha = Math.acos(Math.max(-1, Math.min(1, cosA)));
+      const angToR = Math.atan2(dy, dx);
+      let px = a1x + Math.cos(angToR - alpha) * L2;
+      let py = a1y + Math.sin(angToR - alpha) * L2;
+
+      const sAngle = ct * DEG * 120 + angle;
+      const rx = (px - CX) * scale, ry = (py - CY) * scale;
+      const gx = CX + rx * Math.cos(sAngle) - ry * Math.sin(sAngle);
+      const gy = CY + rx * Math.sin(sAngle) + ry * Math.cos(sAngle);
+
+      firstGhost ? (oCtx.moveTo(gx, gy), firstGhost = false) : oCtx.lineTo(gx, gy);
     }
     oCtx.stroke();
   }
@@ -381,41 +367,44 @@ function draw() {
   requestAnimationFrame(draw);
   if (!isPlaying) return;
 
-  if (!isComplete) {
-    const t = preset.type;
-    if (t === 'spiro')    stepSpiro();
-    else if (t === 'link')     stepLink();
-    else if (t === 'cymatics') stepCymatics();
-    else if (t === 'liss')     stepLiss();
-    else if (t === 'rose')     stepRose();
+  drawLinkageFrame();
+  frame++;
 
-    if (isComplete) {
+  // Ghost overlay
+  oCtx.clearRect(0, 0, W, H);
+  renderGhosts();
+
+  // Auto-advance
+  if (frame >= maxFrames) {
+    if (chaosMode) {
+      // Re-randomize with new params, keep drawing on same canvas
+      const p = PRESETS[searchIndex];
+      const mode = p.type.slice(-1).toUpperCase();
+      const cp = generateChaosParams(mode);
+      setTarget(cp); snapToCurrent();
+      lrot = 0; rrot = 0; crot = 0;
+      prevPts = []; frame = 0;
+      if (shapeNameEl) shapeNameEl.textContent = p.name;
+      if (valLrpmEl)   valLrpmEl.textContent   = cp.lrpm.toFixed(2);
+      if (valRrpmEl)   valRrpmEl.textContent   = cp.rrpm.toFixed(2);
+      if (valSymmetryEl) valSymmetryEl.textContent = cp.symmetry;
+    } else {
+      isComplete = true;
       setTimeout(() => {
         searchIndex = (searchIndex + 1) % PRESETS.length;
         applyPreset(searchIndex);
-      }, 3500);
+      }, 3000);
     }
   }
-
-  if (preset.type !== 'cymatics') {
-    oCtx.clearRect(0, 0, W, H);
-    renderGhosts();
-  }
 }
 
-// ── Apply preset ──────────────────────────────────────────────
-function applyPreset(idx) {
-  preset = PRESETS[idx];
-  clearAll();
-  initMode();
-}
-
-// ── Buttons ───────────────────────────────────────────────────
+// ── Search button ─────────────────────────────────────────────
 randomizeBtn.addEventListener('click', () => {
   searchIndex = (searchIndex + 1) % PRESETS.length;
   applyPreset(searchIndex);
 });
 
+// ── Play / Pause ──────────────────────────────────────────────
 playPauseBtn.addEventListener('click', () => {
   isPlaying = !isPlaying;
   playPauseBtn.textContent = isPlaying ? 'Pause' : 'Play';
