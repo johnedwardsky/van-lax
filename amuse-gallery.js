@@ -1,20 +1,27 @@
 // ============================================================
-// ABRAKADABRA — Amuse Linkage Engine v6
-// Exact Amuse source math:
-//   crot += rotorRPM * step  (global ring rotation)
-//   baseoffsy offsets arm center → creates ring when rotated
-//   Rainbow: sin(lrot/rrot * phase offsets) * 127+127
-//   Rand A/B/C/D: exact parameter ranges from Amuse source
+// ABRAKADABRA — Pure Amuse Engine
+// Faithful port of the exact Amuse source math:
+//
+// Pen from right arm end (qt/Mt = a2):
+//   rl = qt + cos(Me)*(Wt+rarmext)
+//   bl = Mt + sin(Me)*(Wt+rarmext)
+//
+// Me via Law of Cosines + Law of Sines:
+//   oe  = acos((Wt²+Ht²-dist²)/(2*Wt*Ht))
+//   De  = asin(Wt*sin(oe)/dist)
+//   cn  = asin(Ht*sin(oe)/dist)
+//   $l  = asin(dy/dist)
+//   Me  = (Ht>Wt) ? De+oe+$l : PI-cn+$l
+//
+// Global rotation via polar coords:
+//   fa  = atan2-style from center, then += crot*k
+//   It  = cx+cos(fa)*Sl, we = cy+sin(fa)*Sl
+//
+// Rand A/B/C/D — exact Amuse source parameter ranges
 // ============================================================
 
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
-
-const overlay = document.createElement('canvas');
-overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;';
-canvas.parentNode.insertBefore(overlay, canvas.nextSibling);
-const oCtx = overlay.getContext('2d');
-
 const playPauseBtn  = document.getElementById('play-pause');
 const randomizeBtn  = document.getElementById('randomize');
 const shapeNameEl   = document.getElementById('shape-name');
@@ -24,342 +31,243 @@ const valSymmetryEl = document.getElementById('val-symmetry');
 
 let W, H, CX, CY;
 let isPlaying = true;
-const DEG = Math.PI / 180;
+const k = Math.PI / 180;
 
 // ── Rotor state ───────────────────────────────────────────────
-let lrot = 0, rrot = 0, crot = 0;
-let prevPts = [];   // previous pen positions per symmetry branch
-let nt = 0;         // autoEvolve time
-let frame = 0;
+let lrot = 0, rrot = 0, crot = 0, nt = 0;
+let prevX = null, prevY = null;
+let frame = 0, maxFrames = 1200;
 
-// ── Current live params (interpolate toward target) ───────────
-let cur = {}, tgt = {};
+// ── Current params ────────────────────────────────────────────
+let X = {};
 
-// ── Amuse reference viewport scale ───────────────────────────
-// Original Amuse designed for ~900px canvas
-let SC = 1;
-
-function getScale() { return Math.min(W, H) / 900; }
-
-// ── Preset library ────────────────────────────────────────────
-// Based on exact Amuse defaults + curated presets
+// ── Presets — Amuse default + curated + Rand A/B/C/D ─────────
 const PRESETS = [
-  // { lrpm, rrpm, rotorRPM, handdist, larm1, larm2, rarm1, rarm2,
-  //   rarmext, larma, baseoffsx, baseoffsy, symmetry, autoEvolve, name }
-
-  // ── Amuse Classic Default ─────────────────────────────────
-  { lrpm:2,  rrpm:-3,  rotorRPM:4,  handdist:351, larm1:105, larm2:316,
+  // Exact Amuse defaults from source:
+  // acceleration:73, rotorRPM:4, baseoffsy:-385, handdist:351
+  // lrpm:2, larm1:105, larm2:316, rrpm:-3, rarm1:95, rarm2:371, rarmext:53
+  { lrpm:2,  rrpm:-3, rotorRPM:4, handdist:351, larm1:105, larm2:316,
     rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
-    symmetry:1, autoEvolve:true,  name:'Amuse Classic'   },
+    symmetry:1, autoEvolve:false, name:'Amuse Default' },
 
-  // ── Curated Linkage patterns ──────────────────────────────
-  { lrpm:3,  rrpm:-5,  rotorRPM:3,  handdist:300, larm1:100, larm2:280,
+  { lrpm:2,  rrpm:-3, rotorRPM:4, handdist:351, larm1:105, larm2:316,
+    rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
+    symmetry:1, autoEvolve:true, name:'Amuse AutoEvolve' },
+
+  { lrpm:3,  rrpm:-5, rotorRPM:3, handdist:300, larm1:100, larm2:280,
     rarm1:90, rarm2:340, rarmext:40, larma:0, baseoffsx:0, baseoffsy:-320,
-    symmetry:1, autoEvolve:true,  name:'Star Weave'      },
+    symmetry:1, autoEvolve:true, name:'Star Weave' },
 
-  { lrpm:1,  rrpm:-4,  rotorRPM:5,  handdist:380, larm1:90,  larm2:300,
+  { lrpm:1,  rrpm:-4, rotorRPM:5, handdist:380, larm1:90,  larm2:300,
     rarm1:85, rarm2:360, rarmext:60, larma:0, baseoffsx:0, baseoffsy:-400,
-    symmetry:1, autoEvolve:true,  name:'Solar Crown'     },
+    symmetry:1, autoEvolve:true, name:'Solar Crown' },
 
-  { lrpm:4,  rrpm:-3,  rotorRPM:2,  handdist:330, larm1:110, larm2:290,
+  { lrpm:4,  rrpm:-3, rotorRPM:2, handdist:330, larm1:110, larm2:290,
     rarm1:100,rarm2:350, rarmext:45, larma:0, baseoffsx:0, baseoffsy:-360,
-    symmetry:1, autoEvolve:true,  name:'Seven Spiral'    },
+    symmetry:1, autoEvolve:true, name:'Seven Spiral' },
 
-  { lrpm:2,  rrpm:-5,  rotorRPM:6,  handdist:280, larm1:95,  larm2:260,
-    rarm1:88, rarm2:310, rarmext:35, larma:0, baseoffsx:0, baseoffsy:-300,
-    symmetry:1, autoEvolve:true,  name:'Celestial Ring'  },
-
-  { lrpm:5,  rrpm:-3,  rotorRPM:3,  handdist:310, larm1:120, larm2:300,
-    rarm1:95, rarm2:360, rarmext:50, larma:0, baseoffsx:0, baseoffsy:-340,
-    symmetry:1, autoEvolve:true,  name:'Phoenix Bloom'   },
-
-  { lrpm:3,  rrpm:-7,  rotorRPM:4,  handdist:350, larm1:100, larm2:310,
-    rarm1:92, rarm2:370, rarmext:55, larma:0, baseoffsx:0, baseoffsy:-380,
-    symmetry:1, autoEvolve:true,  name:'Harmonic Web'    },
-
-  { lrpm:2,  rrpm:-3,  rotorRPM:4,  handdist:351, larm1:105, larm2:316,
+  { lrpm:2,  rrpm:-3, rotorRPM:4, handdist:351, larm1:105, larm2:316,
     rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
-    symmetry:6, autoEvolve:true,  name:'Mandala Six'     },
+    symmetry:6, autoEvolve:true, name:'Mandala Six' },
 
-  // ── Chaos Rand A (sym=6) — exact Amuse source ─────────────
-  { type:'randA', name:'Chaos Rand A' },
-  { type:'randA', name:'Chaos Rand A' },
+  { lrpm:5,  rrpm:-3, rotorRPM:3, handdist:310, larm1:120, larm2:300,
+    rarm1:95, rarm2:360, rarmext:50, larma:0, baseoffsx:0, baseoffsy:-340,
+    symmetry:1, autoEvolve:true, name:'Phoenix Bloom' },
 
-  // ── Chaos Rand B (sym=1) — exact Amuse source ─────────────
-  { type:'randB', name:'Chaos Rand B' },
-  { type:'randB', name:'Chaos Rand B' },
-
-  // ── Chaos Rand C (flow, sym=3) ────────────────────────────
-  { type:'randC', name:'Chaos Rand C — Flow' },
-  { type:'randC', name:'Chaos Rand C — Flow' },
-
-  // ── Chaos Rand D (deep) ───────────────────────────────────
-  { type:'randD', name:'Chaos Rand D — Deep' },
-  { type:'randD', name:'Chaos Rand D — Deep' },
+  // Rand A/B/C/D chaos
+  { type:'A', name:'Chaos — Rand A (Sym)' },
+  { type:'B', name:'Chaos — Rand B (Pure)' },
+  { type:'C', name:'Chaos — Rand C (Flow)' },
+  { type:'D', name:'Chaos — Rand D (Deep)' },
+  { type:'A', name:'Chaos — Rand A' },
+  { type:'B', name:'Chaos — Rand B' },
+  { type:'C', name:'Chaos — Rand C' },
+  { type:'D', name:'Chaos — Rand D' },
 ];
 
 let searchIndex = 0;
-let isComplete  = false;
-let maxFrames   = 0;
-let chaosMode   = false;
-let chaosRerandom = 0;  // frame counter for chaos re-randomize
 
-// ── Exact Amuse Rand functions from source ────────────────────
-// y = (O, Y) => Math.random() * (Y - O) + O
-// M = () => (Math.random() > .5 ? 1 : -1) * y(.01, 50)
-function randRange(lo, hi) { return Math.random() * (hi - lo) + lo; }
-function randM()           { return (Math.random() > .5 ? 1 : -1) * randRange(0.01, 50); }
+// ── Amuse Rand functions — exact source ───────────────────────
+function rnd(lo, hi) { return Math.random() * (hi - lo) + lo; }
+function rndM()      { return (Math.random() > .5 ? 1 : -1) * rnd(.01, 50); }
 
-function generateChaosParams(mode) {
+function genChaos(mode) {
   const p = {
-    rotorRPM:   randM() / 4,
-    lrpm:       randM(),
-    rrpm:       randM(),
-    baseoffsx:  randRange(-200, 200),
-    baseoffsy:  randRange(-500, -100),   // Always upward offset!
-    handdist:   randRange(50, 500),
-    larm1:      randRange(20, 200),
-    rarm1:      randRange(20, 200),
-    larm2:      randRange(100, 400),
-    rarm2:      randRange(100, 400),
-    rarmext:    randRange(0, 150),
-    larma:      randRange(0, 360),
+    rotorRPM:  rndM() / 4,
+    lrpm:      rndM(),
+    rrpm:      rndM(),
+    baseoffsx: rnd(-200, 200),
+    baseoffsy: rnd(-500, -100),
+    handdist:  rnd(50, 500),
+    larm1:     rnd(20, 200),
+    rarm1:     rnd(20, 200),
+    larm2:     rnd(100, 400),
+    rarm2:     rnd(100, 400),
+    rarmext:   rnd(0, 150),
+    larma:     rnd(0, 360),
     autoEvolve: true,
   };
-  // Symmetry by mode (exact from Amuse source)
   if      (mode === 'A') p.symmetry = 6;
   else if (mode === 'B') p.symmetry = 1;
   else if (mode === 'C') p.symmetry = 3;
-  else                   p.symmetry = Math.floor(randRange(1, 8));  // D: random deep
+  else                   p.symmetry = Math.floor(rnd(1, 9));
+  p.name = 'Chaos Rand ' + mode;
   return p;
 }
+
+// ── Scale ─────────────────────────────────────────────────────
+// Amuse designed for ~900px. Scale all spatial params uniformly.
+function sc() { return Math.min(W, H) / 900; }
 
 // ── Resize ────────────────────────────────────────────────────
 function resize() {
   const dpr = window.devicePixelRatio || 1;
   W = window.innerWidth; H = window.innerHeight;
-  [canvas, overlay].forEach(c => {
-    c.width = W * dpr; c.height = H * dpr;
-  });
-  ctx.scale(dpr, dpr); oCtx.scale(dpr, dpr);
+  canvas.width  = W * dpr; canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
   CX = W / 2; CY = H / 2;
-  SC = getScale();
-  clearCanvas();
-  resetDrawing();
+  clearCanvas(); resetState();
 }
 window.addEventListener('resize', resize);
 
 function clearCanvas() {
   ctx.fillStyle = '#06060f';
   ctx.fillRect(0, 0, W, H);
-  oCtx.clearRect(0, 0, W, H);
 }
 
-// ── Apply preset ──────────────────────────────────────────────
+function resetState() {
+  lrot = 0; rrot = 0; crot = 0; nt = 0;
+  prevX = null; prevY = null;
+  frame = 0;
+}
+
 function applyPreset(idx) {
   const p = PRESETS[idx];
-  chaosMode = !!(p.type);
+  X = p.type ? genChaos(p.type) : { ...p };
+  clearCanvas(); resetState();
+  if (shapeNameEl)   shapeNameEl.textContent   = X.name || p.name;
+  if (valLrpmEl)     valLrpmEl.textContent     = (+X.lrpm).toFixed(2);
+  if (valRrpmEl)     valRrpmEl.textContent     = (+X.rrpm).toFixed(2);
+  if (valSymmetryEl) valSymmetryEl.textContent = X.symmetry;
 
-  if (chaosMode) {
-    const mode = p.type.slice(-1).toUpperCase(); // 'A','B','C','D'
-    const cp = generateChaosParams(mode);
-    setTarget(cp);
-    snapToCurrent();
-    if (shapeNameEl) shapeNameEl.textContent = p.name;
-    if (valLrpmEl)   valLrpmEl.textContent   = cp.lrpm.toFixed(2);
-    if (valRrpmEl)   valRrpmEl.textContent   = cp.rrpm.toFixed(2);
-    if (valSymmetryEl) valSymmetryEl.textContent = cp.symmetry;
+  // Compute frame budget: enough for the pattern to complete
+  const lr = Math.abs(X.lrpm), rr = Math.abs(X.rrpm);
+  const liRnd = Math.round(lr * 10), riRnd = Math.round(rr * 10);
+  if (liRnd > 0 && riRnd > 0) {
+    const g = gcd(liRnd, riRnd);
+    maxFrames = Math.min(3000, Math.ceil((liRnd * riRnd / g) / 73) + 200);
   } else {
-    setTarget(p);
-    snapToCurrent();
-    if (shapeNameEl) shapeNameEl.textContent = p.name;
-    if (valLrpmEl)   valLrpmEl.textContent   = p.lrpm;
-    if (valRrpmEl)   valRrpmEl.textContent   = p.rrpm;
-    if (valSymmetryEl) valSymmetryEl.textContent = p.symmetry;
-  }
-
-  clearCanvas();
-  resetDrawing();
-}
-
-function setTarget(p) {
-  tgt = { ...p };
-}
-
-function snapToCurrent() {
-  cur = { ...tgt };
-}
-
-// ── Reset drawing state ───────────────────────────────────────
-function resetDrawing() {
-  lrot = 0; rrot = 0; crot = 0;
-  prevPts = [];
-  nt = 0; frame = 0;
-  isComplete = false;
-  chaosRerandom = 0;
-
-  // For curated presets: compute approximate frame count for one pattern cycle
-  // LCM of |lrpm| and |rrpm| determines when it closes
-  if (!chaosMode) {
-    const lr = Math.abs(Math.round(cur.lrpm));
-    const rr = Math.abs(Math.round(cur.rrpm));
-    if (lr > 0 && rr > 0) {
-      const g = gcd(lr, rr);
-      const periods = (lr * rr) / g;
-      maxFrames = Math.ceil(periods * 360 / (Math.abs(cur.lrpm) * 0.3) / 73) + 60;
-    } else {
-      maxFrames = 800;
-    }
-  } else {
-    maxFrames = 600; // chaos runs for 600 frames then re-randomizes
+    maxFrames = p.type ? 700 : 1200;
   }
 }
 
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
-// ── Core Linkage draw (exact Amuse math) ─────────────────────
-const STEP = 0.3;  // angle increment per iteration (Amuse uses ~0.3°)
-const ACCEL = 73;  // iterations per frame (Amuse default acceleration)
+// ── Core Amuse draw — exact port ──────────────────────────────
+function drawFrame() {
+  const S = sc();
+  const sym = Math.max(1, Math.round(X.symmetry));
 
-function drawLinkageFrame() {
-  SC = getScale();
-  const c = cur;
-  const sym = Math.max(1, Math.round(c.symmetry));
-
-  // AutoEvolve: subtle arm length oscillation (exact from Amuse source)
-  let larm2_e = c.larm2, rarm2_e = c.rarm2, hand_e = c.handdist;
-  if (c.autoEvolve) {
-    larm2_e += Math.sin(nt * 3) * 50;
-    rarm2_e += Math.cos(nt * 2) * 50;
-    hand_e  += Math.sin(nt * 1.5) * 30;
+  // AutoEvolve (exact from Amuse source)
+  let larm2 = X.larm2, rarm2 = X.rarm2, handdist = X.handdist;
+  if (X.autoEvolve) {
+    larm2    += Math.sin(nt * 3) * 50;
+    rarm2    += Math.cos(nt * 2) * 50;
+    handdist += Math.sin(nt * 1.5) * 30;
     nt += 0.0001;
   }
 
-  for (let i = 0; i < ACCEL; i++) {
-    // Advance rotors
-    lrot += c.lrpm  * STEP;
-    rrot += c.rrpm  * STEP;
-    crot += c.rotorRPM * STEP;
+  // acceleration = 73 (Amuse default)
+  for (let D = 0; D < 73; D++) {
+    lrot += X.lrpm   * 1;   // Amuse increments by step (≈1 degree)
+    rrot += X.rrpm   * 1;
+    crot += X.rotorRPM * 1;
 
-    // Pivot points (scaled, offset from screen center)
-    const ox = CX + c.baseoffsx * SC;
-    const oy = CY + c.baseoffsy * SC;
-    const h1x = ox - (hand_e  * SC) / 2;
-    const h1y = oy;
-    const h2x = ox + (hand_e  * SC) / 2;
-    const h2y = oy;
+    // Pivot centres (exact Amuse variable names mapped here)
+    const ce = CX + X.baseoffsx * S;   // Y in Amuse
+    const Dt = CY + X.baseoffsy * S;   // P in Amuse
+    const Kt = ce - (handdist * S) / 2; // h1x
+    const ie = Dt;                      // h1y
+    const $p = ce + (handdist * S) / 2; // h2x
+    const tt = Dt;                      // h2y
 
-    // End of first arms
-    const a1x = h1x + Math.cos((lrot + c.larma) * DEG) * c.larm1 * SC;
-    const a1y = h1y + Math.sin((lrot + c.larma) * DEG) * c.larm1 * SC;
-    const a2x = h2x + Math.cos( rrot            * DEG) * c.rarm1 * SC;
-    const a2y = h2y + Math.sin( rrot            * DEG) * c.rarm1 * SC;
+    // End of first arms (ft=a1x, at=a1y, qt=a2x, Mt=a2y)
+    const ft = Math.cos((lrot + X.larma) * k) * X.larm1 * S + Kt;
+    const at = Math.sin((lrot + X.larma) * k) * X.larm1 * S + ie;
+    const qt = Math.cos(rrot * k) * X.rarm1 * S + $p;
+    const Mt = Math.sin(rrot * k) * X.rarm1 * S + tt;
 
-    // Law of Cosines intersection
-    const dx = a2x - a1x, dy = a2y - a1y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    const L2 = larm2_e * SC;
-    const R2 = rarm2_e * SC;
+    // Distances
+    const rt = qt - ft;   // dx
+    const yt = Mt - at;   // dy
+    const $t = Math.max(0.1, Math.sqrt(rt * rt + yt * yt));
 
-    if (dist < 0.1 || dist >= L2 + R2 || dist <= Math.abs(L2 - R2)) {
-      // Linkage impossible — reset prev points to avoid streaks
-      prevPts = [];
-      continue;
+    const Wt = Math.max(1, rarm2 * S);   // R2
+    const Ht = Math.max(1, larm2 * S);   // L2
+    const _t = 2 * Wt * Ht;
+
+    // Law of Cosines (exact Amuse)
+    const I  = (Wt*Wt + Ht*Ht - $t*$t) / _t;
+    const oe = Math.acos(Math.max(-1, Math.min(1, I)));
+
+    // Law of Sines (exact Amuse)
+    const Ol = Wt / ($t / Math.sin(oe || 0.001));
+    const De = Math.asin(Math.max(-1, Math.min(1, Ol)));
+    const _e = Ht / ($t / Math.sin(oe || 0.001));
+    const cn = Math.asin(Math.max(-1, Math.min(1, _e)));
+    const $l = Math.asin(Math.max(-1, Math.min(1, yt / $t)));
+
+    // Intersection angle (exact Amuse branch logic)
+    let Me;
+    if (Ht > Wt) {
+      Me = Math.PI - (Math.PI - De - oe - $l);  // = De + oe + $l
+    } else {
+      Me = Math.PI - (cn - $l);                  // = PI - cn + $l
     }
 
-    const cosA   = (L2*L2 + dist*dist - R2*R2) / (2 * L2 * dist);
-    const alpha  = Math.acos(Math.max(-1, Math.min(1, cosA)));
-    const angToR = Math.atan2(dy, dx);
-    const penX   = a1x + Math.cos(angToR - alpha) * (L2 + c.rarmext * SC);
-    const penY   = a1y + Math.sin(angToR - alpha) * (L2 + c.rarmext * SC);
+    // Pen position from right arm end (exact Amuse: qt, Mt = a2)
+    const rl = qt + Math.cos(Me) * (Wt + X.rarmext * S);
+    const bl = Mt + Math.sin(Me) * (Wt + X.rarmext * S);
 
-    // Exact Amuse rainbow color from rotor positions
-    const n1 = Math.sin(DEG * lrot + Math.PI * 0.666) * 127 + 127;
-    const n2 = Math.sin(DEG * lrot + Math.PI * 0.333) * 127 + 127;
-    const n3 = Math.sin(DEG * lrot)                   * 127 + 127;
-    const e1 = Math.sin(DEG * rrot + Math.PI * 0.666) * 127 + 127;
-    const e2 = Math.sin(DEG * rrot + Math.PI * 0.333) * 127 + 127;
-    const e3 = Math.sin(DEG * rrot)                   * 127 + 127;
+    // Global rotation via polar coords (exact Amuse)
+    const Rl = rl - CX;
+    const Wl = bl - CY;
+    const Sl = Math.sqrt(Rl * Rl + Wl * Wl);
+    let fa = (Sl === 0) ? 0 : Math.asin(Math.max(-1, Math.min(1, Wl / Sl)));
+    if (Rl < 0) fa = Math.PI - fa;
+    fa += crot * k;
+
+    // Rainbow color (exact Amuse source)
+    const n1 = Math.sin(k * lrot + Math.PI * 0.666) * 127 + 127;
+    const n2 = Math.sin(k * lrot + Math.PI * 0.333) * 127 + 127;
+    const n3 = Math.sin(k * lrot)                   * 127 + 127;
+    const e1 = Math.sin(k * rrot + Math.PI * 0.666) * 127 + 127;
+    const e2 = Math.sin(k * rrot + Math.PI * 0.333) * 127 + 127;
+    const e3 = Math.sin(k * rrot)                   * 127 + 127;
     const r  = Math.floor((n1 + e1) / 2);
     const g  = Math.floor((n2 + e2) / 2);
     const b  = Math.floor((n3 + e3) / 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.lineWidth   = 1;
 
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.35)`;
-    ctx.lineWidth   = 0.6;
-
-    // Draw each symmetry branch (global rotation by crot)
+    // Draw symmetry copies
     for (let s = 0; s < sym; s++) {
-      const sAngle = (s / sym) * Math.PI * 2 + crot * DEG;
-      const rx = penX - CX, ry = penY - CY;
-      const fx = CX + rx * Math.cos(sAngle) - ry * Math.sin(sAngle);
-      const fy = CY + rx * Math.sin(sAngle) + ry * Math.cos(sAngle);
+      const sfa = fa + (s / sym) * Math.PI * 2;
+      const It  = CX + Math.cos(sfa) * Sl;
+      const we  = CY + Math.sin(sfa) * Sl;
 
-      if (!prevPts[s]) { prevPts[s] = { x: fx, y: fy }; continue; }
-
-      ctx.beginPath();
-      ctx.moveTo(prevPts[s].x, prevPts[s].y);
-      ctx.lineTo(fx, fy);
-      ctx.stroke();
-      prevPts[s] = { x: fx, y: fy };
+      if (prevX !== null && s < prevX.length) {
+        ctx.beginPath();
+        ctx.moveTo(prevX[s], prevY[s]);
+        ctx.lineTo(It, we);
+        ctx.stroke();
+      }
+      if (!prevX) { prevX = []; prevY = []; }
+      prevX[s] = It; prevY[s] = we;
     }
   }
-}
 
-// ── Ghost overlay (rotating transparent copy) ─────────────────
-let ghostAngle = 0;
-function renderGhosts() {
-  ghostAngle += 0.004;
-  const c = cur;
-  const sym = Math.max(1, Math.round(c.symmetry));
-  const steps = 200;
-
-  for (let g = 0; g < 2; g++) {
-    const phase   = (g / 2) * Math.PI * 2;
-    const angle   = ghostAngle + phase;
-    const scale   = 1.0 + Math.sin(ghostAngle * 1.5 + phase) * 0.04;
-    const opacity = 0.05 - g * 0.02;
-
-    oCtx.strokeStyle = `rgba(120,180,255,${opacity})`;
-    oCtx.lineWidth = 0.6;
-    oCtx.beginPath();
-
-    let firstGhost = true;
-    for (let i = 0; i <= steps; i++) {
-      const lt = (i / steps) * Math.PI * 2 * 6;
-      const rt = lt * (c.rrpm / c.lrpm || -1.5);
-      const ct = lt * (c.rotorRPM / Math.abs(c.lrpm || 1));
-
-      const ox = CX + (c.baseoffsx||0) * SC;
-      const oy = CY + (c.baseoffsy||0) * SC;
-      const h1x = ox - (c.handdist * SC) / 2;
-      const h1y = oy;
-      const h2x = ox + (c.handdist * SC) / 2;
-
-      const a1x = h1x + Math.cos(lt * DEG * 120) * c.larm1 * SC;
-      const a1y = h1y + Math.sin(lt * DEG * 120) * c.larm1 * SC;
-      const a2x = h2x + Math.cos(rt * DEG * 120) * c.rarm1 * SC;
-      const a2y = h1y + Math.sin(rt * DEG * 120) * c.rarm1 * SC;
-
-      const dx = a2x - a1x, dy = a2y - a1y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      const L2 = c.larm2 * SC, R2 = c.rarm2 * SC;
-      if (dist < 0.1 || dist >= L2+R2 || dist <= Math.abs(L2-R2)) continue;
-
-      const cosA = (L2*L2 + dist*dist - R2*R2) / (2*L2*dist);
-      const alpha = Math.acos(Math.max(-1, Math.min(1, cosA)));
-      const angToR = Math.atan2(dy, dx);
-      let px = a1x + Math.cos(angToR - alpha) * L2;
-      let py = a1y + Math.sin(angToR - alpha) * L2;
-
-      const sAngle = ct * DEG * 120 + angle;
-      const rx = (px - CX) * scale, ry = (py - CY) * scale;
-      const gx = CX + rx * Math.cos(sAngle) - ry * Math.sin(sAngle);
-      const gy = CY + rx * Math.sin(sAngle) + ry * Math.cos(sAngle);
-
-      firstGhost ? (oCtx.moveTo(gx, gy), firstGhost = false) : oCtx.lineTo(gx, gy);
-    }
-    oCtx.stroke();
-  }
+  frame++;
 }
 
 // ── Main loop ─────────────────────────────────────────────────
@@ -367,44 +275,24 @@ function draw() {
   requestAnimationFrame(draw);
   if (!isPlaying) return;
 
-  drawLinkageFrame();
-  frame++;
+  drawFrame();
 
-  // Ghost overlay
-  oCtx.clearRect(0, 0, W, H);
-  renderGhosts();
-
-  // Auto-advance
   if (frame >= maxFrames) {
-    if (chaosMode) {
-      // Re-randomize with new params, keep drawing on same canvas
-      const p = PRESETS[searchIndex];
-      const mode = p.type.slice(-1).toUpperCase();
-      const cp = generateChaosParams(mode);
-      setTarget(cp); snapToCurrent();
-      lrot = 0; rrot = 0; crot = 0;
-      prevPts = []; frame = 0;
-      if (shapeNameEl) shapeNameEl.textContent = p.name;
-      if (valLrpmEl)   valLrpmEl.textContent   = cp.lrpm.toFixed(2);
-      if (valRrpmEl)   valRrpmEl.textContent   = cp.rrpm.toFixed(2);
-      if (valSymmetryEl) valSymmetryEl.textContent = cp.symmetry;
-    } else {
-      isComplete = true;
-      setTimeout(() => {
-        searchIndex = (searchIndex + 1) % PRESETS.length;
-        applyPreset(searchIndex);
-      }, 3000);
-    }
+    setTimeout(() => {
+      searchIndex = (searchIndex + 1) % PRESETS.length;
+      applyPreset(searchIndex);
+    }, 3000);
+    isPlaying = false;
+    setTimeout(() => { isPlaying = true; }, 3000);
   }
 }
 
-// ── Search button ─────────────────────────────────────────────
+// ── Buttons ───────────────────────────────────────────────────
 randomizeBtn.addEventListener('click', () => {
   searchIndex = (searchIndex + 1) % PRESETS.length;
   applyPreset(searchIndex);
 });
 
-// ── Play / Pause ──────────────────────────────────────────────
 playPauseBtn.addEventListener('click', () => {
   isPlaying = !isPlaying;
   playPauseBtn.textContent = isPlaying ? 'Pause' : 'Play';
