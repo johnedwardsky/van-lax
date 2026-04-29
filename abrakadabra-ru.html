@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АБРАКАДАБРА | Генеративный Спирограф</title>
+    <meta name="description" content="Интерактивные генеративные спирали.">
+    <link rel="stylesheet" href="phi-geometry.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <div class="lang-switch-global">
+            <a href="abrakadabra.html">EN</a>
+            <span>|</span>
+            <a href="abrakadabra-ru.html" class="active">RU</a>
+        </div>
+
+        <header>
+            <div class="title-group">
+                <h1>АБРАКАДАБРА</h1>
+                <p class="subtitle">Магия через геометрию и свет</p>
+            </div>
+        </header>
+
+        <canvas id="canvas"></canvas>
+
+        <div class="controls">
+            <div id="shape-name" class="shape-indicator"><span style="opacity: 0.5; font-weight: 200;">Текущий поток: </span> Вечность</div>
+            <div class="btn-group">
+                <a href="index-ru.html" class="btn secondary link-btn">На главную</a>
+                <button id="play-pause" class="btn">Пауза</button>
+                <button id="randomize" class="btn secondary">Магическая Перестановка</button>
+                <button id="next-color" class="btn secondary">Цвет: <span id="color-name">Спектр</span></button>
+            </div>
+            <div class="info-panel" style="justify-content: center; opacity: 0.7;">
+                <div class="stat"><span class="label">ω₁</span> <span id="val-lrpm">2.000</span></div>
+                <div class="stat"><span class="label">ω₂</span> <span id="val-rrpm">-3.000</span></div>
+                <div class="stat"><span class="label">S</span> <span id="val-symmetry">1</span></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Исследование гармонии через математику и свет</p>
+        </footer>
+    </div>
+
+    <script src="abrakadabra.js"></script>
+</body>
+</html>
