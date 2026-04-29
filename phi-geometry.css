@@ -243,3 +243,115 @@ footer {
         margin: 0;
     }
 }
+
+/* Gallery Section Styles */
+.gallery-section {
+    padding: 60px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.gallery-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    color: var(--gold);
+    margin-bottom: 40px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    padding: 20px;
+}
+
+.gallery-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+}
+
+.gallery-item:hover {
+    transform: translateY(-10px);
+    border-color: var(--gold);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+.thumb-container {
+    width: 100%;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+}
+
+.thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+
+.gallery-item:hover .thumb-img {
+    opacity: 1;
+}
+
+.item-info {
+    padding: 20px;
+    text-align: left;
+}
+
+.item-title {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.item-meta {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 15px;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.action-btn {
+    background: transparent;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--gold);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.action-btn:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: var(--gold);
+}
+
+.action-btn.like-btn.active {
+    background: var(--gold);
+    color: #000;
+}
+
+canvas {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}

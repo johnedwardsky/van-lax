@@ -199,7 +199,7 @@
       <!-- Node 3: Generative Gallery -->
       <section class="gallery-node" id="node-3">
         <h2 class="fade-in theme-glow-cyan" style="margin-bottom:0;">ГЕНЕРАТИВНАЯ ГАЛЕРЕЯ</h2>
-        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #00d2ff; font-size: 1.1rem;">AMUSE ART</h3>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #00d2ff; font-size: 1.1rem;">ABRAKADABRA</h3>
         <button class="start-view-btn btn-cyan fade-in" onclick="enterSection(3)">Войти</button>
       </section>
 
@@ -488,35 +488,8 @@
     </div>
   </div>
 
-  <div id="gallery-3-container" class="fullscreen-container" style="display:none; opacity:0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(229,178,54,0.3) transparent;">
-    <!-- Local Language Switch for gallery -->
-    <div class="lang-switch-global">
-      <a href="index-ru.html" class="active" onclick="localStorage.setItem('lang_selected', 'true')">RU</a>
-      <span>/</span>
-      <a href="index.html" onclick="localStorage.setItem('lang_selected', 'true')">EN</a>
-    </div>
-    <div class="g1-intro-section" style="padding-bottom: 20px;">
-      <div class="g1-elegant-title">ГЕНЕРАТИВНАЯ ГАЛЕРЕЯ <span>#3</span></div>
-      <h1 class="g1-intro-text">Amuse Art</h1>
-      <p class="g1-intro-sub">Здесь и сейчас ты можешь стать творцом. Попробуй...</p>
-    </div>
-    
-    <!-- Desktop Canvas -->
-    <div class="iframe-wrapper desktop-only-amuse" style="width: 90%; max-width: 1400px; height: 75vh; margin: 0 auto 40px; border: 1px solid rgba(229,178,54,0.2); border-radius: 8px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
-      <iframe src="https://johnedwardsky.github.io/amuse-web/" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>
-    </div>
-
-    <!-- Mobile Placeholder -->
-    <div class="mobile-only-amuse" style="display: none; width: 90%; max-width: 500px; margin: 40px auto; padding: 40px; border: 1px solid rgba(229,178,54,0.3); border-radius: 8px; background: rgba(10,10,10,0.8); backdrop-filter: blur(5px); text-align: center;">
-      <p style="font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold); margin-bottom: 15px; font-style: italic;">Только для десктопа</p>
-      <p style="font-family: 'Montserrat', sans-serif; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.6;">Генеративное полотно требует точных инструментов и вычислительных мощностей. Пожалуйста, откройте эту галерею на настольном компьютере, чтобы раскрыть свой творческий потенциал.</p>
-    </div>
-
-    <div class="g1-outro" style="margin-bottom: 80px;">
-      <button class="g1-btn" onclick="exitSection()">На главную</button>
-      <a href="phi-geometry-ru.html" class="g1-btn g1-btn-primary" style="text-decoration: none;">Геометрия Фи</a>
-      <button class="g1-btn g1-btn-primary" onclick="nextSection(3)">СЛЕДУЮЩАЯ ГАЛЕРЕЯ</button>
-    </div>
+  <div id="gallery-3-container" class="fullscreen-container" style="display:none; opacity:0; overflow: hidden;">
+    <iframe src="amuse-gallery-ru.html" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>
   </div>
 
   <div id="gallery-4-container" class="fullscreen-container" style="display:none; opacity:0;">
@@ -756,7 +729,7 @@
         <ul style="list-style: none; padding-left: 15px; margin-bottom: 25px;">
           <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Цифровая галерея</strong> раскрывает философский миф о сотворении мира и роли баланса между светом и тьмой через масштабные цифровые полотна.</li>
           <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Сакральная галерея</strong> представляет «Печати» — тонкие визуальные коды, в которых зашифрована мудрость старинных сказок и абсолютные законы сакральной геометрии.</li>
-          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Генеративная галерея</strong> позволяет вам самим стать творцами здесь и сейчас, взаимодействуя с алгоритмическим искусством Amuse.</li>
+          <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Генеративная галерея</strong> позволяет вам самим стать творцами здесь и сейчас, взаимодействуя с алгоритмическим искусством ABRAKADABRA.</li>
           <li style="margin-bottom: 12px; line-height: 1.6;"><strong style="color:var(--gold);">Музыка и Книга</strong> («Золотое Яйцо») дополняют визуальный опыт, окружая ваши чувства и погружая в глубокие размышления о природе нашего восприятия.</li>
         </ul>
         
