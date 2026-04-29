@@ -41,46 +41,75 @@ let frame = 0, maxFrames = 1200;
 // ── Current params ────────────────────────────────────────────
 let X = {};
 
-// ── Presets — Amuse default + curated + Rand A/B/C/D ─────────
+// φ = 1.618... — all arm ratios use adjacent Fibonacci numbers
+// larm2/larm1 = 144/89 = 1.618 = φ
+// rarm2/rarm1 = 144/55 = 2.618 = φ²
+// |baseoffsy|/larm2 = 233/144 = 1.618 = φ  (ring radius = φ × arm)
+// lrpm/rrpm from Fibonacci pairs: (2,3), (3,5), (5,8)
+// Symmetry: 5 and 10 (pentagon, most φ-native), 3, 6 (triangular/hexagonal)
 const PRESETS = [
-  // Exact Amuse defaults from source:
-  // acceleration:73, rotorRPM:4, baseoffsy:-385, handdist:351
-  // lrpm:2, larm1:105, larm2:316, rrpm:-3, rarm1:95, rarm2:371, rarmext:53
+  // ── FIXED GEOMETRIC — rotorRPM=0, centered, pure φ proportions ──
+
+  // Pentagon (5-fold) — most native to φ
+  { lrpm:2,  rrpm:-3, rotorRPM:0, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:55,  larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:5, autoEvolve:false, name:'φ Pentagon — 2:3' },
+
+  // Decagon (10-fold) — double pentagon
+  { lrpm:3,  rrpm:-5, rotorRPM:0, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:55,  larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:10, autoEvolve:false, name:'φ Decagon — 3:5' },
+
+  // Pentagram star (5-fold, longer spike arm)
+  { lrpm:5,  rrpm:-8, rotorRPM:0, handdist:233, larm1:55, larm2:144,
+    rarm1:34, rarm2:89,  rarmext:144, larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:5, autoEvolve:false, name:'φ Pentagram — 5:8' },
+
+  // Trefoil (3-fold)
+  { lrpm:2,  rrpm:-3, rotorRPM:0, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:89,  larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:3, autoEvolve:false, name:'φ Trefoil — 2:3' },
+
+  // Hexagon (6-fold)
+  { lrpm:3,  rrpm:-5, rotorRPM:0, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:55,  larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:6, autoEvolve:false, name:'φ Hexagon — 3:5' },
+
+  // 5-fold deep mesh (5:8 ratio, dense lines)
+  { lrpm:5,  rrpm:-8, rotorRPM:0, handdist:377, larm1:89, larm2:233,
+    rarm1:55, rarm2:233, rarmext:89,  larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:5, autoEvolve:false, name:'φ Mesh — 5:8' },
+
+  // 10-fold lace (Fibonacci 5:8, double pentagon)
+  { lrpm:5,  rrpm:-8, rotorRPM:0, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:89,  larma:0, baseoffsx:0, baseoffsy:0,
+    symmetry:10, autoEvolve:false, name:'φ Lace — 10-fold' },
+
+  // ── RING PATTERNS — rotorRPM>0, |baseoffsy| = larm2 × φ ──────────
+
+  // Pentagon ring (ring radius = 144 × 1.618 = 233)
+  { lrpm:2,  rrpm:-3, rotorRPM:3, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:55,  larma:0, baseoffsx:0, baseoffsy:-233,
+    symmetry:5, autoEvolve:true, name:'φ Ring Pentagon' },
+
+  // Amuse Classic (exact defaults, kept for reference)
   { lrpm:2,  rrpm:-3, rotorRPM:4, handdist:351, larm1:105, larm2:316,
     rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
-    symmetry:1, autoEvolve:false, name:'Amuse Default' },
+    symmetry:1, autoEvolve:true, name:'Amuse Classic' },
 
-  { lrpm:2,  rrpm:-3, rotorRPM:4, handdist:351, larm1:105, larm2:316,
-    rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
-    symmetry:1, autoEvolve:true, name:'Amuse AutoEvolve' },
+  // Hexagonal ring
+  { lrpm:3,  rrpm:-5, rotorRPM:2, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:55,  larma:0, baseoffsx:0, baseoffsy:-233,
+    symmetry:6, autoEvolve:true, name:'φ Ring Hexagon' },
 
-  { lrpm:3,  rrpm:-5, rotorRPM:3, handdist:300, larm1:100, larm2:280,
-    rarm1:90, rarm2:340, rarmext:40, larma:0, baseoffsx:0, baseoffsy:-320,
-    symmetry:1, autoEvolve:true, name:'Star Weave' },
+  // Decagon ring
+  { lrpm:5,  rrpm:-8, rotorRPM:2, handdist:233, larm1:89, larm2:144,
+    rarm1:55, rarm2:144, rarmext:89,  larma:0, baseoffsx:0, baseoffsy:-233,
+    symmetry:10, autoEvolve:true, name:'φ Ring Decagon' },
 
-  { lrpm:1,  rrpm:-4, rotorRPM:5, handdist:380, larm1:90,  larm2:300,
-    rarm1:85, rarm2:360, rarmext:60, larma:0, baseoffsx:0, baseoffsy:-400,
-    symmetry:1, autoEvolve:true, name:'Solar Crown' },
-
-  { lrpm:4,  rrpm:-3, rotorRPM:2, handdist:330, larm1:110, larm2:290,
-    rarm1:100,rarm2:350, rarmext:45, larma:0, baseoffsx:0, baseoffsy:-360,
-    symmetry:1, autoEvolve:true, name:'Seven Spiral' },
-
-  { lrpm:2,  rrpm:-3, rotorRPM:4, handdist:351, larm1:105, larm2:316,
-    rarm1:95, rarm2:371, rarmext:53, larma:0, baseoffsx:0, baseoffsy:-385,
-    symmetry:6, autoEvolve:true, name:'Mandala Six' },
-
-  { lrpm:5,  rrpm:-3, rotorRPM:3, handdist:310, larm1:120, larm2:300,
-    rarm1:95, rarm2:360, rarmext:50, larma:0, baseoffsx:0, baseoffsy:-340,
-    symmetry:1, autoEvolve:true, name:'Phoenix Bloom' },
-
-  // Rand A/B/C/D chaos
+  // ── CHAOS Rand A/B/C/D — exact Amuse Rand source ───────────────
   { type:'A', name:'Chaos — Rand A (Sym)' },
   { type:'B', name:'Chaos — Rand B (Pure)' },
-  { type:'C', name:'Chaos — Rand C (Flow)' },
-  { type:'D', name:'Chaos — Rand D (Deep)' },
-  { type:'A', name:'Chaos — Rand A' },
-  { type:'B', name:'Chaos — Rand B' },
   { type:'C', name:'Chaos — Rand C' },
   { type:'D', name:'Chaos — Rand D' },
 ];
@@ -115,9 +144,15 @@ function genChaos(mode) {
   return p;
 }
 
-// ── Scale ─────────────────────────────────────────────────────
-// Amuse designed for ~900px. Scale all spatial params uniformly.
-function sc() { return Math.min(W, H) / 900; }
+// ── Dynamic scale — fills viewport per preset ────────────────
+// maxReach = |baseoffsy| + max(larm2,rarm2) + rarmext
+// scale so figure fills 88% of shorter screen dimension
+let S = 1;
+
+function computeScale(p) {
+  const reach = Math.abs(p.baseoffsy) + Math.max(p.larm2, p.rarm2) + p.rarmext;
+  return (Math.min(W, H) * 0.44) / Math.max(reach, 1);
+}
 
 // ── Resize ────────────────────────────────────────────────────
 function resize() {
@@ -126,6 +161,7 @@ function resize() {
   canvas.width  = W * dpr; canvas.height = H * dpr;
   ctx.scale(dpr, dpr);
   CX = W / 2; CY = H / 2;
+  if (Object.keys(X).length) S = computeScale(X);
   clearCanvas(); resetState();
 }
 window.addEventListener('resize', resize);
@@ -144,6 +180,7 @@ function resetState() {
 function applyPreset(idx) {
   const p = PRESETS[idx];
   X = p.type ? genChaos(p.type) : { ...p };
+  S = computeScale(X);
   clearCanvas(); resetState();
   if (shapeNameEl)   shapeNameEl.textContent   = X.name || p.name;
   if (valLrpmEl)     valLrpmEl.textContent     = (+X.lrpm).toFixed(2);
@@ -165,7 +202,7 @@ function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
 // ── Core Amuse draw — exact port ──────────────────────────────
 function drawFrame() {
-  const S = sc();
+  // S is pre-computed per preset via computeScale()
   const sym = Math.max(1, Math.round(X.symmetry));
 
   // AutoEvolve (exact from Amuse source)
