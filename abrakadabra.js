@@ -479,6 +479,18 @@ function draw() {
 }
 
 // ─── Event Listeners ──────────────────────────────────────────────────────────
+const returnBtn = document.querySelector('.link-btn');
+if (returnBtn && window.self !== window.top) {
+    returnBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        try {
+            window.parent.exitSection();
+        } catch(err) {
+            window.location.href = 'index.html';
+        }
+    });
+}
+
 randomizeBtn.addEventListener('click', randomize);
 if (colorBtn) {
     colorBtn.addEventListener('click', () => {
