@@ -206,7 +206,7 @@ function randomize() {
 
     // ── Geometry ranges ─────────────────────────────────────────────────────
     targetParams.hbx      = rnd(-200, 200)  * mobileScale;
-    targetParams.hby      = rnd(-550, -50)  * mobileScale;
+    targetParams.hby      = rnd(-550, -200) * mobileScale;  // keep pivot away from centre
     targetParams.hdist    = rnd(50,  600)   * mobileScale;
     targetParams.larm1    = rnd(20,  180)   * mobileScale;
     targetParams.rarm1    = rnd(20,  180)   * mobileScale;
@@ -356,21 +356,6 @@ function draw() {
             const fy = cy + Math.sin(na) * nd;
 
             if (startPoint === null) startPoint = { x: fx, y: fy };
-
-            // ── Horizontal-line artifact filter ────────────────────────────
-            // Root cause: h1y === h2y always (same horizontal pivot line).
-            // At certain arm angles this produces long near-horizontal strokes.
-            // Detect: wide AND nearly flat stroke → skip + break bezier chain.
-            if (pen.x !== null) {
-                const sdx = fx - pen.x, sdy = fy - pen.y;
-                const sw  = Math.abs(sdx), sh = Math.abs(sdy);
-                if (sw > 25 * scaleBase && sh < sw * 0.12) {
-                    prevPen.x = null;
-                    prevPen.y = null;
-                    pen.x = fx; pen.y = fy;  // advance pen, no draw
-                    continue;
-                }
-            }
 
             // Smooth Bézier drawing: midpoint-to-midpoint curves eliminate jagged edges
             if (pen.x !== null) {
