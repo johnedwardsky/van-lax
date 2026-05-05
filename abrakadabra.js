@@ -340,6 +340,34 @@ function randomize() {
     targetParams.driftR     = rnd(-0.02, 0.02);
     targetParams.driftC     = rnd(-0.01, 0.01);
 
+    // ── Viewport safety: scale geometry so figure never overflows canvas ────
+    // scaleBase in draw() = min(w,h) / 2000, so half-screen = 1000 units.
+    // Use 920 as safe limit (margin for volume zShift ±100 and growth).
+    const SAFE = 920;
+    // Worst-case horizontal reach from canvas centre
+    const maxH = Math.abs(targetParams.hbx)
+               + (targetParams.hdist + 100) / 2      // +100 for volume zShift
+               + targetParams.larm1
+               + targetParams.larm2
+               + targetParams.ext;
+    // Worst-case vertical reach from canvas centre
+    const maxV = Math.abs(targetParams.hby)
+               + targetParams.larm1
+               + targetParams.larm2
+               + targetParams.ext;
+    const overflow = Math.max(maxH, maxV) / SAFE;
+    if (overflow > 1) {
+        const s = 1 / overflow;
+        targetParams.hbx   *= s;
+        targetParams.hby   *= s;
+        targetParams.hdist *= s;
+        targetParams.larm1 *= s;
+        targetParams.rarm1 *= s;
+        targetParams.larm2 *= s;
+        targetParams.rarm2 *= s;
+        targetParams.ext   *= s;
+    }
+
     // Pick a random archetype name for display only
     const arc   = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
     const adjs  = isRu ? ['Хаотичный', 'Дикий', 'Свободный', 'Случайный', 'Бесконечный']
