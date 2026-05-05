@@ -205,7 +205,7 @@ function randomize() {
 
     // ── Geometry ranges ─────────────────────────────────────────────────────
     targetParams.hbx      = rnd(-200, 200)  * mobileScale;
-    targetParams.hby      = rnd(-550, -50)  * mobileScale;
+    targetParams.hby      = rnd(-550, -200) * mobileScale;  // keep pivot away from centre
     targetParams.hdist    = rnd(50,  600)   * mobileScale;
     targetParams.larm1    = rnd(20,  180)   * mobileScale;
     targetParams.rarm1    = rnd(20,  180)   * mobileScale;
@@ -215,8 +215,7 @@ function randomize() {
     targetParams.handlrot = rnd(0,   360);
 
     targetParams.growth   = 0;
-    // Volume adds a "dimension" (oscillation) - 40% chance
-    targetParams.volume   = Math.random() > 0.6 ? rnd(0.2, 1.2) : 0;
+    targetParams.volume   = 0; // Keep zero: volume oscillation causes broken geometry
     targetParams.driftL   = 0;
     targetParams.driftR   = 0;
     targetParams.driftC   = 0;
