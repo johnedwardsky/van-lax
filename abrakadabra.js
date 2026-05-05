@@ -20,7 +20,8 @@ let totalSteps = 0;
 let time = 0;
 
 let rot = { l: 0, r: 0, c: 0 };
-let pen = { x: null, y: null };
+let pen    = { x: null, y: null };
+let prevPen = { x: null, y: null };
 let startPoint = null;
 let isFinished = false;
 
@@ -89,8 +90,8 @@ function clearCanvas() {
     // Use semi-transparent fill to leave a faint ghost of the previous shape
     ctx.fillStyle = 'rgba(5, 5, 8, 0.92)'; 
     ctx.fillRect(0, 0, width, height);
-    pen.x = null;
-    pen.y = null;
+    pen.x = null;     pen.y = null;
+    prevPen.x = null; prevPen.y = null;
     startPoint = null;
     isFinished = false;
     rot.l = params.handlrot || 0;
@@ -357,24 +358,62 @@ function draw() {
 
             if (startPoint === null) startPoint = { x: fx, y: fy };
 
-            // Optimized drawing: batch symmetry segments + avoid shadowBlur
+            // Smooth Bézier drawing: midpoint-to-midpoint curves eliminate jagged edges
             if (pen.x !== null) {
                 const phase  = AM * rot.l;
                 const stroke = getStrokeColor(phase);
                 const sym    = params.symmetry || 1;
-                const px = pen.x - cx,  py = pen.y - cy;
-                const qx = fx - cx,     qy = fy - cy;
-                const d  = Math.sqrt((qx - px)**2 + (qy - py)**2);
-                
+
+                // Current and previous pen offsets from centre
+                const px = pen.x - cx,  py = pen.y - cy;  // current pen
+                const qx = fx   - cx,   qy = fy   - cy;   // new point
+
+                const d = Math.sqrt((qx - px)**2 + (qy - py)**2);
                 const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
-                const baseWidth   = 0.5 * scaleBase;
-                
+
                 ctx.strokeStyle = stroke;
 
-                // 1. Draw "Glow" pass (thicker, transparent) - only if not too fast
-                if (speedFactor > 0.3) {
-                    ctx.lineWidth = baseWidth * 4;
-                    ctx.globalAlpha = 0.15 * speedFactor;
+                // ── Helper: rotate a point around centre ────────────────────
+                const rot2 = (x, y, ca, sa) => [cx + x * ca - y * sa, cy + x * sa + y * ca];
+
+                if (prevPen.x !== null) {
+                    // Smooth quadratic Bézier: midpoint(prev→pen) → pen (ctrl) → midpoint(pen→new)
+                    const rx = prevPen.x - cx, ry = prevPen.y - cy;  // prev pen
+
+                    // Glow pass
+                    ctx.lineWidth   = 2.5 * scaleBase;
+                    ctx.globalAlpha = 0.10 * speedFactor;
+                    ctx.beginPath();
+                    for (let s = 0; s < sym; s++) {
+                        const ang = (2 * Math.PI * s) / sym;
+                        const ca  = Math.cos(ang), sa = Math.sin(ang);
+                        const [m0x, m0y] = rot2((rx + px) / 2, (ry + py) / 2, ca, sa);
+                        const [cpx, cpy] = rot2(px, py, ca, sa);
+                        const [m1x, m1y] = rot2((px + qx) / 2, (py + qy) / 2, ca, sa);
+                        ctx.moveTo(m0x, m0y);
+                        ctx.quadraticCurveTo(cpx, cpy, m1x, m1y);
+                    }
+                    ctx.stroke();
+
+                    // Core pass — smooth, bright
+                    ctx.lineWidth   = (0.3 + 0.5 * speedFactor) * scaleBase;
+                    ctx.globalAlpha = 0.55 + 0.45 * speedFactor;
+                    ctx.beginPath();
+                    for (let s = 0; s < sym; s++) {
+                        const ang = (2 * Math.PI * s) / sym;
+                        const ca  = Math.cos(ang), sa = Math.sin(ang);
+                        const [m0x, m0y] = rot2((rx + px) / 2, (ry + py) / 2, ca, sa);
+                        const [cpx, cpy] = rot2(px, py, ca, sa);
+                        const [m1x, m1y] = rot2((px + qx) / 2, (py + qy) / 2, ca, sa);
+                        ctx.moveTo(m0x, m0y);
+                        ctx.quadraticCurveTo(cpx, cpy, m1x, m1y);
+                    }
+                    ctx.stroke();
+
+                } else {
+                    // First segment: plain line (no prev point yet)
+                    ctx.lineWidth   = 0.5 * scaleBase;
+                    ctx.globalAlpha = 0.8;
                     ctx.beginPath();
                     for (let s = 0; s < sym; s++) {
                         const ang = (2 * Math.PI * s) / sym;
@@ -385,20 +424,10 @@ function draw() {
                     ctx.stroke();
                 }
 
-                // 2. Draw "Core" pass (thin, bright)
-                ctx.lineWidth = (0.3 + 0.5 * speedFactor) * scaleBase;
-                ctx.globalAlpha = 0.5 + 0.5 * speedFactor;
-                ctx.beginPath();
-                for (let s = 0; s < sym; s++) {
-                    const ang = (2 * Math.PI * s) / sym;
-                    const ca  = Math.cos(ang), sa = Math.sin(ang);
-                    ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
-                    ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
-                }
-                ctx.stroke();
-                
                 ctx.globalAlpha = 1.0;
             }
+            prevPen.x = pen.x;
+            prevPen.y = pen.y;
             pen.x = fx;
             pen.y = fy;
         }
