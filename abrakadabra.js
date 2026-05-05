@@ -20,8 +20,7 @@ let totalSteps = 0;
 let time = 0;
 
 let rot = { l: 0, r: 0, c: 0 };
-let pen    = { x: null, y: null };
-let prevPen = { x: null, y: null };
+let pen = { x: null, y: null };
 let startPoint = null;
 let isFinished = false;
 
@@ -90,8 +89,8 @@ function clearCanvas() {
     // Use semi-transparent fill to leave a faint ghost of the previous shape
     ctx.fillStyle = 'rgba(5, 5, 8, 0.92)'; 
     ctx.fillRect(0, 0, width, height);
-    pen.x = null;     pen.y = null;
-    prevPen.x = null; prevPen.y = null;
+    pen.x = null;
+    pen.y = null;
     startPoint = null;
     isFinished = false;
     rot.l = params.handlrot || 0;
@@ -206,7 +205,7 @@ function randomize() {
 
     // ── Geometry ranges ─────────────────────────────────────────────────────
     targetParams.hbx      = rnd(-200, 200)  * mobileScale;
-    targetParams.hby      = rnd(-550, -200) * mobileScale;  // keep pivot away from centre
+    targetParams.hby      = rnd(-550, -50)  * mobileScale;
     targetParams.hdist    = rnd(50,  600)   * mobileScale;
     targetParams.larm1    = rnd(20,  180)   * mobileScale;
     targetParams.rarm1    = rnd(20,  180)   * mobileScale;
@@ -216,7 +215,8 @@ function randomize() {
     targetParams.handlrot = rnd(0,   360);
 
     targetParams.growth   = 0;
-    targetParams.volume   = 0; // Keep zero: volume oscillation causes horizontal-line grid artifacts
+    // Volume adds a "dimension" (oscillation) - 40% chance
+    targetParams.volume   = Math.random() > 0.6 ? rnd(0.2, 1.2) : 0;
     targetParams.driftL   = 0;
     targetParams.driftR   = 0;
     targetParams.driftC   = 0;
@@ -357,79 +357,52 @@ function draw() {
 
             if (startPoint === null) startPoint = { x: fx, y: fy };
 
-            // Smooth Bézier drawing: midpoint-to-midpoint curves eliminate jagged edges
+            // Optimized drawing: batch symmetry segments + avoid shadowBlur
             if (pen.x !== null) {
                 const phase  = AM * rot.l;
                 const stroke = getStrokeColor(phase);
                 const sym    = params.symmetry || 1;
-
-                // Current and previous pen offsets from centre
-                const px = pen.x - cx,  py = pen.y - cy;  // current pen
-                const qx = fx   - cx,   qy = fy   - cy;   // new point
-
-                const d = Math.sqrt((qx - px)**2 + (qy - py)**2);
+                const px = pen.x - cx,  py = pen.y - cy;
+                const qx = fx - cx,     qy = fy - cy;
+                const d  = Math.sqrt((qx - px)**2 + (qy - py)**2);
+                
                 const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
-
-                // Jump handling: only draw if movement is small enough for a smooth curve.
-                // Large jumps = pen-lift (arm repositioning between lobes) — no line drawn.
-                const JUMP_SMOOTH = 30 * scaleBase;  // smooth bezier threshold
-                const JUMP_SKIP   = 150 * scaleBase; // extreme: skip + reset
-
+                const baseWidth   = 0.5 * scaleBase;
+                
                 ctx.strokeStyle = stroke;
-                const rot2 = (x, y, ca, sa) => [cx + x * ca - y * sa, cy + x * sa + y * ca];
 
-                if (d > JUMP_SKIP) {
-                    // Extreme phantom: skip entirely
-                    prevPen.x = null;
-                    prevPen.y = null;
-                } else if (d > JUMP_SMOOTH) {
-                    // Pen lift: arm repositioning between lobes — no line, clean break
-                    prevPen.x = null;
-                    prevPen.y = null;
-                } else if (prevPen.x !== null) {
-
-                    // Glow pass
-                    ctx.lineWidth   = 2.5 * scaleBase;
-                    ctx.globalAlpha = 0.10 * speedFactor;
+                // 1. Draw "Glow" pass (thicker, transparent) - only if not too fast
+                if (speedFactor > 0.3) {
+                    ctx.lineWidth = baseWidth * 4;
+                    ctx.globalAlpha = 0.15 * speedFactor;
                     ctx.beginPath();
                     for (let s = 0; s < sym; s++) {
                         const ang = (2 * Math.PI * s) / sym;
                         const ca  = Math.cos(ang), sa = Math.sin(ang);
-                        const [m0x, m0y] = rot2((rx + px) / 2, (ry + py) / 2, ca, sa);
-                        const [cpx, cpy] = rot2(px, py, ca, sa);
-                        const [m1x, m1y] = rot2((px + qx) / 2, (py + qy) / 2, ca, sa);
-                        ctx.moveTo(m0x, m0y);
-                        ctx.quadraticCurveTo(cpx, cpy, m1x, m1y);
-                    }
-                    ctx.stroke();
-
-                    // Core pass
-                    ctx.lineWidth   = (0.3 + 0.5 * speedFactor) * scaleBase;
-                    ctx.globalAlpha = 0.55 + 0.45 * speedFactor;
-                    ctx.beginPath();
-                    for (let s = 0; s < sym; s++) {
-                        const ang = (2 * Math.PI * s) / sym;
-                        const ca  = Math.cos(ang), sa = Math.sin(ang);
-                        const [m0x, m0y] = rot2((rx + px) / 2, (ry + py) / 2, ca, sa);
-                        const [cpx, cpy] = rot2(px, py, ca, sa);
-                        const [m1x, m1y] = rot2((px + qx) / 2, (py + qy) / 2, ca, sa);
-                        ctx.moveTo(m0x, m0y);
-                        ctx.quadraticCurveTo(cpx, cpy, m1x, m1y);
+                        ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
+                        ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
                     }
                     ctx.stroke();
                 }
 
+                // 2. Draw "Core" pass (thin, bright)
+                ctx.lineWidth = (0.3 + 0.5 * speedFactor) * scaleBase;
+                ctx.globalAlpha = 0.5 + 0.5 * speedFactor;
+                ctx.beginPath();
+                for (let s = 0; s < sym; s++) {
+                    const ang = (2 * Math.PI * s) / sym;
+                    const ca  = Math.cos(ang), sa = Math.sin(ang);
+                    ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
+                    ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
+                }
+                ctx.stroke();
+                
                 ctx.globalAlpha = 1.0;
             }
-            prevPen.x = pen.x;
-            prevPen.y = pen.y;
             pen.x = fx;
             pen.y = fy;
-        } else {
-            // Constraint failed: reset prevPen so bezier never bridges a gap
-            prevPen.x = null;
-            prevPen.y = null;
         }
+        // Constraint failed: keep pen position — path resumes from last valid point
 
         totalSteps++;
     }
