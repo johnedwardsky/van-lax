@@ -188,9 +188,9 @@ function randomize() {
     const mobileScale = isMobile ? 0.7 : 1;
 
     // ── RPM strategy: one fast arm + one slow arm ───────────────────────────
-    // Fast arm (1–5 range) + slow arm (1/20 – 1/100) = closed rose/petal figure
-    const fastRPM = Math.floor(rnd(1, 6)) + (Math.random() > 0.6 ? rnd(0.1, 0.9) : 0);
-    const slowRPM = 1 / Math.floor(rnd(20, 80));
+    // Broader ranges for more "magical" and intricate patterns.
+    const fastRPM = rnd(0.5, 6);
+    const slowRPM = 1 / rnd(10, 200);
 
     if (Math.random() > 0.5) {
         targetParams.lrota = sign() * fastRPM;
@@ -200,29 +200,31 @@ function randomize() {
         targetParams.rrota = sign() * fastRPM;
     }
 
-    // Canvas rotation
-    targetParams.crota = sign() * rnd(0.01, 0.8);
+    // Canvas rotation: often slow, but can be zero or moderate
+    targetParams.crota = Math.random() > 0.2 ? sign() * rnd(0.01, 1.2) : 0;
 
-    // ── AMUSE Rand B geometry ranges ────────────────────────────────────────
-    targetParams.hbx      = rnd(-150, 150)  * mobileScale;
-    targetParams.hby      = rnd(-500, -100) * mobileScale;
-    targetParams.hdist    = rnd(50,  500)   * mobileScale;
-    targetParams.larm1    = rnd(20,  150)   * mobileScale;
-    targetParams.rarm1    = rnd(20,  150)   * mobileScale;
-    targetParams.larm2    = rnd(100, 550)   * mobileScale;
-    targetParams.rarm2    = rnd(100, 550)   * mobileScale;
-    targetParams.ext      = rnd(0,   100);
+    // ── Geometry ranges ─────────────────────────────────────────────────────
+    targetParams.hbx      = rnd(-200, 200)  * mobileScale;
+    targetParams.hby      = rnd(-550, -50)  * mobileScale;
+    targetParams.hdist    = rnd(50,  600)   * mobileScale;
+    targetParams.larm1    = rnd(20,  180)   * mobileScale;
+    targetParams.rarm1    = rnd(20,  180)   * mobileScale;
+    targetParams.larm2    = rnd(100, 600)   * mobileScale;
+    targetParams.rarm2    = rnd(100, 600)   * mobileScale;
+    targetParams.ext      = rnd(0,   120);
     targetParams.handlrot = rnd(0,   360);
 
     targetParams.growth   = 0;
-    targetParams.volume   = 0;
+    // Volume adds a "dimension" (oscillation) - 40% chance
+    targetParams.volume   = Math.random() > 0.6 ? rnd(0.2, 1.2) : 0;
     targetParams.driftL   = 0;
     targetParams.driftR   = 0;
     targetParams.driftC   = 0;
-    targetParams.speed    = 200;  // fast generation
+    targetParams.speed    = 400; // Super fast generation
     targetParams.colormode = 4;
-    // Rotational symmetry: 2–8 fold for dimensional mandala-like figures
-    const symOpts = [2, 3, 4, 5, 6, 8];
+
+    // Symmetry: 1 (none) to 12-fold for massive variety
+    const symOpts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
     targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
 
     // ── Viewport safety ─────────────────────────────────────────────────────
@@ -354,11 +356,17 @@ function draw() {
                 const stroke = getStrokeColor(phase);
                 const sym    = params.symmetry || 1;
                 const px = pen.x - cx,  py = pen.y - cy;
-                const qx = fx    - cx,  qy = fy    - cy;
-
+                const qx = fx - cx,  qy = fy - cy;
+                const dx = qx - px,  dy = qy - py;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                
+                // Organic width/alpha based on pen speed
+                const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
+                ctx.lineWidth   = (0.3 + 0.7 * speedFactor) * scaleBase;
+                ctx.globalAlpha = 0.4 + 0.6 * speedFactor;
+                
                 ctx.strokeStyle = stroke;
-                ctx.lineWidth   = 0.5 * scaleBase;
-                ctx.shadowBlur  = 5;
+                ctx.shadowBlur  = 4 * speedFactor;
                 ctx.shadowColor = stroke;
 
                 for (let s = 0; s < sym; s++) {
@@ -370,6 +378,7 @@ function draw() {
                     ctx.stroke();
                 }
                 ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1.0;
             }
             pen.x = fx;
             pen.y = fy;
