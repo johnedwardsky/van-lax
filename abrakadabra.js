@@ -291,57 +291,65 @@ function updateColorUI() {
 }
 
 function randomize() {
-    const rnd = (a, b) => Math.random() * (b - a) + a;
-    const arc = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
-    const p = arc.p;
+    // ── AMUSE "Rand B (Chaos)" algorithm ───────────────────────────────────
+    // Exactly mirrors the AMUSE app: Ql("B") → symmetry=1, fully-free params
+    const rnd  = (a, b) => Math.random() * (b - a) + a;
+    const rpm  = ()     => (Math.random() > 0.5 ? 1 : -1) * rnd(0.01, 50);
 
     const isMobile = window.innerWidth < 768;
-    
-    targetParams.crota = rnd(p.crota[0], p.crota[1]);
-    targetParams.hdist = rnd(p.hdist[0], p.hdist[1]) * (isMobile ? 0.7 : 1);
-    
-    // Exact symmetry logic
-    if (p.speedRatio) {
-        const baseSpeed = Math.floor(rnd(p.lrotaBase[0], p.lrotaBase[1]));
-        const ratio = p.rrotaRatio[Math.floor(Math.random() * p.rrotaRatio.length)];
-        targetParams.lrota = baseSpeed;
-        targetParams.rrota = baseSpeed * ratio;
-    } else {
-        targetParams.lrota = rnd(p.lrota[0], p.lrota[1]) * (Math.random() > 0.5 ? 1 : -1);
-        targetParams.rrota = rnd(p.rrota[0], p.rrota[1]) * (Math.random() > 0.5 ? 1 : -1);
-    }
-    
-    // Scale Arm 1s
-    const baseArm = rnd(80, 200) * (isMobile ? 0.7 : 1);
-    targetParams.larm1 = baseArm;
-    targetParams.rarm1 = baseArm * (Math.random() > 0.5 ? PHI : 1); 
-    
-    targetParams.larm2 = rnd(p.larm2[0], p.larm2[1]) * (isMobile ? 0.75 : 1);
-    targetParams.rarm2 = rnd(p.rarm2[0], p.rarm2[1]) * (isMobile ? 0.75 : 1);
-    
-    targetParams.ext = rnd(p.ext[0], p.ext[1]);
-    targetParams.growth = rnd(p.growth[0], p.growth[1]);
-    targetParams.volume = rnd(p.volume[0], p.volume[1]);
-    
-    // Using PHI for offset randomization
-    targetParams.hbx = rnd(-100, 100) * (isMobile ? 0.5 : 1);
-    targetParams.hby = isMobile ? rnd(-150, 50) : rnd(p.hby[0], p.hby[1]);
-    targetParams.speed = Math.floor(rnd(60, 150)); 
-    targetParams.handlrot = rnd(0, 360 * PHI) % 360;
-    targetParams.colormode = 4;
+    const mobileScale = isMobile ? 0.7 : 1;
 
-    const adjs  = isRu ? ['Абсолютный', 'Кристальный', 'Сакральный', 'Симметричный', 'Эфирный'] : ['Absolute', 'Crystal', 'Sacred', 'Symmetric', 'Ethereal'];
-    const nouns = isRu ? ['Узор', 'Поток', 'Фрактал', 'Мандала', 'Резонанс'] : ['Pattern', 'Flow', 'Fractal', 'Mandala', 'Resonance'];
+    // Canvas rotor (= AMUSE rotorRPM / 4)
+    targetParams.crota      = rpm() / 4;
 
+    // Left & right arm RPMs — fully random chaos
+    targetParams.lrota      = rpm();
+    targetParams.rrota      = rpm();
+
+    // Offsets (AMUSE: baseoffsx, baseoffsy)
+    targetParams.hbx        = rnd(-200, 200)  * mobileScale;
+    targetParams.hby        = rnd(-500, -100) * mobileScale;
+
+    // Hand distance
+    targetParams.hdist      = rnd(50, 500)    * mobileScale;
+
+    // Arm 1 lengths (AMUSE: larm1, rarm1 — range 20–200)
+    targetParams.larm1      = rnd(20, 200)    * mobileScale;
+    targetParams.rarm1      = rnd(20, 200)    * mobileScale;
+
+    // Arm 2 lengths (AMUSE: larm2, rarm2 — range 100–400)
+    targetParams.larm2      = rnd(100, 400)   * mobileScale;
+    targetParams.rarm2      = rnd(100, 400)   * mobileScale;
+
+    // Extension (AMUSE: rarmext — range 0–150)
+    targetParams.ext        = rnd(0, 150);
+
+    // Left arm offset angle (AMUSE: larma — range 0–360)
+    targetParams.handlrot   = rnd(0, 360);
+
+    // Slight growth & volume for depth — kept minimal for pure Rand B feel
+    targetParams.growth     = rnd(0.00005, 0.0001);
+    targetParams.volume     = rnd(0.1, 0.4);
+
+    // Speed (acceleration — higher = more lines per frame)
+    targetParams.speed      = Math.floor(rnd(60, 150));
+    targetParams.colormode  = 4;
+
+    // Subtle drift so lines stay alive
+    targetParams.driftL     = rnd(-0.02, 0.02);
+    targetParams.driftR     = rnd(-0.02, 0.02);
+    targetParams.driftC     = rnd(-0.01, 0.01);
+
+    // Pick a random archetype name for display only
+    const arc   = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
+    const adjs  = isRu ? ['Хаотичный', 'Дикий', 'Свободный', 'Случайный', 'Бесконечный']
+                       : ['Chaotic',   'Wild',   'Free',      'Random',    'Infinite'];
+    const nouns = isRu ? ['Вихрь', 'Поток', 'Фрактал', 'Взрыв', 'Резонанс']
+                       : ['Vortex','Flow',  'Fractal', 'Burst', 'Resonance'];
     const label = isRu ? arc.ruName : arc.name;
     if (shapeNameEl) {
         shapeNameEl.innerHTML = `<span style="opacity:0.5;font-weight:200;">${label}: </span>${adjs[Math.floor(Math.random()*adjs.length)]} ${nouns[Math.floor(Math.random()*nouns.length)]}`;
     }
-
-    // Add slight parameter drift for dynamic behavior
-    targetParams.driftL = rnd(-0.02, 0.02);
-    targetParams.driftR = rnd(-0.02, 0.02);
-    targetParams.driftC = rnd(-0.01, 0.01);
 
     params = { ...targetParams };
     clearCanvas();
