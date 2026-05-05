@@ -42,7 +42,7 @@ const colorNameEl = document.getElementById('color-name');
 
 // ─── Default params — AMUSE-style, viewport-safe ─────────────────────────────
 let params = {
-    speed: 80,       // Acceleration
+    speed: 200,      // Acceleration
     colormode: 4,
     brightness: 1,
     crota: 4,        // Canvas Rotation RPM
@@ -57,8 +57,9 @@ let params = {
     rarm2: 260,      // Right Arm 2 Length
     ext: 37,         // Extension
     handlrot: 0,     // Offset Angle
-    growth: 0.00007,
-    volume: 0.2
+    growth: 0,
+    volume: 0,
+    symmetry: 1
 };
 
 let targetParams = { ...params };
@@ -218,8 +219,11 @@ function randomize() {
     targetParams.driftL   = 0;
     targetParams.driftR   = 0;
     targetParams.driftC   = 0;
-    targetParams.speed    = 50;
+    targetParams.speed    = 200;  // fast generation
     targetParams.colormode = 4;
+    // Rotational symmetry: 2–8 fold for dimensional mandala-like figures
+    const symOpts = [2, 3, 4, 5, 6, 8];
+    targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
 
     // ── Viewport safety ─────────────────────────────────────────────────────
     const SAFE = 920;
@@ -344,15 +348,28 @@ function draw() {
 
             if (startPoint === null) startPoint = { x: fx, y: fy };
 
-            // One continuous unbroken line — no distance cutoff, no null reset
+            // One continuous unbroken line with rotational symmetry + glow
             if (pen.x !== null) {
-                const phase = AM * rot.l;
-                ctx.strokeStyle = getStrokeColor(phase);
+                const phase  = AM * rot.l;
+                const stroke = getStrokeColor(phase);
+                const sym    = params.symmetry || 1;
+                const px = pen.x - cx,  py = pen.y - cy;
+                const qx = fx    - cx,  qy = fy    - cy;
+
+                ctx.strokeStyle = stroke;
                 ctx.lineWidth   = 0.5 * scaleBase;
-                ctx.beginPath();
-                ctx.moveTo(pen.x, pen.y);
-                ctx.lineTo(fx, fy);
-                ctx.stroke();
+                ctx.shadowBlur  = 5;
+                ctx.shadowColor = stroke;
+
+                for (let s = 0; s < sym; s++) {
+                    const ang = (2 * Math.PI * s) / sym;
+                    const ca  = Math.cos(ang), sa = Math.sin(ang);
+                    ctx.beginPath();
+                    ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
+                    ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
             }
             pen.x = fx;
             pen.y = fy;
