@@ -79,7 +79,19 @@ function resize() {
     canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     cx = width / 2;
-    cy = height / 2;
+
+    // On mobile: center between header and controls, not full-screen centre
+    const isMobileLayout = width < 768;
+    if (isMobileLayout) {
+        const headerEl   = document.querySelector('header');
+        const controlsEl = document.querySelector('.controls');
+        const headerBottom  = headerEl   ? headerEl.getBoundingClientRect().bottom   : 90;
+        const controlsTop   = controlsEl ? controlsEl.getBoundingClientRect().top    : height - 220;
+        cy = headerBottom + (controlsTop - headerBottom) / 2;
+    } else {
+        cy = height / 2;
+    }
+
     clearCanvas();
 }
 
@@ -279,7 +291,7 @@ function draw() {
     updateDisplay();
 
     const isMobile = width < 768;
-    const scaleBase = Math.min(width, height) / (isMobile ? 2600 : 2000);
+    const scaleBase = Math.min(width, height) / (isMobile ? 1800 : 2000);
     const { speed, hbx, hby, hdist, lrota, larm1, larm2, rrota, rarm1, rarm2, ext, crota, colormode, brightness, growth, volume } = params;
 
     ctx.lineCap = 'round';
