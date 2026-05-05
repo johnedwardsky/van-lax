@@ -9,7 +9,6 @@ const valRrpmEl = document.getElementById('val-rrpm');
 const valSymmetryEl = document.getElementById('val-symmetry');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const PHI = (1 + Math.sqrt(5)) / 2; 
 const AM = Math.PI / 180;
 const isRu = document.documentElement.lang === 'ru';
 
@@ -41,144 +40,34 @@ let currentScheme = 0;
 const colorBtn = document.getElementById('next-color');
 const colorNameEl = document.getElementById('color-name');
 
-// Start with standard Sprirograph parameters from the screenshot
+// ─── Default params — AMUSE-style, viewport-safe ─────────────────────────────
 let params = {
-    speed: 50,       // Acceleration
+    speed: 80,       // Acceleration
     colormode: 4,
     brightness: 1,
-    crota: -14.4,    // Canvas Rotation RPM
-    hbx: 30,         // Offset X
-    hby: -700,       // Offset Y
-    hdist: 1174,     // Hand Distance
-    lrota: 25,       // Left Arm 1 RPM
-    larm1: 120,      // Left Arm 1 Length
-    larm2: 860,      // Left Arm 2 Length
-    rrota: -36,      // Right Arm 1 RPM
-    rarm1: 100,      // Right Arm 1 Length
-    rarm2: 1050,     // Right Arm 2 Length
-    ext: 75,         // Extension
+    crota: 4,        // Canvas Rotation RPM
+    hbx: 0,          // Offset X
+    hby: -270,       // Offset Y
+    hdist: 245,      // Hand Distance
+    lrota: 2,        // Left Arm RPM
+    larm1: 73,       // Left Arm 1 Length
+    larm2: 221,      // Left Arm 2 Length
+    rrota: -3,       // Right Arm RPM
+    rarm1: 66,       // Right Arm 1 Length
+    rarm2: 260,      // Right Arm 2 Length
+    ext: 37,         // Extension
     handlrot: 0,     // Offset Angle
-    growth: 0.0001,
-    volume: 0.5
+    growth: 0.00007,
+    volume: 0.2
 };
 
 let targetParams = { ...params };
 
-// ─── Sacred Geometry Archetypes (Scaled up to Pro Spirograph levels) ─────────
-const ARCHETYPES = [
-    {
-        name: 'Harmonic Flow', ruName: 'Гармоничный Поток',
-        p: {
-            crota: [-2, 2], 
-            hdist: [600, 1100],
-            speedRatio: true, 
-            lrotaBase: [10, 40],
-            rrotaRatio: [-3, -1.5, -0.5, 0.5, 1.5, 3], 
-            larm2: [600, 900],
-            rarm2: [600, 900],
-            ext: [0, 100],
-            growth: [0.00005, 0.0001], 
-            volume: [0.1, 0.3], 
-            hby: [-700, -300]
-        }
-    },
-    {
-        name: 'Sacred Dance', ruName: 'Сакральный Танец',
-        p: {
-            crota: [-5, 5],
-            hdist: [400, 1200],
-            speedRatio: true,
-            lrotaBase: [15, 35],
-            rrotaRatio: [-2, -1, 2],
-            larm2: [500, 1000],
-            rarm2: [500, 1000],
-            ext: [50, 200],
-            growth: [0.0001, 0.0002],
-            volume: [0.2, 0.5],
-            hby: [-500, 0]
-        }
-    },
-    {
-        name: 'Phi Spiral', ruName: 'Спираль Фи',
-        p: {
-            crota: [-8, 8],
-            hdist: [800, 1300],
-            speedRatio: false,
-            lrota: [10, 30],
-            rrota: [-40, -10],
-            larm2: [700, 1000],
-            rarm2: [900, 1200],
-            ext: [0, 150],
-            growth: [0.0001, 0.0003],
-            volume: [0.3, 0.7],
-            hby: [-800, -400]
-        }
-    },
-    {
-        name: 'Grand Vortex', ruName: 'Великий Вихрь',
-        p: {
-            crota: [10, 40],
-            hdist: [300, 700],
-            speedRatio: false,
-            lrota: [PHI * 10, PHI * 20],
-            rrota: [-PHI * 20, -PHI * 5],
-            larm2: [400, 800],
-            rarm2: [600, 1000],
-            ext: [150, 300],
-            growth: [-0.0002, 0.0002],
-            volume: [0.5, 1.5],
-            hby: [-300, 100]
-        }
-    },
-    {
-        name: 'Golden Ratio Pulse', ruName: 'Пульс Золотого Сечения',
-        p: {
-            crota: [-PHI, PHI],
-            hdist: [500, 1000],
-            speedRatio: false,
-            lrota: [10 * PHI, 25 * PHI],
-            rrota: [-30 / PHI, -10 / PHI],
-            larm2: [600, 900],
-            rarm2: [700, 1100],
-            ext: [50, 200],
-            growth: [0.0001, 0.0002],
-            volume: [0.4, 0.8],
-            hby: [-500, -200]
-        }
-    },
-    {
-        name: 'Cosine Harmonic', ruName: 'Косинусная Гармоника',
-        p: {
-            crota: [2, 12],
-            hdist: [400, 900],
-            speedRatio: true,
-            lrotaBase: [25, 55],
-            rrotaRatio: [-Math.cos(1)*2, -Math.cos(2)*3, PHI/2], 
-            larm2: [800, 1200],
-            rarm2: [800, 1200],
-            ext: [100, 400],
-            growth: [0.0002, 0.0006],
-            volume: [0.6, 1.4],
-            hby: [-700, -400]
-        }
-    },
-    {
-        name: 'Phi Vortex', ruName: 'Вихрь Фи',
-        p: {
-            crota: [PHI * 5, PHI * 15],
-            hdist: [300, 600],
-            speedRatio: false,
-            lrota: [15, 45],
-            rrota: [-45, -15],
-            larm2: [900, 1300],
-            rarm2: [900, 1300],
-            ext: [200, 500],
-            growth: [0.0001 * PHI, 0.0003 * PHI],
-            volume: [0.8, 1.8],
-            hby: [-200, 100]
-        }
-    }
-];
+// ─── Shape name lists for display only ───────────────────────────────────────
+const SHAPE_NAMES = {
+    en: ['Chaos', 'Vortex', 'Storm', 'Spiral', 'Pulse', 'Bloom', 'Flow', 'Burst', 'Wave', 'Drift'],
+    ru: ['Хаос', 'Вихрь', 'Шторм', 'Спираль', 'Пульс', 'Расцвет', 'Поток', 'Взрыв', 'Волна', 'Дрейф']
+};
 
 // ─── Functions ────────────────────────────────────────────────────────────────
 function resize() {
@@ -368,15 +257,14 @@ function randomize() {
         targetParams.ext   *= s;
     }
 
-    // Pick a random archetype name for display only
-    const arc   = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
+    // Display name — picked from AMUSE-style flat list
+    const names = isRu ? SHAPE_NAMES.ru : SHAPE_NAMES.en;
     const adjs  = isRu ? ['Хаотичный', 'Дикий', 'Свободный', 'Случайный', 'Бесконечный']
                        : ['Chaotic',   'Wild',   'Free',      'Random',    'Infinite'];
-    const nouns = isRu ? ['Вихрь', 'Поток', 'Фрактал', 'Взрыв', 'Резонанс']
-                       : ['Vortex','Flow',  'Fractal', 'Burst', 'Resonance'];
-    const label = isRu ? arc.ruName : arc.name;
     if (shapeNameEl) {
-        shapeNameEl.innerHTML = `<span style="opacity:0.5;font-weight:200;">${label}: </span>${adjs[Math.floor(Math.random()*adjs.length)]} ${nouns[Math.floor(Math.random()*nouns.length)]}`;
+        const n = names[Math.floor(Math.random() * names.length)];
+        const a = adjs[Math.floor(Math.random()  * adjs.length)];
+        shapeNameEl.innerHTML = `<span style="opacity:0.5;font-weight:200;">AMUSE B: </span>${a} ${n}`;
     }
 
     params = { ...targetParams };
