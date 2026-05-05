@@ -350,34 +350,46 @@ function draw() {
 
             if (startPoint === null) startPoint = { x: fx, y: fy };
 
-            // One continuous unbroken line with rotational symmetry + glow
+            // Optimized drawing: batch symmetry segments + avoid shadowBlur
             if (pen.x !== null) {
                 const phase  = AM * rot.l;
                 const stroke = getStrokeColor(phase);
                 const sym    = params.symmetry || 1;
                 const px = pen.x - cx,  py = pen.y - cy;
-                const qx = fx - cx,  qy = fy - cy;
-                const dx = qx - px,  dy = qy - py;
-                const d = Math.sqrt(dx * dx + dy * dy);
+                const qx = fx - cx,     qy = fy - cy;
+                const d  = Math.sqrt((qx - px)**2 + (qy - py)**2);
                 
-                // Organic width/alpha based on pen speed
                 const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
-                ctx.lineWidth   = (0.3 + 0.7 * speedFactor) * scaleBase;
-                ctx.globalAlpha = 0.4 + 0.6 * speedFactor;
+                const baseWidth   = 0.5 * scaleBase;
                 
                 ctx.strokeStyle = stroke;
-                ctx.shadowBlur  = 4 * speedFactor;
-                ctx.shadowColor = stroke;
 
+                // 1. Draw "Glow" pass (thicker, transparent) - only if not too fast
+                if (speedFactor > 0.3) {
+                    ctx.lineWidth = baseWidth * 4;
+                    ctx.globalAlpha = 0.15 * speedFactor;
+                    ctx.beginPath();
+                    for (let s = 0; s < sym; s++) {
+                        const ang = (2 * Math.PI * s) / sym;
+                        const ca  = Math.cos(ang), sa = Math.sin(ang);
+                        ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
+                        ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
+                    }
+                    ctx.stroke();
+                }
+
+                // 2. Draw "Core" pass (thin, bright)
+                ctx.lineWidth = (0.3 + 0.5 * speedFactor) * scaleBase;
+                ctx.globalAlpha = 0.5 + 0.5 * speedFactor;
+                ctx.beginPath();
                 for (let s = 0; s < sym; s++) {
                     const ang = (2 * Math.PI * s) / sym;
                     const ca  = Math.cos(ang), sa = Math.sin(ang);
-                    ctx.beginPath();
                     ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
                     ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
-                    ctx.stroke();
                 }
-                ctx.shadowBlur = 0;
+                ctx.stroke();
+                
                 ctx.globalAlpha = 1.0;
             }
             pen.x = fx;
