@@ -164,10 +164,10 @@ function getStrokeColor(phase) {
             if (p < 0.6) return `rgba(0, 209, 255, 0.85)`;
             if (p < 0.8) return `rgba(0, 56, 255, 0.85)`;
             return `rgba(128, 0, 255, 0.85)`;
-        default: // Rainbow (0) - Original Sine Spectrum
+        default: // Rainbow (0) - Sine Spectrum
             r = Math.sin(phase) * 127 + 127;
-            g = Math.sin(phase + PHI) * 127 + 127;
-            b = Math.sin(phase + PHI * 2) * 127 + 127;
+            g = Math.sin(phase + 2.094) * 127 + 127;  // 2π/3 offset
+            b = Math.sin(phase + 4.189) * 127 + 127;  // 4π/3 offset
     }
     return `rgba(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)},0.85)`;
 }
