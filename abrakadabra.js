@@ -402,21 +402,19 @@ function draw() {
             pen.x = fx;
             pen.y = fy;
 
-            // ── Closure detection: figure completed a full cycle ─────────────
-            // Check after minimum steps so we don't stop at the very start
+            // ── Closure: figure completed — immediately start the next one ──
             if (startPoint !== null && totalSteps > 500) {
                 const closeDist = Math.sqrt(
                     Math.pow(fx - startPoint.x, 2) + Math.pow(fy - startPoint.y, 2)
                 );
                 if (closeDist < 2.5) {
-                    // Draw the closing segment back to exact start
+                    // Close the final segment precisely
                     ctx.beginPath();
                     ctx.moveTo(fx, fy);
                     ctx.lineTo(startPoint.x, startPoint.y);
                     ctx.stroke();
-                    isPlaying = false;
-                    isFinished = true;
-                    setTimeout(() => { randomize(); }, 2000);
+                    // Immediately generate a new figure — no pause
+                    randomize();
                     break;
                 }
             }
@@ -424,11 +422,9 @@ function draw() {
         // Constraint failed: keep pen position — path resumes from last valid point
 
         totalSteps++;
-        // Hard fallback: stop after 800k steps if figure never closes
-        if (totalSteps > 800000) {
-            isPlaying = false;
-            isFinished = true;
-            setTimeout(() => { randomize(); }, 2000);
+        // Fallback: if figure never closes after 600k steps, start fresh
+        if (totalSteps > 600000) {
+            randomize();
             break;
         }
     }
