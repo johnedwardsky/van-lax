@@ -180,81 +180,60 @@ function updateColorUI() {
 }
 
 function randomize() {
-    // ── AMUSE "Rand B (Chaos)" algorithm ───────────────────────────────────
-    // Exactly mirrors the AMUSE app: Ql("B") → symmetry=1, fully-free params
     const rnd  = (a, b) => Math.random() * (b - a) + a;
-    const rpm  = ()     => (Math.random() > 0.5 ? 1 : -1) * rnd(0.01, 50);
+    const sign = ()     => Math.random() > 0.5 ? 1 : -1;
 
-    const isMobile = window.innerWidth < 768;
+    const isMobile  = window.innerWidth < 768;
     const mobileScale = isMobile ? 0.7 : 1;
 
-    // Canvas rotor (= AMUSE rotorRPM / 4)
-    targetParams.crota      = rpm() / 4;
+    // ── RPM strategy: one fast arm + one slow arm ───────────────────────────
+    // Fast arm (1–5 range) + slow arm (1/20 – 1/100) = closed rose/petal figure
+    const fastRPM = Math.floor(rnd(1, 6)) + (Math.random() > 0.6 ? rnd(0.1, 0.9) : 0);
+    const slowRPM = 1 / Math.floor(rnd(20, 80));
 
-    // Left & right arm RPMs — fully random chaos
-    targetParams.lrota      = rpm();
-    targetParams.rrota      = rpm();
+    if (Math.random() > 0.5) {
+        targetParams.lrota = sign() * fastRPM;
+        targetParams.rrota = sign() * slowRPM;
+    } else {
+        targetParams.lrota = sign() * slowRPM;
+        targetParams.rrota = sign() * fastRPM;
+    }
 
-    // Offsets (AMUSE: baseoffsx, baseoffsy)
-    targetParams.hbx        = rnd(-200, 200)  * mobileScale;
-    targetParams.hby        = rnd(-500, -100) * mobileScale;
+    // Canvas rotation
+    targetParams.crota = sign() * rnd(0.01, 0.8);
 
-    // Hand distance
-    targetParams.hdist      = rnd(50, 500)    * mobileScale;
+    // ── AMUSE Rand B geometry ranges ────────────────────────────────────────
+    targetParams.hbx      = rnd(-150, 150)  * mobileScale;
+    targetParams.hby      = rnd(-500, -100) * mobileScale;
+    targetParams.hdist    = rnd(50,  500)   * mobileScale;
+    targetParams.larm1    = rnd(20,  150)   * mobileScale;
+    targetParams.rarm1    = rnd(20,  150)   * mobileScale;
+    targetParams.larm2    = rnd(100, 550)   * mobileScale;
+    targetParams.rarm2    = rnd(100, 550)   * mobileScale;
+    targetParams.ext      = rnd(0,   100);
+    targetParams.handlrot = rnd(0,   360);
 
-    // Arm 1 lengths (AMUSE: larm1, rarm1 — range 20–200)
-    targetParams.larm1      = rnd(20, 200)    * mobileScale;
-    targetParams.rarm1      = rnd(20, 200)    * mobileScale;
+    targetParams.growth   = 0;
+    targetParams.volume   = 0;
+    targetParams.driftL   = 0;
+    targetParams.driftR   = 0;
+    targetParams.driftC   = 0;
+    targetParams.speed    = 50;
+    targetParams.colormode = 4;
 
-    // Arm 2 lengths (AMUSE: larm2, rarm2 — range 100–400)
-    targetParams.larm2      = rnd(100, 400)   * mobileScale;
-    targetParams.rarm2      = rnd(100, 400)   * mobileScale;
-
-    // Extension (AMUSE: rarmext — range 0–150)
-    targetParams.ext        = rnd(0, 150);
-
-    // Left arm offset angle (AMUSE: larma — range 0–360)
-    targetParams.handlrot   = rnd(0, 360);
-
-    // Slight growth & volume for depth — kept minimal for pure Rand B feel
-    targetParams.growth     = rnd(0.00005, 0.0001);
-    targetParams.volume     = rnd(0.1, 0.4);
-
-    // Speed (acceleration — higher = more lines per frame)
-    targetParams.speed      = Math.floor(rnd(60, 150));
-    targetParams.colormode  = 4;
-
-    // Subtle drift so lines stay alive
-    targetParams.driftL     = rnd(-0.02, 0.02);
-    targetParams.driftR     = rnd(-0.02, 0.02);
-    targetParams.driftC     = rnd(-0.01, 0.01);
-
-    // ── Viewport safety: scale geometry so figure never overflows canvas ────
-    // scaleBase in draw() = min(w,h) / 2000, so half-screen = 1000 units.
-    // Use 920 as safe limit (margin for volume zShift ±100 and growth).
+    // ── Viewport safety ─────────────────────────────────────────────────────
     const SAFE = 920;
-    // Worst-case horizontal reach from canvas centre
-    const maxH = Math.abs(targetParams.hbx)
-               + (targetParams.hdist + 100) / 2      // +100 for volume zShift
-               + targetParams.larm1
-               + targetParams.larm2
-               + targetParams.ext;
-    // Worst-case vertical reach from canvas centre
+    const maxH = Math.abs(targetParams.hbx) + targetParams.hdist / 2
+               + targetParams.larm1 + targetParams.larm2 + targetParams.ext;
     const maxV = Math.abs(targetParams.hby)
-               + targetParams.larm1
-               + targetParams.larm2
-               + targetParams.ext;
+               + targetParams.larm1 + targetParams.larm2 + targetParams.ext;
     const overflow = Math.max(maxH, maxV) / SAFE;
     if (overflow > 1) {
         const s = 1 / overflow;
-        targetParams.hbx   *= s;
-        targetParams.hby   *= s;
-        targetParams.hdist *= s;
-        targetParams.larm1 *= s;
-        targetParams.rarm1 *= s;
-        targetParams.larm2 *= s;
-        targetParams.rarm2 *= s;
-        targetParams.ext   *= s;
+        targetParams.hbx   *= s;  targetParams.hby   *= s;
+        targetParams.hdist *= s;  targetParams.larm1 *= s;
+        targetParams.rarm1 *= s;  targetParams.larm2 *= s;
+        targetParams.rarm2 *= s;  targetParams.ext   *= s;
     }
 
     // Display name — picked from AMUSE-style flat list
@@ -377,16 +356,34 @@ function draw() {
             }
             pen.x = fx;
             pen.y = fy;
+
+            // ── Closure detection: figure completed a full cycle ─────────────
+            // Check after minimum steps so we don't stop at the very start
+            if (startPoint !== null && totalSteps > 500) {
+                const closeDist = Math.sqrt(
+                    Math.pow(fx - startPoint.x, 2) + Math.pow(fy - startPoint.y, 2)
+                );
+                if (closeDist < 2.5) {
+                    // Draw the closing segment back to exact start
+                    ctx.beginPath();
+                    ctx.moveTo(fx, fy);
+                    ctx.lineTo(startPoint.x, startPoint.y);
+                    ctx.stroke();
+                    isPlaying = false;
+                    isFinished = true;
+                    setTimeout(() => { randomize(); }, 2000);
+                    break;
+                }
+            }
         }
         // Constraint failed: keep pen position — path resumes from last valid point
 
         totalSteps++;
-        const stepLimit = 500000;
-        if (totalSteps > stepLimit) {
+        // Hard fallback: stop after 800k steps if figure never closes
+        if (totalSteps > 800000) {
             isPlaying = false;
             isFinished = true;
-            drawMarker(pen.x, pen.y, false);
-            setTimeout(() => { randomize(); }, 1500);
+            setTimeout(() => { randomize(); }, 2000);
             break;
         }
     }
