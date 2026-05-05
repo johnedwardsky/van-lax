@@ -216,8 +216,7 @@ function randomize() {
     targetParams.handlrot = rnd(0,   360);
 
     targetParams.growth   = 0;
-    // Volume adds a "dimension" (oscillation) - 40% chance
-    targetParams.volume   = Math.random() > 0.6 ? rnd(0.2, 1.2) : 0;
+    targetParams.volume   = 0; // Keep zero: volume oscillation causes horizontal-line grid artifacts
     targetParams.driftL   = 0;
     targetParams.driftR   = 0;
     targetParams.driftC   = 0;
@@ -371,6 +370,13 @@ function draw() {
                 const d = Math.sqrt((qx - px)**2 + (qy - py)**2);
                 const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
 
+                // Skip if pen jumps too far (artifact / constraint glitch)
+                const maxJump = 80 * scaleBase;
+                if (d > maxJump) {
+                    prevPen.x = null;  // break chain — no phantom connector
+                    prevPen.y = null;
+                } else {
+
                 ctx.strokeStyle = stroke;
 
                 // ── Helper: rotate a point around centre ────────────────────
@@ -425,13 +431,17 @@ function draw() {
                 }
 
                 ctx.globalAlpha = 1.0;
+                } // end distance guard
             }
             prevPen.x = pen.x;
             prevPen.y = pen.y;
             pen.x = fx;
             pen.y = fy;
+        } else {
+            // Constraint failed: reset prevPen so bezier never bridges a gap
+            prevPen.x = null;
+            prevPen.y = null;
         }
-        // Constraint failed: keep pen position — path resumes from last valid point
 
         totalSteps++;
     }
