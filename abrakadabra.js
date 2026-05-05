@@ -370,21 +370,39 @@ function draw() {
                 const d = Math.sqrt((qx - px)**2 + (qy - py)**2);
                 const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
 
-                // Skip if pen jumps too far (artifact / constraint glitch)
-                const maxJump = 80 * scaleBase;
-                if (d > maxJump) {
-                    prevPen.x = null;  // break chain — no phantom connector
-                    prevPen.y = null;
-                } else {
+                // ── 3-tier jump handling to eliminate dark seam cuts ─────────
+                // Tier 3: extreme jump → skip & reset (phantom connector prevention)
+                // Tier 2: medium jump → thin straight bridge (fills seam, no bezier artifact)
+                // Tier 1: normal    → smooth quadratic bezier
+                const JUMP_MAX    = 200 * scaleBase;  // extreme: skip entirely
+                const JUMP_BRIDGE = 40  * scaleBase;  // medium: straight bridge
 
                 ctx.strokeStyle = stroke;
 
                 // ── Helper: rotate a point around centre ────────────────────
                 const rot2 = (x, y, ca, sa) => [cx + x * ca - y * sa, cy + x * sa + y * ca];
 
-                if (prevPen.x !== null) {
-                    // Smooth quadratic Bézier: midpoint(prev→pen) → pen (ctrl) → midpoint(pen→new)
-                    const rx = prevPen.x - cx, ry = prevPen.y - cy;  // prev pen
+                if (d > JUMP_MAX) {
+                    // Tier 3: true phantom — skip and break bezier chain
+                    prevPen.x = null;
+                    prevPen.y = null;
+                } else if (d > JUMP_BRIDGE || prevPen.x === null) {
+                    // Tier 2: medium jump OR no prevPen — straight line bridge, reset bezier chain
+                    ctx.lineWidth   = 0.4 * scaleBase;
+                    ctx.globalAlpha = 0.5 * speedFactor;
+                    ctx.beginPath();
+                    for (let s = 0; s < sym; s++) {
+                        const ang = (2 * Math.PI * s) / sym;
+                        const ca  = Math.cos(ang), sa = Math.sin(ang);
+                        ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
+                        ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
+                    }
+                    ctx.stroke();
+                    prevPen.x = null;  // reset: next step starts fresh bezier
+                    prevPen.y = null;
+                } else {
+                    // Tier 1: smooth quadratic Bézier: midpoint(prev→pen) → pen (ctrl) → midpoint(pen→new)
+                    const rx = prevPen.x - cx, ry = prevPen.y - cy;
 
                     // Glow pass
                     ctx.lineWidth   = 2.5 * scaleBase;
@@ -401,7 +419,7 @@ function draw() {
                     }
                     ctx.stroke();
 
-                    // Core pass — smooth, bright
+                    // Core pass
                     ctx.lineWidth   = (0.3 + 0.5 * speedFactor) * scaleBase;
                     ctx.globalAlpha = 0.55 + 0.45 * speedFactor;
                     ctx.beginPath();
@@ -415,23 +433,9 @@ function draw() {
                         ctx.quadraticCurveTo(cpx, cpy, m1x, m1y);
                     }
                     ctx.stroke();
-
-                } else {
-                    // First segment: plain line (no prev point yet)
-                    ctx.lineWidth   = 0.5 * scaleBase;
-                    ctx.globalAlpha = 0.8;
-                    ctx.beginPath();
-                    for (let s = 0; s < sym; s++) {
-                        const ang = (2 * Math.PI * s) / sym;
-                        const ca  = Math.cos(ang), sa = Math.sin(ang);
-                        ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
-                        ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
-                    }
-                    ctx.stroke();
                 }
 
                 ctx.globalAlpha = 1.0;
-                } // end distance guard
             }
             prevPen.x = pen.x;
             prevPen.y = pen.y;
