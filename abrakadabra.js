@@ -370,39 +370,23 @@ function draw() {
                 const d = Math.sqrt((qx - px)**2 + (qy - py)**2);
                 const speedFactor = Math.max(0.1, Math.min(1.0, 10 / (d + 0.1)));
 
-                // ── 3-tier jump handling to eliminate dark seam cuts ─────────
-                // Tier 3: extreme jump → skip & reset (phantom connector prevention)
-                // Tier 2: medium jump → thin straight bridge (fills seam, no bezier artifact)
-                // Tier 1: normal    → smooth quadratic bezier
-                const JUMP_MAX    = 200 * scaleBase;  // extreme: skip entirely
-                const JUMP_BRIDGE = 40  * scaleBase;  // medium: straight bridge
+                // Jump handling: only draw if movement is small enough for a smooth curve.
+                // Large jumps = pen-lift (arm repositioning between lobes) — no line drawn.
+                const JUMP_SMOOTH = 30 * scaleBase;  // smooth bezier threshold
+                const JUMP_SKIP   = 150 * scaleBase; // extreme: skip + reset
 
                 ctx.strokeStyle = stroke;
-
-                // ── Helper: rotate a point around centre ────────────────────
                 const rot2 = (x, y, ca, sa) => [cx + x * ca - y * sa, cy + x * sa + y * ca];
 
-                if (d > JUMP_MAX) {
-                    // Tier 3: true phantom — skip and break bezier chain
+                if (d > JUMP_SKIP) {
+                    // Extreme phantom: skip entirely
                     prevPen.x = null;
                     prevPen.y = null;
-                } else if (d > JUMP_BRIDGE || prevPen.x === null) {
-                    // Tier 2: medium jump OR no prevPen — straight line bridge, reset bezier chain
-                    ctx.lineWidth   = 0.4 * scaleBase;
-                    ctx.globalAlpha = 0.5 * speedFactor;
-                    ctx.beginPath();
-                    for (let s = 0; s < sym; s++) {
-                        const ang = (2 * Math.PI * s) / sym;
-                        const ca  = Math.cos(ang), sa = Math.sin(ang);
-                        ctx.moveTo(cx + px * ca - py * sa,  cy + px * sa + py * ca);
-                        ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
-                    }
-                    ctx.stroke();
-                    prevPen.x = null;  // reset: next step starts fresh bezier
+                } else if (d > JUMP_SMOOTH) {
+                    // Pen lift: arm repositioning between lobes — no line, clean break
+                    prevPen.x = null;
                     prevPen.y = null;
-                } else {
-                    // Tier 1: smooth quadratic Bézier: midpoint(prev→pen) → pen (ctrl) → midpoint(pen→new)
-                    const rx = prevPen.x - cx, ry = prevPen.y - cy;
+                } else if (prevPen.x !== null) {
 
                     // Glow pass
                     ctx.lineWidth   = 2.5 * scaleBase;
