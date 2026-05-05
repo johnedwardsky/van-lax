@@ -296,9 +296,9 @@ function draw() {
     ctx.globalCompositeOperation = 'screen'; 
 
     for (let i = 0; i < speed; i++) {
-        time += 0.0001; 
-        
-        // Apply slight drift for dynamic lines
+        time += 0.0001;
+
+        // Slight drift for organic feel
         const currentLrota = lrota + (params.driftL || 0) * Math.sin(time * 10);
         const currentRrota = rrota + (params.driftR || 0) * Math.cos(time * 10);
         const currentCrota = crota + (params.driftC || 0);
@@ -312,15 +312,15 @@ function draw() {
         const sDist = hdist * gScale;
 
         const zShift = volume === 0 ? 0 : Math.cos(time * 8 * volume) * 100;
-        const vDist = sDist + zShift;
+        const vDist  = sDist + zShift;
 
-        rot.l = (rot.l + currentLrota / 10 + 360) % 360; 
+        rot.l = (rot.l + currentLrota / 10 + 360) % 360;
         rot.r = (rot.r + currentRrota / 10 + 360) % 360;
-        rot.c = (rot.c + currentCrota / 10 + 360) % 360;
+        rot.c = (rot.c + currentCrota  / 10 + 360) % 360;
 
         const hx  = cx + (hbx + (volume === 0 ? 0 : Math.cos(time * 4) * 50)) * scaleBase;
         const hy  = cy + (hby + (volume === 0 ? 0 : Math.sin(time * 4) * 50)) * scaleBase;
-        
+
         const h1x = hx - (vDist / 2) * scaleBase;
         const h1y = hy;
         const h2x = hx + (vDist / 2) * scaleBase;
@@ -338,9 +338,8 @@ function draw() {
         const R2 = sR2 * scaleBase;
 
         if (D > 0.1 && D < (L2 + R2) && D > Math.abs(L2 - R2)) {
-            const cosGamma = Math.max(-1, Math.min(1, (R2*R2 + L2*L2 - D*D) / (2*R2*L2)));
-            const gamma    = Math.acos(cosGamma);
-
+            const cosGamma    = Math.max(-1, Math.min(1, (R2*R2 + L2*L2 - D*D) / (2*R2*L2)));
+            const gamma       = Math.acos(cosGamma);
             const sinAlphaRaw = Math.max(-1, Math.min(1, R2 * Math.sin(gamma) / D));
             const sinBetaRaw  = Math.max(-1, Math.min(1, L2 * Math.sin(gamma) / D));
             let alpha = Math.asin(sinAlphaRaw);
@@ -364,35 +363,26 @@ function draw() {
             const fx = cx + Math.cos(na) * nd;
             const fy = cy + Math.sin(na) * nd;
 
-            if (startPoint === null) {
-                startPoint = { x: fx, y: fy };
-            }
+            if (startPoint === null) startPoint = { x: fx, y: fy };
 
+            // One continuous unbroken line — no distance cutoff, no null reset
             if (pen.x !== null) {
-                const distDraw = Math.sqrt(Math.pow(fx - pen.x, 2) + Math.pow(fy - pen.y, 2));
-                if (distDraw < 800 * scaleBase) {
-                    // Thinner lines as requested
-                    let lw = Math.max(0.1, Math.min(0.6, 12 / Math.min(10, distDraw*2)));
-                    ctx.lineWidth = lw * scaleBase;
-
-                    const phase = AM * rot.l;
-                    ctx.strokeStyle = getStrokeColor(phase);
-                    ctx.beginPath();
-                    ctx.moveTo(pen.x, pen.y);
-                    ctx.lineTo(fx, fy);
-                    ctx.stroke();
-                }
+                const phase = AM * rot.l;
+                ctx.strokeStyle = getStrokeColor(phase);
+                ctx.lineWidth   = 0.5 * scaleBase;
+                ctx.beginPath();
+                ctx.moveTo(pen.x, pen.y);
+                ctx.lineTo(fx, fy);
+                ctx.stroke();
             }
             pen.x = fx;
             pen.y = fy;
-        } else {
-            pen.x = null;
         }
+        // Constraint failed: keep pen position — path resumes from last valid point
 
         totalSteps++;
-        // Reset earlier if it's a closed symmetric shape
-        const stepLimit = growth === 0 ? 300000 : 500000;
-        if (totalSteps > stepLimit) { 
+        const stepLimit = 500000;
+        if (totalSteps > stepLimit) {
             isPlaying = false;
             isFinished = true;
             drawMarker(pen.x, pen.y, false);
