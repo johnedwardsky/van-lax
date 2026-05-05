@@ -227,19 +227,26 @@ function randomize() {
     const symOpts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
     targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
 
-    // ── Viewport safety ─────────────────────────────────────────────────────
-    const SAFE = 920;
+    // ── Viewport safety: scale DOWN if too large, scale UP if too small ─────
+    const SAFE   = 900;  // max reach in AMUSE units (maps to ~90% of half-screen)
+    const TARGET = 650;  // minimum reach — figures always fill at least 65% of screen
+
     const maxH = Math.abs(targetParams.hbx) + targetParams.hdist / 2
                + targetParams.larm1 + targetParams.larm2 + targetParams.ext;
     const maxV = Math.abs(targetParams.hby)
                + targetParams.larm1 + targetParams.larm2 + targetParams.ext;
-    const overflow = Math.max(maxH, maxV) / SAFE;
-    if (overflow > 1) {
-        const s = 1 / overflow;
-        targetParams.hbx   *= s;  targetParams.hby   *= s;
-        targetParams.hdist *= s;  targetParams.larm1 *= s;
-        targetParams.rarm1 *= s;  targetParams.larm2 *= s;
-        targetParams.rarm2 *= s;  targetParams.ext   *= s;
+    const reach = Math.max(maxH, maxV);
+
+    // Determine scale factor: clamp to [TARGET, SAFE]
+    let sizeScale = 1;
+    if (reach > SAFE)   sizeScale = SAFE / reach;    // too big → shrink
+    else if (reach < TARGET) sizeScale = TARGET / reach; // too small → grow
+
+    if (Math.abs(sizeScale - 1) > 0.01) {
+        targetParams.hbx   *= sizeScale;  targetParams.hby   *= sizeScale;
+        targetParams.hdist *= sizeScale;  targetParams.larm1 *= sizeScale;
+        targetParams.rarm1 *= sizeScale;  targetParams.larm2 *= sizeScale;
+        targetParams.rarm2 *= sizeScale;  targetParams.ext   *= sizeScale;
     }
 
     // Display name — picked from AMUSE-style flat list
