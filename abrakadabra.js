@@ -401,32 +401,10 @@ function draw() {
             }
             pen.x = fx;
             pen.y = fy;
-
-            // ── Closure: figure completed — immediately start the next one ──
-            if (startPoint !== null && totalSteps > 500) {
-                const closeDist = Math.sqrt(
-                    Math.pow(fx - startPoint.x, 2) + Math.pow(fy - startPoint.y, 2)
-                );
-                if (closeDist < 2.5) {
-                    // Close the final segment precisely
-                    ctx.beginPath();
-                    ctx.moveTo(fx, fy);
-                    ctx.lineTo(startPoint.x, startPoint.y);
-                    ctx.stroke();
-                    // Immediately generate a new figure — no pause
-                    randomize();
-                    break;
-                }
-            }
         }
         // Constraint failed: keep pen position — path resumes from last valid point
 
         totalSteps++;
-        // Fallback: if figure never closes after 600k steps, start fresh
-        if (totalSteps > 600000) {
-            randomize();
-            break;
-        }
     }
 }
 
