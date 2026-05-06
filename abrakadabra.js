@@ -443,7 +443,7 @@ canvas.addEventListener('dblclick', randomize);
 playPauseBtn.addEventListener('click', () => {
     isPlaying = !isPlaying;
     if (playPauseBtn) {
-        playPauseBtn.textContent = isPlaying ? (isRu ? 'Пауза' : 'Pause') : (isRu ? 'Играть' : 'Play');
+        playPauseBtn.textContent = isPlaying ? (isRu ? 'Стоп' : 'Stop') : (isRu ? 'Старт' : 'Start');
     }
 });
 
