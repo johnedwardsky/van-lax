@@ -30,6 +30,10 @@ let pen = { x: null, y: null };
 let startPoint = null;
 let isFinished = false;
 
+// SVG recording buffer — base path segments, relative to center (pre-symmetry)
+const SVG_MAX = 60000;
+let svgBuffer = []; // {px, py, qx, qy, color}
+
 const SCHEMES = [
     { name: 'Rainbow', ruName: 'Радуга' },
     { name: 'Ethereal Gold', ruName: 'Эфирное Золото' },
@@ -116,6 +120,7 @@ function clearCanvas() {
     rot.c = 0;
     time = 0;
     totalSteps = 0;
+    svgBuffer = []; // reset SVG recording for new figure
 }
 
 function drawMarker(x, y, isStart) {
@@ -413,8 +418,12 @@ function draw() {
                     ctx.lineTo(cx + qx * ca - qy * sa,  cy + qx * sa + qy * ca);
                 }
                 ctx.stroke();
-                
                 ctx.globalAlpha = 1.0;
+
+                // Record base segment for SVG export (pre-symmetry, relative to center)
+                if (svgBuffer.length < SVG_MAX) {
+                    svgBuffer.push({ px, py, qx, qy, color: stroke });
+                }
             }
             pen.x = fx;
             pen.y = fy;
@@ -445,6 +454,65 @@ playPauseBtn.addEventListener('click', () => {
     // Show Pin button only when paused
     if (pinBtn) pinBtn.style.display = isPlaying ? 'none' : '';
 });
+
+// ── SVG Export ────────────────────────────────────────────────────────────
+// Records the base path (pre-symmetry) and exports as transparent SVG.
+// Symmetry arms are <use> + rotate transforms — compact file, infinite scale.
+function generateSVG(figName) {
+    if (svgBuffer.length < 2) return null;
+    const buf = svgBuffer;
+    const sym = params.symmetry || 1;
+
+    // Build path data for the base arm (all segments as M x,y L x,y)
+    // Offset by SVG canvas centre (1000,1000)
+    const OX = 1000, OY = 1000;
+    let d = '';
+    let prevColor = null;
+    let paths = []; // [{color, d}]
+    let cur = '';
+
+    for (const seg of buf) {
+        if (seg.color !== prevColor) {
+            if (cur) paths.push({ color: prevColor, d: cur });
+            cur = `M${(OX + seg.px).toFixed(2)},${(OY + seg.py).toFixed(2)}`;
+            prevColor = seg.color;
+        }
+        cur += ` L${(OX + seg.qx).toFixed(2)},${(OY + seg.qy).toFixed(2)}`;
+    }
+    if (cur) paths.push({ color: prevColor, d: cur });
+
+    // Base arm group
+    const baseGroup = paths.map(p =>
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.95" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
+    ).join('');
+
+    // Symmetry copies via <use>
+    let useTags = '';
+    for (let s = 1; s < sym; s++) {
+        const deg = (360 * s / sym).toFixed(4);
+        useTags += `<use href="#arm" transform="rotate(${deg},${OX},${OY})"/>\n    `;
+    }
+
+    const viewSize = 2000;
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="${viewSize}" height="${viewSize}" viewBox="0 0 ${viewSize} ${viewSize}">
+  <title>${figName}</title>
+  <desc>Formula: ${buildFormula()}</desc>
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <g id="arm">${baseGroup}</g>
+  </defs>
+  <g filter="url(#glow)">
+    <use href="#arm"/>
+    ${useTags}
+  </g>
+</svg>`;
+    return svg;
+}
 
 // ── Pin / Gallery ────────────────────────────────────────────────────────────
 function buildFormula() {
@@ -480,31 +548,31 @@ if (pinModal) pinModal.addEventListener('click', e => { if (e.target === pinModa
 
 if (pinConfirmBtn) {
     pinConfirmBtn.addEventListener('click', () => {
-        const name    = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
+        const name     = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
         const safeName = name.replace(/[^a-z0-9\u0400-\u04FF]/gi, '_');
 
-        // ── 1. Gallery thumbnail: 1000px wide, lossless PNG ────────────────────
-        const THUMB_W = 1000;
+        // ── 1. Vector SVG download (transparent bg, infinite scale for print) ──
+        const svgText = generateSVG(name);
+        if (svgText) {
+            const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+            const svgLink = document.createElement('a');
+            svgLink.href     = URL.createObjectURL(blob);
+            svgLink.download = safeName + '.svg';
+            document.body.appendChild(svgLink);
+            svgLink.click();
+            document.body.removeChild(svgLink);
+            setTimeout(() => URL.revokeObjectURL(svgLink.href), 5000);
+        }
+
+        // ── 2. Gallery thumbnail: canvas snapshot at 800px (for display) ───────
+        const THUMB_W = 800;
         const THUMB_H = Math.round((canvas.height / canvas.width) * THUMB_W);
         const off = document.createElement('canvas');
         off.width = THUMB_W; off.height = THUMB_H;
         off.getContext('2d').drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
-        const dataUrl = off.toDataURL('image/png');  // lossless PNG thumbnail
+        const dataUrl = off.toDataURL('image/jpeg', 0.90);
 
-        // ── 2. Full-resolution PNG download for print ──────────────────────────
-        // canvas.width/height already include devicePixelRatio (2-3× on retina)
-        try {
-            const printLink = document.createElement('a');
-            printLink.href     = canvas.toDataURL('image/png');
-            printLink.download = safeName + '_print.png';
-            document.body.appendChild(printLink);
-            printLink.click();
-            document.body.removeChild(printLink);
-        } catch(e) {
-            // canvas may be tainted on some hosts — silently skip download
-        }
-
-        // ── 3. Save thumbnail to gallery ───────────────────────────────────────
+        // ── 3. Save to gallery ─────────────────────────────────────────────────
         let gallery = [];
         try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
         gallery.unshift({ id: Date.now(), dataUrl, name, formula: buildFormula(), ts: Date.now() });
@@ -514,8 +582,8 @@ if (pinConfirmBtn) {
             if (pinModal) pinModal.style.display = 'none';
             if (pinBtn) {
                 const prev = pinBtn.textContent;
-                pinBtn.textContent = isRu ? '✓ Сохранено' : '✓ Saved!';
-                setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2000);
+                pinBtn.textContent = isRu ? '✓ SVG сохранён' : '✓ SVG Saved!';
+                setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2500);
             }
         } catch(e) {
             alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
