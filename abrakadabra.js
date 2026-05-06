@@ -480,15 +480,31 @@ if (pinModal) pinModal.addEventListener('click', e => { if (e.target === pinModa
 
 if (pinConfirmBtn) {
     pinConfirmBtn.addEventListener('click', () => {
-        const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
-        // Capture canvas at 600px wide thumbnail
-        const THUMB_W = 600;
+        const name    = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
+        const safeName = name.replace(/[^a-z0-9\u0400-\u04FF]/gi, '_');
+
+        // ── 1. Gallery thumbnail: 1000px wide, lossless PNG ────────────────────
+        const THUMB_W = 1000;
         const THUMB_H = Math.round((canvas.height / canvas.width) * THUMB_W);
         const off = document.createElement('canvas');
         off.width = THUMB_W; off.height = THUMB_H;
         off.getContext('2d').drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
-        const dataUrl = off.toDataURL('image/jpeg', 0.85);
+        const dataUrl = off.toDataURL('image/png');  // lossless PNG thumbnail
 
+        // ── 2. Full-resolution PNG download for print ──────────────────────────
+        // canvas.width/height already include devicePixelRatio (2-3× on retina)
+        try {
+            const printLink = document.createElement('a');
+            printLink.href     = canvas.toDataURL('image/png');
+            printLink.download = safeName + '_print.png';
+            document.body.appendChild(printLink);
+            printLink.click();
+            document.body.removeChild(printLink);
+        } catch(e) {
+            // canvas may be tainted on some hosts — silently skip download
+        }
+
+        // ── 3. Save thumbnail to gallery ───────────────────────────────────────
         let gallery = [];
         try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
         gallery.unshift({ id: Date.now(), dataUrl, name, formula: buildFormula(), ts: Date.now() });
@@ -496,7 +512,6 @@ if (pinConfirmBtn) {
         try {
             localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
             if (pinModal) pinModal.style.display = 'none';
-            // Visual feedback on Pin button
             if (pinBtn) {
                 const prev = pinBtn.textContent;
                 pinBtn.textContent = isRu ? '✓ Сохранено' : '✓ Saved!';
@@ -506,7 +521,6 @@ if (pinConfirmBtn) {
             alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
         }
     });
-    // Allow Enter key to confirm
     if (pinNameInput) pinNameInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') pinConfirmBtn.click();
     });
