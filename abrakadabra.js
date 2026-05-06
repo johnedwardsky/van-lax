@@ -434,12 +434,26 @@ function draw() {
 }
 
 // ─── Event Listeners ──────────────────────────────────────────────────────────
-const returnBtn = document.querySelector('.link-btn');
-if (returnBtn && window.self !== window.top) {
+// "Return to Main" — guard against accidental tap during generation
+const returnBtn = document.querySelector('a.link-btn[href*="index"]');
+if (returnBtn) {
     returnBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        try { window.parent.exitSection(); }
-        catch(err) { window.location.href = 'index.html'; }
+        // Ask confirmation only while figure is actively drawing
+        if (isPlaying) {
+            const msg = isRu
+                ? 'Фигура ещё генерируется. Прервать и выйти?'
+                : 'Figure is still generating. Leave anyway?';
+            if (!confirm(msg)) {
+                e.preventDefault();
+                return;
+            }
+        }
+        // If inside iframe — delegate exit to parent
+        if (window.self !== window.top) {
+            e.preventDefault();
+            try { window.parent.exitSection(); }
+            catch(err) { window.location.href = returnBtn.href; }
+        }
     });
 }
 
