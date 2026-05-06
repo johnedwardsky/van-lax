@@ -456,55 +456,76 @@ playPauseBtn.addEventListener('click', () => {
 });
 
 // ── SVG Export ────────────────────────────────────────────────────────────
-// Records the base path (pre-symmetry) and exports as transparent SVG.
-// Symmetry arms are <use> + rotate transforms — compact file, infinite scale.
+// Records the base path (pre-symmetry) and exports as a print-ready SVG.
+// Output: 1000×1000 px viewBox, ~84.67mm physical (≥300 dpi at that size).
+// Symmetry arms use <use> + rotate — compact file, infinitely scalable.
 function generateSVG(figName) {
     if (svgBuffer.length < 2) return null;
     const buf = svgBuffer;
     const sym = params.symmetry || 1;
 
-    // Build path data for the base arm (all segments as M x,y L x,y)
-    // Offset by SVG canvas centre (1000,1000)
-    const OX = 1000, OY = 1000;
-    let d = '';
-    let prevColor = null;
-    let paths = []; // [{color, d}]
-    let cur = '';
-
+    // ── Step 1: find actual bounding radius of the figure ──────────────────
+    let maxR = 0;
     for (const seg of buf) {
+        maxR = Math.max(maxR,
+            Math.sqrt(seg.px * seg.px + seg.py * seg.py),
+            Math.sqrt(seg.qx * seg.qx + seg.qy * seg.qy));
+    }
+    if (maxR < 1) maxR = 1;
+
+    // ── Step 2: scale figure to fill 90% of 1000×1000 SVG canvas ──────────
+    // viewBox = 1000×1000 (vector — 300dpi at any print size)
+    const SIZE   = 1000;
+    const OX     = SIZE / 2, OY = SIZE / 2;
+    const scale  = (SIZE * 0.45) / maxR;   // 0.45 = 90% of half-canvas
+
+    // ── Step 3: build colour-grouped paths for the base arm ───────────────
+    let paths = [], cur = '', prevColor = null;
+    for (const seg of buf) {
+        const x1 = (OX + seg.px * scale).toFixed(2);
+        const y1 = (OY + seg.py * scale).toFixed(2);
+        const x2 = (OX + seg.qx * scale).toFixed(2);
+        const y2 = (OY + seg.qy * scale).toFixed(2);
         if (seg.color !== prevColor) {
             if (cur) paths.push({ color: prevColor, d: cur });
-            cur = `M${(OX + seg.px).toFixed(2)},${(OY + seg.py).toFixed(2)}`;
+            cur = `M${x1},${y1}`;
             prevColor = seg.color;
         }
-        cur += ` L${(OX + seg.qx).toFixed(2)},${(OY + seg.qy).toFixed(2)}`;
+        cur += ` L${x2},${y2}`;
     }
     if (cur) paths.push({ color: prevColor, d: cur });
 
-    // Base arm group
     const baseGroup = paths.map(p =>
-        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.95" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
-    ).join('');
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.95" stroke-width="0.8" fill="none" stroke-linecap="round"/>`
+    ).join('\n      ');
 
-    // Symmetry copies via <use>
+    // ── Step 4: symmetry copies via <use> + rotate ─────────────────────────
     let useTags = '';
     for (let s = 1; s < sym; s++) {
         const deg = (360 * s / sym).toFixed(4);
         useTags += `<use href="#arm" transform="rotate(${deg},${OX},${OY})"/>\n    `;
     }
 
-    const viewSize = 2000;
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+    // Physical size for print: 1000px ÷ 300dpi × 25.4 = 84.667mm
+    // → opening in Illustrator/Inkscape and exporting at native size = 300dpi
+    const mmSize = (1000 / 300 * 25.4).toFixed(3); // 84.667mm
+
+    const svg =
+`<?xml version="1.0" encoding="UTF-8"?>
+<!-- Van Lax Abrakadabra | ${figName} | 1000×1000 px | 300 DPI at ${mmSize}mm -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-     width="${viewSize}" height="${viewSize}" viewBox="0 0 ${viewSize} ${viewSize}">
+     width="${mmSize}mm" height="${mmSize}mm"
+     viewBox="0 0 ${SIZE} ${SIZE}">
   <title>${figName}</title>
-  <desc>Formula: ${buildFormula()}</desc>
+  <desc>Formula: ${buildFormula()} | Van Lax Abrakadabra</desc>
   <defs>
     <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feGaussianBlur stdDeviation="2" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <g id="arm">${baseGroup}</g>
+    <g id="arm">
+      ${baseGroup}
+    </g>
   </defs>
   <g filter="url(#glow)">
     <use href="#arm"/>
@@ -513,6 +534,7 @@ function generateSVG(figName) {
 </svg>`;
     return svg;
 }
+
 
 // ── Pin / Gallery ────────────────────────────────────────────────────────────
 function buildFormula() {
