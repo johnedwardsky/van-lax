@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GALAXY GALLERY | Van Lax</title>
+    <meta name="description" content="Your personal collection of geometric art.">
+    <link rel="stylesheet" href="phi-geometry.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { overflow-y: auto; overflow-x: hidden; }
+
+        .page-wrap {
+            min-height: 100vh;
+            padding: 100px 32px 80px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* ── Header ── */
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 56px;
+        }
+        .gallery-header .eyebrow {
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: rgba(229,178,54,0.6);
+            margin-bottom: 12px;
+        }
+        .gallery-header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 300;
+            color: var(--accent-gold);
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+        .gallery-header .tagline {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        /* ── Nav row ── */
+        .gallery-nav-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+        }
+
+        /* ── Grid ── */
+        .figures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 28px;
+        }
+
+        .figure-card {
+            position: relative;
+            background: rgba(8, 10, 16, 0.9);
+            border: 1px solid rgba(229, 178, 54, 0.18);
+            transition: border-color 0.4s, transform 0.4s, box-shadow 0.4s;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .figure-card:hover {
+            border-color: rgba(229, 178, 54, 0.7);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(229, 178, 54, 0.12), 0 4px 16px rgba(0,0,0,0.8);
+        }
+
+        .figure-img-wrap {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            background: #05070a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .figure-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+        .figure-card:hover .figure-img {
+            transform: scale(1.04);
+        }
+
+        .figure-info {
+            padding: 14px 18px 16px;
+            border-top: 1px solid rgba(229, 178, 54, 0.08);
+        }
+        .figure-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            color: var(--accent-gold);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .figure-formula {
+            font-size: 0.62rem;
+            color: rgba(255,255,255,0.3);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .figure-date {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.22);
+            letter-spacing: 0.1em;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: rgba(0,0,0,0.75);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            line-height: 1;
+            opacity: 0;
+            transition: opacity 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .figure-card:hover .delete-btn { opacity: 1; }
+        .delete-btn:hover { color: #ff4466; border-color: #ff4466; background: rgba(255,40,80,0.15); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 100px 20px;
+        }
+        .empty-state h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: rgba(229, 178, 54, 0.35);
+            margin-bottom: 16px;
+        }
+        .empty-state p {
+            color: rgba(255,255,255,0.3);
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            line-height: 1.8;
+        }
+        .empty-state .hint-arrow {
+            font-size: 2rem;
+            margin-top: 24px;
+            opacity: 0.2;
+        }
+
+        /* ── Lightbox ── */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.96);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            cursor: zoom-out;
+        }
+        .lightbox.active { display: flex; }
+        .lightbox-img {
+            max-width: 88vw;
+            max-height: 80vh;
+            object-fit: contain;
+            border: 1px solid rgba(229, 178, 54, 0.3);
+            box-shadow: 0 0 80px rgba(229,178,54,0.08);
+        }
+        .lightbox-meta {
+            text-align: center;
+            pointer-events: none;
+        }
+        .lightbox-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            color: var(--accent-gold);
+            margin-bottom: 6px;
+        }
+        .lightbox-formula-full {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.4);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.08em;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 2.2rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .lightbox-close:hover { color: #fff; }
+        .lightbox-download {
+            pointer-events: auto;
+        }
+
+        /* ── Count badge ── */
+        .count-badge {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.3);
+            text-align: center;
+            margin-bottom: 24px;
+            letter-spacing: 0.15em;
+        }
+
+        @media (max-width: 600px) {
+            .page-wrap { padding: 80px 16px 60px; }
+            .figures-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+            .figure-info { padding: 10px 12px 12px; }
+            .figure-name { font-size: 0.9rem; }
+            .delete-btn { opacity: 1; top: 6px; right: 6px; width: 26px; height: 26px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-switch-global">
+        <a href="abrakadabra-galaxy.html" class="active">EN</a>
+        <span>|</span>
+        <a href="abrakadabra.html">GEN</a>
+    </div>
+
+    <div class="page-wrap">
+        <div class="gallery-header">
+            <div class="eyebrow">Van Lax · Abrakadabra</div>
+            <h1>GALAXY GALLERY</h1>
+            <p class="tagline">Your personal collection of geometric universes</p>
+        </div>
+
+        <div class="gallery-nav-row">
+            <a href="abrakadabra.html" class="btn secondary link-btn">← Back to Generator</a>
+            <button id="clear-all" class="btn secondary">Clear All</button>
+        </div>
+
+        <div id="count-badge" class="count-badge"></div>
+        <div id="figures-grid" class="figures-grid"></div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightbox-close">×</button>
+        <img class="lightbox-img" id="lightbox-img" src="" alt="">
+        <div class="lightbox-meta">
+            <div class="lightbox-title" id="lightbox-title"></div>
+            <div class="lightbox-formula-full" id="lightbox-formula"></div>
+        </div>
+        <a id="lightbox-download" class="btn secondary lightbox-download" download="galaxy.jpg">Download</a>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'vanlax_galaxy';
+
+        function getGallery() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; }
+        }
+        function saveGallery(g) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(g));
+        }
+        function formatDate(ts) {
+            return new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+        }
+
+        function render() {
+            const gallery = getGallery();
+            const grid    = document.getElementById('figures-grid');
+            const badge   = document.getElementById('count-badge');
+            grid.innerHTML = '';
+
+            if (gallery.length === 0) {
+                badge.textContent = '';
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No Galaxies Yet</h2>
+                        <p>Go to the Generator · Pause a figure you love<br>Press Pin · Name your Galaxy · Save it here</p>
+                        <div class="hint-arrow">✦</div>
+                    </div>`;
+                return;
+            }
+
+            badge.textContent = `${gallery.length} Galaxy${gallery.length !== 1 ? 'ies' : 'y'} saved`;
+
+            gallery.forEach(fig => {
+                const card = document.createElement('div');
+                card.className = 'figure-card';
+
+                const shortFormula = fig.formula ? fig.formula.split('|')[0].trim() : '';
+                const fullFormula  = fig.formula || '';
+
+                card.innerHTML = `
+                    <div class="figure-img-wrap">
+                        <img class="figure-img" src="${fig.dataUrl}" alt="${fig.name}" loading="lazy">
+                    </div>
+                    <div class="figure-info">
+                        <div class="figure-name">${fig.name}</div>
+                        <div class="figure-formula" title="${fullFormula}">${shortFormula}</div>
+                        <div class="figure-date">${formatDate(fig.ts)}</div>
+                    </div>
+                    <button class="delete-btn" title="Delete">×</button>`;
+
+                card.querySelector('.figure-img-wrap').addEventListener('click', () => openLightbox(fig));
+                card.querySelector('.figure-info').addEventListener('click', () => openLightbox(fig));
+                card.querySelector('.delete-btn').addEventListener('click', e => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${fig.name}"?`)) {
+                        saveGallery(getGallery().filter(f => f.id !== fig.id));
+                        render();
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        function openLightbox(fig) {
+            document.getElementById('lightbox-img').src   = fig.dataUrl;
+            document.getElementById('lightbox-title').textContent = fig.name;
+            document.getElementById('lightbox-formula').textContent = fig.formula || '';
+            document.getElementById('lightbox-download').href = fig.dataUrl;
+            document.getElementById('lightbox-download').download = fig.name.replace(/\s+/g,'_') + '.jpg';
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        document.getElementById('lightbox').addEventListener('click', e => {
+            if (e.target === e.currentTarget || e.target === document.getElementById('lightbox-img'))
+                document.getElementById('lightbox').classList.remove('active');
+        });
+        document.getElementById('lightbox-close').addEventListener('click', () =>
+            document.getElementById('lightbox').classList.remove('active'));
+
+        document.getElementById('clear-all').addEventListener('click', () => {
+            if (confirm('Delete ALL galaxies? This cannot be undone.')) {
+                localStorage.removeItem(STORAGE_KEY);
+                render();
+            }
+        });
+
+        render();
+    </script>
+</body>
+</html>

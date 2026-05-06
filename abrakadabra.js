@@ -1,12 +1,18 @@
 // ─── DOM References ──────────────────────────────────────────────────────────
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const canvas       = document.getElementById('canvas');
+const ctx          = canvas.getContext('2d');
 const playPauseBtn = document.getElementById('play-pause');
 const randomizeBtn = document.getElementById('randomize');
-const shapeNameEl = document.getElementById('shape-name');
-const valLrpmEl = document.getElementById('val-lrpm');
-const valRrpmEl = document.getElementById('val-rrpm');
-const valSymmetryEl = document.getElementById('val-symmetry');
+const pinBtn       = document.getElementById('pin');
+const pinModal     = document.getElementById('pin-modal');
+const pinModalClose= document.getElementById('pin-modal-close');
+const pinNameInput = document.getElementById('pin-name');
+const pinFormulaEl = document.getElementById('pin-formula');
+const pinConfirmBtn= document.getElementById('pin-confirm');
+const shapeNameEl  = document.getElementById('shape-name');
+const valLrpmEl    = document.getElementById('val-lrpm');
+const valRrpmEl    = document.getElementById('val-rrpm');
+const valSymmetryEl= document.getElementById('val-symmetry');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const AM = Math.PI / 180;
@@ -424,28 +430,87 @@ const returnBtn = document.querySelector('.link-btn');
 if (returnBtn && window.self !== window.top) {
     returnBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        try {
-            window.parent.exitSection();
-        } catch(err) {
-            window.location.href = 'index.html';
-        }
+        try { window.parent.exitSection(); }
+        catch(err) { window.location.href = 'index.html'; }
     });
 }
 
 randomizeBtn.addEventListener('click', randomize);
-if (colorBtn) {
-    colorBtn.addEventListener('click', () => {
-        currentScheme = (currentScheme + 1) % SCHEMES.length;
-        updateColorUI();
-    });
-}
 canvas.addEventListener('dblclick', randomize);
+
+// ── Play / Pause ────────────────────────────────────────────────────────────
 playPauseBtn.addEventListener('click', () => {
     isPlaying = !isPlaying;
-    if (playPauseBtn) {
-        playPauseBtn.textContent = isPlaying ? (isRu ? 'Стоп' : 'Stop') : (isRu ? 'Старт' : 'Start');
-    }
+    playPauseBtn.textContent = isPlaying ? (isRu ? 'Стоп' : 'Stop') : (isRu ? 'Старт' : 'Start');
+    // Show Pin button only when paused
+    if (pinBtn) pinBtn.style.display = isPlaying ? 'none' : '';
 });
+
+// ── Pin / Gallery ────────────────────────────────────────────────────────────
+function buildFormula() {
+    const p = params;
+    const f = n => (typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '?');
+    return [
+        `ω₁ = ${f(p.lrota)}`,
+        `ω₂ = ${f(p.rrota)}`,
+        `L₁ = ${Math.round(p.larm1)}`,
+        `L₂ = ${Math.round(p.larm2)}`,
+        `R₁ = ${Math.round(p.rarm1)}`,
+        `R₂ = ${Math.round(p.rarm2)}`,
+        `d = ${Math.round(p.hdist)}`,
+        `ext = ${Math.round(p.ext)}`,
+        `S = ${p.symmetry || 1}×`
+    ].join('   ');
+}
+
+if (pinBtn) {
+    pinBtn.addEventListener('click', () => {
+        // Populate modal
+        if (pinFormulaEl) pinFormulaEl.textContent = buildFormula();
+        if (pinNameInput) pinNameInput.value = '';
+        if (pinModal) {
+            pinModal.style.display = 'flex';
+            setTimeout(() => { if (pinNameInput) pinNameInput.focus(); }, 50);
+        }
+    });
+}
+
+if (pinModalClose) pinModalClose.addEventListener('click', () => { if (pinModal) pinModal.style.display = 'none'; });
+if (pinModal) pinModal.addEventListener('click', e => { if (e.target === pinModal) pinModal.style.display = 'none'; });
+
+if (pinConfirmBtn) {
+    pinConfirmBtn.addEventListener('click', () => {
+        const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
+        // Capture canvas at 600px wide thumbnail
+        const THUMB_W = 600;
+        const THUMB_H = Math.round((canvas.height / canvas.width) * THUMB_W);
+        const off = document.createElement('canvas');
+        off.width = THUMB_W; off.height = THUMB_H;
+        off.getContext('2d').drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
+        const dataUrl = off.toDataURL('image/jpeg', 0.85);
+
+        let gallery = [];
+        try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
+        gallery.unshift({ id: Date.now(), dataUrl, name, formula: buildFormula(), ts: Date.now() });
+        if (gallery.length > 60) gallery = gallery.slice(0, 60);
+        try {
+            localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
+            if (pinModal) pinModal.style.display = 'none';
+            // Visual feedback on Pin button
+            if (pinBtn) {
+                const prev = pinBtn.textContent;
+                pinBtn.textContent = isRu ? '✓ Сохранено' : '✓ Saved!';
+                setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2000);
+            }
+        } catch(e) {
+            alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
+        }
+    });
+    // Allow Enter key to confirm
+    if (pinNameInput) pinNameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') pinConfirmBtn.click();
+    });
+}
 
 window.addEventListener('resize', resize);
 
