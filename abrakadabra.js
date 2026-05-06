@@ -108,8 +108,7 @@ function resize() {
 function clearCanvas() {
     if (!ctx) return;
     ctx.globalCompositeOperation = 'source-over';
-    // Use semi-transparent fill to leave a faint ghost of the previous shape
-    ctx.fillStyle = 'rgba(5, 5, 8, 0.92)'; 
+    ctx.fillStyle = '#05050a';   // fully opaque — no ghost of previous figure
     ctx.fillRect(0, 0, width, height);
     pen.x = null;
     pen.y = null;
