@@ -30,9 +30,10 @@ let pen = { x: null, y: null };
 let startPoint = null;
 let isFinished = false;
 
-// SVG recording buffer — base path segments, relative to center (pre-symmetry)
-const SVG_MAX = 10000;  // ~120KB SVG per figure, fits ~30 figures in localStorage
-let svgBuffer = []; // {px, py, qx, qy, color}
+// SVG recording buffer — circular, always keeps the MOST RECENT steps
+const SVG_MAX = 60000; // ~1 sec at 400steps/frame@60fps; circular so later draws stay
+let svgBuffer    = [];
+let svgBufferPos = 0;  // circular write head
 
 const SCHEMES = [
     { name: 'Rainbow', ruName: 'Радуга' },
@@ -119,7 +120,8 @@ function clearCanvas() {
     rot.c = 0;
     time = 0;
     totalSteps = 0;
-    svgBuffer = []; // reset SVG recording for new figure
+    svgBuffer    = [];
+    svgBufferPos = 0; // reset circular buffer for new figure
 }
 
 function drawMarker(x, y, isStart) {
@@ -419,9 +421,12 @@ function draw() {
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;
 
-                // Record base segment for SVG export (pre-symmetry, relative to center)
+                // Circular SVG buffer — overwrite oldest once full
                 if (svgBuffer.length < SVG_MAX) {
                     svgBuffer.push({ px, py, qx, qy, color: stroke });
+                } else {
+                    svgBuffer[svgBufferPos] = { px, py, qx, qy, color: stroke };
+                    svgBufferPos = (svgBufferPos + 1) % SVG_MAX;
                 }
             }
             pen.x = fx;
@@ -468,40 +473,34 @@ playPauseBtn.addEventListener('click', () => {
 });
 
 // ── SVG Export ────────────────────────────────────────────────────────────
-// Records the base path (pre-symmetry) and exports as a print-ready SVG.
-// Output: 1000×1000 px viewBox, ~84.67mm physical (≥300 dpi at that size).
-// Symmetry arms use <use> + rotate — compact file, infinitely scalable.
 function generateSVG(figName) {
     if (svgBuffer.length < 2) return null;
-    const buf = svgBuffer;
     const sym = params.symmetry || 1;
 
-    // ── Step 1: find actual bounding radius of the figure ──────────────────
+    // Read circular buffer in correct order (oldest → newest)
+    const buf = svgBuffer.length < SVG_MAX
+        ? svgBuffer
+        : [...svgBuffer.slice(svgBufferPos), ...svgBuffer.slice(0, svgBufferPos)];
+
+    // Bounding radius → scale to fill 90% of 1000×1000
     let maxR = 0;
-    for (const seg of buf) {
-        maxR = Math.max(maxR,
-            Math.sqrt(seg.px * seg.px + seg.py * seg.py),
-            Math.sqrt(seg.qx * seg.qx + seg.qy * seg.qy));
-    }
+    for (const s of buf) maxR = Math.max(maxR, Math.sqrt(s.px*s.px+s.py*s.py), Math.sqrt(s.qx*s.qx+s.qy*s.qy));
     if (maxR < 1) maxR = 1;
+    const SIZE  = 1000;
+    const OX = SIZE/2, OY = SIZE/2;
+    const scale = (SIZE * 0.45) / maxR;
 
-    // ── Step 2: scale figure to fill 90% of 1000×1000 SVG canvas ──────────
-    // viewBox = 1000×1000 (vector — 300dpi at any print size)
-    const SIZE   = 1000;
-    const OX     = SIZE / 2, OY = SIZE / 2;
-    const scale  = (SIZE * 0.45) / maxR;   // 0.45 = 90% of half-canvas
-
-    // ── Step 3: build colour-grouped paths for the base arm ───────────────
+    // Build colour-grouped paths
     let paths = [], cur = '', prevColor = null;
-    for (const seg of buf) {
-        const x1 = (OX + seg.px * scale).toFixed(2);
-        const y1 = (OY + seg.py * scale).toFixed(2);
-        const x2 = (OX + seg.qx * scale).toFixed(2);
-        const y2 = (OY + seg.qy * scale).toFixed(2);
-        if (seg.color !== prevColor) {
+    for (const s of buf) {
+        const x1 = Math.round(OX + s.px * scale);
+        const y1 = Math.round(OY + s.py * scale);
+        const x2 = Math.round(OX + s.qx * scale);
+        const y2 = Math.round(OY + s.qy * scale);
+        if (s.color !== prevColor) {
             if (cur) paths.push({ color: prevColor, d: cur });
             cur = `M${x1},${y1}`;
-            prevColor = seg.color;
+            prevColor = s.color;
         }
         cur += ` L${x2},${y2}`;
     }
@@ -539,7 +538,10 @@ function generateSVG(figName) {
       ${baseGroup}
     </g>
   </defs>
-  <g filter="url(#glow)">
+  <!-- Dark background matches canvas — required for screen blend glow -->
+  <rect width="${SIZE}" height="${SIZE}" fill="#05050a"/>
+  <!-- screen blend-mode replicates canvas globalCompositeOperation:'screen' -->
+  <g filter="url(#glow)" style="mix-blend-mode:screen">
     <use href="#arm"/>
     ${useTags}
   </g>
@@ -595,7 +597,7 @@ if (pinConfirmBtn) {
         let gallery = [];
         try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
         gallery.unshift({ id: Date.now(), svgData, name, formula: buildFormula(), ts: Date.now() });
-        if (gallery.length > 30) gallery = gallery.slice(0, 30);
+        if (gallery.length > 8) gallery = gallery.slice(0, 8); // 8 × ~600KB ≈ 5MB
         try {
             localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
             if (pinModal) pinModal.style.display = 'none';
