@@ -506,6 +506,84 @@ if (downloadBtn) {
         setTimeout(function() { downloadBtn.textContent = prev; }, 2500);
     });
 }
+function generateSVG(figName) {
+    if (svgBuffer.length < 2) return null;
+    const sym = params.symmetry || 1;
+
+    // Read circular buffer in correct order (oldest → newest)
+    const buf = svgBuffer.length < SVG_MAX
+        ? svgBuffer
+        : [...svgBuffer.slice(svgBufferPos), ...svgBuffer.slice(0, svgBufferPos)];
+
+    // Bounding radius → scale to fill 90% of 1000×1000
+    let maxR = 0;
+    for (const s of buf) maxR = Math.max(maxR, Math.sqrt(s.px*s.px+s.py*s.py), Math.sqrt(s.qx*s.qx+s.qy*s.qy));
+    if (maxR < 1) maxR = 1;
+    const SIZE  = 1000;
+    const OX = SIZE/2, OY = SIZE/2;
+    const scale = (SIZE * 0.45) / maxR;
+
+    // Build colour-grouped paths
+    let paths = [], cur = '', prevColor = null;
+    for (const s of buf) {
+        const x1 = Math.round(OX + s.px * scale);
+        const y1 = Math.round(OY + s.py * scale);
+        const x2 = Math.round(OX + s.qx * scale);
+        const y2 = Math.round(OY + s.qy * scale);
+        if (s.color !== prevColor) {
+            if (cur) paths.push({ color: prevColor, d: cur });
+            cur = `M${x1},${y1}`;
+            prevColor = s.color;
+        }
+        cur += ` L${x2},${y2}`;
+    }
+    if (cur) paths.push({ color: prevColor, d: cur });
+
+    const baseGroup = paths.map(p =>
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.95" stroke-width="0.8" fill="none" stroke-linecap="round"/>`
+    ).join('\n      ');
+
+    // ── Step 4: symmetry copies via <use> + rotate ─────────────────────────
+    let useTags = '';
+    for (let s = 1; s < sym; s++) {
+        const deg = (360 * s / sym).toFixed(4);
+        useTags += `<use href="#arm" transform="rotate(${deg},${OX},${OY})"/>\n    `;
+    }
+
+    // Physical size for print: 1000px ÷ 300dpi × 25.4 = 84.667mm
+    // → opening in Illustrator/Inkscape and exporting at native size = 300dpi
+    const mmSize = (1000 / 300 * 25.4).toFixed(3); // 84.667mm
+
+    const svg =
+`<?xml version="1.0" encoding="UTF-8"?>
+<!-- Van Lax Abrakadabra | ${figName} | 1000×1000 px | 300 DPI at ${mmSize}mm -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="${mmSize}mm" height="${mmSize}mm"
+     viewBox="0 0 ${SIZE} ${SIZE}">
+  <title>${figName}</title>
+  <desc>Van Lax Abrakadabra | ω1=${params.lrota?.toFixed(4)} ω2=${params.rrota?.toFixed(4)} S=${params.symmetry||1}</desc>
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <g id="arm">
+      ${baseGroup}
+    </g>
+  </defs>
+  <!-- Dark background matches canvas — required for screen blend glow -->
+  <rect width="${SIZE}" height="${SIZE}" fill="#05050a"/>
+  <!-- screen blend-mode replicates canvas globalCompositeOperation:'screen' -->
+  <g filter="url(#glow)" style="mix-blend-mode:screen">
+    <use href="#arm"/>
+    ${useTags}
+  </g>
+</svg>`;
+    return svg;
+}
+
+
+
 window.addEventListener('resize', resize);
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
