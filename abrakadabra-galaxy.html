@@ -331,8 +331,8 @@
 
                 const shortFormula = fig.formula ? fig.formula.split('|')[0].trim() : '';
                 const fullFormula  = fig.formula || '';
-                // SVG displayed via Blob URL — works for any file size, infinite resolution
-                const imgSrc = svgBlobUrl(fig.svgData || '');
+                // Backward-compatible: new entries have svgData, old entries have dataUrl
+                const imgSrc = fig.svgData ? svgBlobUrl(fig.svgData) : (fig.dataUrl || '');
 
                 card.innerHTML = `
                     <div class="figure-img-wrap">
@@ -360,19 +360,25 @@
         }
 
         function openLightbox(fig) {
-            const imgSrc = svgBlobUrl(fig.svgData || '');
+            const imgSrc = fig.svgData ? svgBlobUrl(fig.svgData) : (fig.dataUrl || '');
             document.getElementById('lightbox-img').src = imgSrc;
             document.getElementById('lightbox-title').textContent = fig.name;
             document.getElementById('lightbox-formula').textContent = fig.formula || '';
-            // Download SVG via Blob
-            document.getElementById('lightbox-download').onclick = () => {
-                const blob = new Blob([fig.svgData], { type: 'image/svg+xml;charset=utf-8' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = fig.name.replace(/[^\w\u0400-\u04FF]/g, '_') + '.svg';
-                a.click();
-                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-            };
+            // Download SVG (only if svgData exists)
+            const dlBtn = document.getElementById('lightbox-download');
+            if (fig.svgData) {
+                dlBtn.style.display = '';
+                dlBtn.onclick = () => {
+                    const blob = new Blob([fig.svgData], { type: 'image/svg+xml;charset=utf-8' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = fig.name.replace(/[^\w\u0400-\u04FF]/g, '_') + '.svg';
+                    a.click();
+                    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+                };
+            } else {
+                dlBtn.style.display = 'none'; // old JPEG entries have no SVG to download
+            }
             document.getElementById('lightbox').classList.add('active');
         }
 
