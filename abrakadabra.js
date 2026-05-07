@@ -597,7 +597,7 @@ if (pinConfirmBtn) {
         let gallery = [];
         try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
         gallery.unshift({ id: Date.now(), svgData, name, formula: buildFormula(), ts: Date.now() });
-        if (gallery.length > 8) gallery = gallery.slice(0, 8); // 8 × ~600KB ≈ 5MB
+        if (gallery.length > 200) gallery = gallery.slice(0, 200); // soft safety cap
         try {
             localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
             if (pinModal) pinModal.style.display = 'none';
