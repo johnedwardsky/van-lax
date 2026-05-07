@@ -14,6 +14,44 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+
+  <!-- ===============================
+       WELCOME POPUP
+       =============================== -->
+  <div id="welcome-popup-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-popup-title">
+    <div id="welcome-popup">
+      <div class="wlc-ornament">&#9830;</div>
+      <p class="wlc-sup">THE HOUSE OF</p>
+      <h2 id="welcome-popup-title" class="wlc-logo">VAN LAX</h2>
+      <div class="wlc-divider"></div>
+      <p class="wlc-body">
+        Welcome to the House of Art of VAN LAX — a space where you are invited to explore the
+        creative vision and philosophy of a contemporary artist ahead of his time.
+        Through an innovative lens, he translates visual and sonic imagery through the prism
+        of his own philosophy, inspiring countless minds with the boundless flight of his imagination.
+      </p>
+      <p class="wlc-body">
+        Here, every element of our world is perceived through mathematics, geometric forms,
+        the Golden Ratio, and the profound interconnection between all things — an interconnection
+        that inevitably forges not only new neural pathways and thought-forms, but a new,
+        sequential reality of our shared matrix of life.
+      </p>
+      <p class="wlc-quote">Everything in our world is ordered and connected.</p>
+      <button id="welcome-enter-btn" onclick="closeWelcomePopup()">ENTER THE HOUSE</button>
+    </div>
+  </div>
+
+  <!-- ===============================
+       COOKIE CONSENT BANNER
+       =============================== -->
+  <div id="cookie-banner" role="complementary" aria-label="Cookie consent">
+    <span class="cookie-text">
+      &#x1F36A;&ensp;We use cookies to enhance your experience on this site.
+      By continuing, you agree to our use of cookies.
+    </span>
+    <button id="cookie-accept-btn" onclick="acceptCookies()">Accept</button>
+  </div>
+
   
   <!-- ===============================
        GLOBAL HUB: THE BEGINNING
@@ -868,8 +906,238 @@
     </div>
   </div>
 
+  <!-- ===============================
+       WELCOME POPUP & COOKIE — STYLES
+       =============================== -->
+  <style>
+    /* ---- Welcome Popup ---- */
+    #welcome-popup-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at center, rgba(10,8,20,0.92) 0%, rgba(0,0,0,0.97) 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: wlcFadeIn 1s ease forwards;
+      padding: 20px;
+    }
+    #welcome-popup-overlay.hidden {
+      animation: wlcFadeOut 0.7s ease forwards;
+      pointer-events: none;
+    }
+    @keyframes wlcFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes wlcFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+    #welcome-popup {
+      position: relative;
+      max-width: 680px;
+      width: 100%;
+      background: linear-gradient(145deg, rgba(25,20,10,0.85) 0%, rgba(10,8,20,0.9) 100%);
+      border: 1px solid rgba(229,178,54,0.35);
+      border-radius: 4px;
+      padding: 56px 52px 48px;
+      text-align: center;
+      box-shadow:
+        0 0 60px rgba(229,178,54,0.08),
+        0 0 120px rgba(0,0,0,0.6),
+        inset 0 0 60px rgba(229,178,54,0.03);
+      animation: wlcSlideUp 1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+    }
+    @keyframes wlcSlideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    /* Top & bottom golden lines */
+    #welcome-popup::before,
+    #welcome-popup::after {
+      content: '';
+      position: absolute;
+      left: 52px; right: 52px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(229,178,54,0.6), transparent);
+    }
+    #welcome-popup::before { top: 24px; }
+    #welcome-popup::after  { bottom: 24px; }
+
+    .wlc-ornament {
+      font-size: 1rem;
+      color: rgba(229,178,54,0.5);
+      letter-spacing: 0.4em;
+      margin-bottom: 18px;
+    }
+    .wlc-sup {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 200;
+      font-size: 0.65rem;
+      letter-spacing: 0.5em;
+      color: rgba(229,178,54,0.55);
+      text-transform: uppercase;
+      margin: 0 0 6px;
+    }
+    .wlc-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(2.6rem, 5vw, 3.6rem);
+      letter-spacing: 0.28em;
+      color: #E5B236;
+      text-shadow: 0 0 40px rgba(229,178,54,0.4), 0 0 80px rgba(229,178,54,0.15);
+      margin: 0 0 20px;
+    }
+    .wlc-divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #E5B236, transparent);
+      margin: 0 auto 28px;
+    }
+    .wlc-body {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(0.95rem, 2vw, 1.08rem);
+      font-weight: 300;
+      line-height: 1.85;
+      color: rgba(220,210,190,0.82);
+      margin: 0 0 18px;
+    }
+    .wlc-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.2vw, 1.18rem);
+      color: rgba(229,178,54,0.75);
+      border-left: 2px solid rgba(229,178,54,0.4);
+      padding-left: 16px;
+      text-align: left;
+      margin: 22px 0 36px;
+      line-height: 1.6;
+    }
+    #welcome-enter-btn {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300;
+      font-size: 0.75rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #E5B236;
+      background: transparent;
+      border: 1px solid rgba(229,178,54,0.5);
+      padding: 14px 44px;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    #welcome-enter-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(229,178,54,0.08), transparent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    #welcome-enter-btn:hover::before { transform: scaleX(1); }
+    #welcome-enter-btn:hover {
+      color: #fff;
+      border-color: rgba(229,178,54,0.85);
+      box-shadow: 0 0 20px rgba(229,178,54,0.2);
+    }
+
+    /* ---- Cookie Banner ---- */
+    #cookie-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 8900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 14px 28px;
+      background: rgba(8,6,16,0.92);
+      border-top: 1px solid rgba(229,178,54,0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      animation: cookieSlideUp 0.6s ease 1.2s both;
+      font-family: 'Montserrat', sans-serif;
+    }
+    #cookie-banner.hidden {
+      animation: cookieSlideDown 0.4s ease forwards;
+    }
+    @keyframes cookieSlideUp   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes cookieSlideDown { from { transform: translateY(0); }   to { transform: translateY(120%); } }
+
+    .cookie-text {
+      font-size: 0.75rem;
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      color: rgba(200,190,170,0.75);
+      line-height: 1.5;
+    }
+    #cookie-accept-btn {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid rgba(229,178,54,0.5);
+      color: #E5B236;
+      padding: 8px 24px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+    #cookie-accept-btn:hover {
+      background: rgba(229,178,54,0.1);
+      border-color: rgba(229,178,54,0.85);
+      color: #fff;
+    }
+
+    @media (max-width: 600px) {
+      #welcome-popup { padding: 40px 24px 36px; }
+      #welcome-popup::before, #welcome-popup::after { left: 24px; right: 24px; }
+      .wlc-quote { margin-left: 0; }
+    }
+  </style>
+
   <script src="script.js" defer></script>
   <script>
+    // ---- Welcome Popup Logic ----
+    function closeWelcomePopup() {
+      const overlay = document.getElementById('welcome-popup-overlay');
+      overlay.classList.add('hidden');
+      overlay.addEventListener('animationend', () => {
+        overlay.style.display = 'none';
+      }, { once: true });
+      localStorage.setItem('vanlax_welcomed', '1');
+    }
+
+    // ---- Cookie Consent Logic ----
+    function acceptCookies() {
+      const banner = document.getElementById('cookie-banner');
+      banner.classList.add('hidden');
+      banner.addEventListener('animationend', () => {
+        banner.style.display = 'none';
+      }, { once: true });
+      localStorage.setItem('vanlax_cookies', '1');
+    }
+
+    // On load: respect saved preferences
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('vanlax_welcomed') === '1') {
+        const overlay = document.getElementById('welcome-popup-overlay');
+        overlay.style.display = 'none';
+      }
+      if (localStorage.getItem('vanlax_cookies') === '1') {
+        const banner = document.getElementById('cookie-banner');
+        banner.style.display = 'none';
+      }
+    });
+
     // Deep linking for specific sections
     window.addEventListener('load', () => {
       const urlParams = new URLSearchParams(window.location.search);
