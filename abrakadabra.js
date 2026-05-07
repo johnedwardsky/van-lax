@@ -582,6 +582,56 @@ if (pinBtn) {
 if (pinModalClose) pinModalClose.addEventListener('click', () => { if (pinModal) pinModal.style.display = 'none'; });
 if (pinModal) pinModal.addEventListener('click', e => { if (e.target === pinModal) pinModal.style.display = 'none'; });
 
+// ── Auto-crop thumbnail: finds content bounding box, fills card ──────────────
+function captureThumb(srcCanvas, size) {
+    // Scan 200×200 proxy for non-background pixels to find content bounds
+    const P = 200;
+    const proxy = document.createElement('canvas');
+    proxy.width = P; proxy.height = P;
+    proxy.getContext('2d').drawImage(srcCanvas, 0, 0, P, P);
+    const px = proxy.getContext('2d').getImageData(0, 0, P, P).data;
+
+    let x0 = P, y0 = P, x1 = 0, y1 = 0;
+    for (let y = 0; y < P; y++) {
+        for (let x = 0; x < P; x++) {
+            const i = (y * P + x) * 4;
+            // Background is #05050a ≈ (5,5,10) — any brighter pixel is content
+            if (px[i] > 18 || px[i+1] > 18 || px[i+2] > 18) {
+                if (x < x0) x0 = x; if (x > x1) x1 = x;
+                if (y < y0) y0 = y; if (y > y1) y1 = y;
+            }
+        }
+    }
+
+    const off = document.createElement('canvas');
+    off.width = size; off.height = size;
+    const oc  = off.getContext('2d');
+    oc.fillStyle = '#05050a';
+    oc.fillRect(0, 0, size, size);
+
+    if (x0 < x1 && y0 < y1) {
+        // Add 8% padding around the content
+        const pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.08);
+        x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+        x1 = Math.min(P - 1, x1 + pad); y1 = Math.min(P - 1, y1 + pad);
+        // Map from proxy coords back to source canvas coords
+        const sx = x0 / P * srcCanvas.width,  sy = y0 / P * srcCanvas.height;
+        const sw = (x1 - x0) / P * srcCanvas.width, sh = (y1 - y0) / P * srcCanvas.height;
+        // Fit the crop into the square (90% fill)
+        const f  = Math.min(size / sw, size / sh) * 0.90;
+        const dw = sw * f, dh = sh * f;
+        oc.drawImage(srcCanvas, sx, sy, sw, sh, (size - dw) / 2, (size - dh) / 2, dw, dh);
+    } else {
+        // Fallback: letterbox full canvas
+        const r = Math.min(size / srcCanvas.width, size / srcCanvas.height);
+        oc.drawImage(srcCanvas,
+            (size - srcCanvas.width  * r) / 2,
+            (size - srcCanvas.height * r) / 2,
+            srcCanvas.width * r, srcCanvas.height * r);
+    }
+    return off;
+}
+
 if (pinConfirmBtn) {
     pinConfirmBtn.addEventListener('click', () => {
         const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
@@ -589,16 +639,8 @@ if (pinConfirmBtn) {
         // SVG for vector download
         const svgData = generateSVG(name);
 
-        // 1200×1200 square JPEG (~100-200 KB) — JPEG on dark bg compresses 10× vs PNG
-        const T = 1200;
-        const off = document.createElement('canvas');
-        off.width = T; off.height = T;
-        const offCtx = off.getContext('2d');
-        offCtx.fillStyle = '#05050a';
-        offCtx.fillRect(0, 0, T, T);
-        const ratio = Math.min(T / canvas.width, T / canvas.height);
-        offCtx.drawImage(canvas, (T - canvas.width * ratio) / 2, (T - canvas.height * ratio) / 2,
-                         canvas.width * ratio, canvas.height * ratio);
+        // Auto-crop thumbnail: detects figure bounding box, fills 1200×1200 JPEG
+        const off = captureThumb(canvas, 1200);
         const jpeg90 = off.toDataURL('image/jpeg', 0.90);
         const jpeg60 = () => off.toDataURL('image/jpeg', 0.60);
         const jpeg40 = () => off.toDataURL('image/jpeg', 0.40);
