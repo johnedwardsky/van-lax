@@ -462,18 +462,18 @@ function generateSVG(figName) {
     if (svgBuffer.length < 2) return null;
     const sym = params.symmetry || 1;
 
-    // Use full buffer (linear, no circular reorder needed)
+    // Full linear buffer (no wrap)
     const buf = svgBuffer;
 
     // Bounding radius → scale to fill 90% of 1000×1000
     let maxR = 0;
     for (const s of buf) maxR = Math.max(maxR, Math.sqrt(s.px*s.px+s.py*s.py), Math.sqrt(s.qx*s.qx+s.qy*s.qy));
     if (maxR < 1) maxR = 1;
-    const SIZE  = 1000;
+    const SIZE = 1000;
     const OX = SIZE/2, OY = SIZE/2;
     const scale = (SIZE * 0.45) / maxR;
 
-    // Build colour-grouped paths
+    // Colour-grouped paths (one per colour run)
     let paths = [], cur = '', prevColor = null;
     for (const s of buf) {
         const x1 = Math.round(OX + s.px * scale);
@@ -489,47 +489,63 @@ function generateSVG(figName) {
     }
     if (cur) paths.push({ color: prevColor, d: cur });
 
-    const baseGroup = paths.map(p =>
-        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.2" stroke-width="0.4" fill="none" stroke-linecap="round"/>`
+    // ── Two passes replicating the canvas dual draw ─────────────────────────
+    // Pass 1 (Glow): thick, very transparent — matches ctx.lineWidth*4, alpha 0.15
+    const glowPaths = paths.map(p =>
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.07" stroke-width="3" fill="none" stroke-linecap="round"/>`
     ).join('\n      ');
 
-    // ── Step 4: symmetry copies via <use> + rotate ─────────────────────────
-    let useTags = '';
+    // Pass 2 (Core): thin, semi-transparent — matches ctx.lineWidth*0.7, alpha 0.5-1
+    const corePaths = paths.map(p =>
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.5" stroke-width="0.5" fill="none" stroke-linecap="round"/>`
+    ).join('\n      ');
+
+    // Symmetry <use> tags for each pass
+    let useGlow = '', useCore = '';
     for (let s = 1; s < sym; s++) {
         const deg = (360 * s / sym).toFixed(4);
-        useTags += `<use href="#arm" transform="rotate(${deg},${OX},${OY})"/>\n    `;
+        useGlow += `<use href="#arm-glow" transform="rotate(${deg},${OX},${OY})"/>\n    `;
+        useCore += `<use href="#arm-core" transform="rotate(${deg},${OX},${OY})"/>\n    `;
     }
 
-    // Physical size for print: 1000px ÷ 300dpi × 25.4 = 84.667mm
-    // → opening in Illustrator/Inkscape and exporting at native size = 300dpi
-    const mmSize = (1000 / 300 * 25.4).toFixed(3); // 84.667mm
+    // Physical size: 1000px at 300 DPI = 84.667mm
+    const mmSize = (1000 / 300 * 25.4).toFixed(3);
 
-    const svg =
-`<?xml version="1.0" encoding="UTF-8"?>
-<!-- Van Lax Abrakadabra | ${figName} | 1000×1000 px | 300 DPI at ${mmSize}mm -->
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Van Lax Abrakadabra | ${figName} | 1000×1000 px | 300 DPI | Transparent -->
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
      width="${mmSize}mm" height="${mmSize}mm"
      viewBox="0 0 ${SIZE} ${SIZE}">
   <title>${figName}</title>
-  <desc>Van Lax Abrakadabra | ω1=${params.lrota?.toFixed(4)} ω2=${params.rrota?.toFixed(4)} S=${params.symmetry||1}</desc>
+  <desc>Van Lax Abrakadabra | S=${params.symmetry||1}</desc>
   <defs>
-    <!-- Glow filter available but not applied by default for crisp linework -->
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="2" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <!-- Glow blur — softens the thick halo pass without a background -->
+    <filter id="gf" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.5"/>
     </filter>
-    <g id="arm">
-      ${baseGroup}
+    <!-- Pass 1: thick, blurred glow -->
+    <g id="arm-glow">
+      ${glowPaths}
+    </g>
+    <!-- Pass 2: thin, sharp core -->
+    <g id="arm-core">
+      ${corePaths}
     </g>
   </defs>
-  <!-- Transparent background — place on any colour in print software -->
+  <!-- No background — fully transparent, works on white, black or any colour -->
+  <!-- Glow pass (blurred halo) -->
+  <g filter="url(#gf)">
+    <use href="#arm-glow"/>
+    ${useGlow}
+  </g>
+  <!-- Core pass (crisp lines on top) -->
   <g>
-    <use href="#arm"/>
-    ${useTags}
+    <use href="#arm-core"/>
+    ${useCore}
   </g>
 </svg>`;
-    return svg;
 }
+
 
 
 // ── Play / Pause ─────────────────────────────────────────────────────────────
