@@ -291,12 +291,22 @@
             return new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
         }
 
-        function svgDataUri(svgData) {
-            // Use Blob URL for large SVGs to avoid data URI length issues
-            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+        let activeBlobUrls = []; // track for cleanup
+
+        function svgBlobUrl(svgData) {
+            const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            activeBlobUrls.push(url);
+            return url;
+        }
+
+        function cleanupBlobs() {
+            activeBlobUrls.forEach(u => URL.revokeObjectURL(u));
+            activeBlobUrls = [];
         }
 
         function render() {
+            cleanupBlobs(); // free previous image Blob URLs
             const gallery = getGallery();
             const grid    = document.getElementById('figures-grid');
             const badge   = document.getElementById('count-badge');
@@ -321,8 +331,8 @@
 
                 const shortFormula = fig.formula ? fig.formula.split('|')[0].trim() : '';
                 const fullFormula  = fig.formula || '';
-                // SVG displayed directly — infinite resolution, no JPEG artefacts
-                const imgSrc = svgDataUri(fig.svgData || '');
+                // SVG displayed via Blob URL — works for any file size, infinite resolution
+                const imgSrc = svgBlobUrl(fig.svgData || '');
 
                 card.innerHTML = `
                     <div class="figure-img-wrap">
@@ -350,7 +360,7 @@
         }
 
         function openLightbox(fig) {
-            const imgSrc = svgDataUri(fig.svgData || '');
+            const imgSrc = svgBlobUrl(fig.svgData || '');
             document.getElementById('lightbox-img').src = imgSrc;
             document.getElementById('lightbox-title').textContent = fig.name;
             document.getElementById('lightbox-formula').textContent = fig.formula || '';
