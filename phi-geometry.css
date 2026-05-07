@@ -185,6 +185,12 @@ h1 {
     box-shadow: none;
 }
 
+.btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .btn.active {
     background: var(--accent-gold);
     color: #000;

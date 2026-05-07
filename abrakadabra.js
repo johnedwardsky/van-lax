@@ -459,53 +459,8 @@ if (returnBtn) {
 randomizeBtn.addEventListener('click', randomize);
 canvas.addEventListener('dblclick', randomize);
 
-// ── Play / Pause + auto-download on Stop ───────────────────────────
-function doSvgDownload() {
-    if (svgBuffer.length < 2) return;
-    try {
-        var p   = params;
-        var fv  = function(n) { return typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '0'; };
-        var raw = 'Abrakadabra_' + fv(p.lrota) + '_' + fv(p.rrota) + '_S' + (p.symmetry || 1);
-        var fn  = raw.replace(/[^A-Za-z0-9._-]/g, '_');
-        var svgText = generateSVG(raw);
-        if (!svgText) { console.warn('generateSVG returned null'); return; }
-        var blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-        var url  = URL.createObjectURL(blob);
-        var a    = document.createElement('a');
-        a.href   = url;
-        a.setAttribute('download', fn + '.svg');
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 3000);
-    } catch(err) {
-        alert('Download failed: ' + err.message);
-        console.error(err);
-    }
-}
 
-playPauseBtn.addEventListener('click', function() {
-    isPlaying = !isPlaying;
-    playPauseBtn.textContent = isPlaying
-        ? (isRu ? 'Стоп' : 'Stop')
-        : (isRu ? 'Старт' : 'Start');
-    if (!isPlaying) doSvgDownload();
-});
-
-// Download button — manual trigger at any time
-var downloadBtn = document.getElementById('download');
-if (downloadBtn) {
-    downloadBtn.addEventListener('click', function() {
-        if (svgBuffer.length < 2) {
-            alert(isRu ? 'Подождите, пока фигура нарисуется.' : 'Let the figure draw first.');
-            return;
-        }
-        doSvgDownload();
-        var prev = downloadBtn.textContent;
-        downloadBtn.textContent = isRu ? '✓ Скачан!' : '✓ Downloaded!';
-        setTimeout(function() { downloadBtn.textContent = prev; }, 2500);
-    });
-}
+// ── SVG Export ────────────────────────────────────────────────────────────────
 function generateSVG(figName) {
     if (svgBuffer.length < 2) return null;
     const sym = params.symmetry || 1;
@@ -583,10 +538,69 @@ function generateSVG(figName) {
 }
 
 
+// ── Play / Pause ─────────────────────────────────────────────────────────────
+var downloadBtn = document.getElementById('download');
+
+playPauseBtn.addEventListener('click', function() {
+    isPlaying = !isPlaying;
+    playPauseBtn.textContent = isPlaying
+        ? (isRu ? 'Стоп' : 'Stop')
+        : (isRu ? 'Старт' : 'Start');
+    // When stopped: light up Download button (gold). When playing: dim it.
+    if (downloadBtn) {
+        if (!isPlaying) {
+            downloadBtn.classList.remove('secondary');
+            downloadBtn.disabled = false;
+        } else {
+            downloadBtn.classList.add('secondary');
+            downloadBtn.disabled = true;
+        }
+    }
+});
+
+// ── Download SVG — only works when stopped ───────────────────────────────────
+if (downloadBtn) {
+    downloadBtn.classList.add('secondary');
+    downloadBtn.disabled = true;
+    downloadBtn.addEventListener('click', function() {
+        if (isPlaying) return;
+        if (svgBuffer.length < 2) {
+            alert(isRu ? 'Подождите, пока фигура нарисуется.' : 'Let the figure draw first.');
+            return;
+        }
+        try {
+            var p  = params;
+            var fv = function(n) { return typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '0'; };
+            var figName = 'Abrakadabra_' + fv(p.lrota) + '_' + fv(p.rrota) + '_S' + (p.symmetry || 1);
+            var safeName = figName.replace(/[^A-Za-z0-9._-]/g, '_');
+            var svgText = generateSVG(figName);
+            if (!svgText) { alert(isRu ? 'Нет данных.' : 'No data to export.'); return; }
+            var blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+            var url  = URL.createObjectURL(blob);
+            var a    = document.createElement('a');
+            a.href   = url;
+            a.setAttribute('download', safeName + '.svg');
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 3000);
+            // Flash success
+            var prev = downloadBtn.textContent;
+            downloadBtn.textContent = isRu ? '✓ Скачан!' : '✓ Downloaded!';
+            setTimeout(function() { downloadBtn.textContent = prev; }, 2500);
+        } catch(err) {
+            alert('Download failed: ' + err.message);
+            console.error(err);
+        }
+    });
+}
 
 window.addEventListener('resize', resize);
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+// ─── Boot ───────────────────────────────────────────────────────────────────────
 resize();
 updateColorUI();
 randomize();
