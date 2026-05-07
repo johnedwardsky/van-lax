@@ -275,7 +275,7 @@
             <div class="lightbox-title" id="lightbox-title"></div>
             <div class="lightbox-formula-full" id="lightbox-formula"></div>
         </div>
-        <a id="lightbox-download" class="btn secondary lightbox-download" download="galaxy.jpg">Download</a>
+        <button id="lightbox-download" class="btn secondary lightbox-download">Download SVG</button>
     </div>
 
     <script>
@@ -291,6 +291,11 @@
             return new Date(ts).toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
         }
 
+        function svgDataUri(svgData) {
+            // Use Blob URL for large SVGs to avoid data URI length issues
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+        }
+
         function render() {
             const gallery = getGallery();
             const grid    = document.getElementById('figures-grid');
@@ -302,7 +307,7 @@
                 grid.innerHTML = `
                     <div class="empty-state">
                         <h2>No Galaxies Yet</h2>
-                        <p>Go to the Generator · Pause a figure you love<br>Press Pin · Name your Galaxy · Save it here</p>
+                        <p>Go to the Generator · Let a figure draw · Press Pin<br>Name your Galaxy · It appears here</p>
                         <div class="hint-arrow">✦</div>
                     </div>`;
                 return;
@@ -316,10 +321,12 @@
 
                 const shortFormula = fig.formula ? fig.formula.split('|')[0].trim() : '';
                 const fullFormula  = fig.formula || '';
+                // SVG displayed directly — infinite resolution, no JPEG artefacts
+                const imgSrc = svgDataUri(fig.svgData || '');
 
                 card.innerHTML = `
                     <div class="figure-img-wrap">
-                        <img class="figure-img" src="${fig.dataUrl}" alt="${fig.name}" loading="lazy">
+                        <img class="figure-img" src="${imgSrc}" alt="${fig.name}" loading="lazy">
                     </div>
                     <div class="figure-info">
                         <div class="figure-name">${fig.name}</div>
@@ -343,11 +350,19 @@
         }
 
         function openLightbox(fig) {
-            document.getElementById('lightbox-img').src   = fig.dataUrl;
+            const imgSrc = svgDataUri(fig.svgData || '');
+            document.getElementById('lightbox-img').src = imgSrc;
             document.getElementById('lightbox-title').textContent = fig.name;
             document.getElementById('lightbox-formula').textContent = fig.formula || '';
-            document.getElementById('lightbox-download').href = fig.dataUrl;
-            document.getElementById('lightbox-download').download = fig.name.replace(/\s+/g,'_') + '.jpg';
+            // Download SVG via Blob
+            document.getElementById('lightbox-download').onclick = () => {
+                const blob = new Blob([fig.svgData], { type: 'image/svg+xml;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = fig.name.replace(/[^\w\u0400-\u04FF]/g, '_') + '.svg';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            };
             document.getElementById('lightbox').classList.add('active');
         }
 

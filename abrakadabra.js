@@ -31,7 +31,7 @@ let startPoint = null;
 let isFinished = false;
 
 // SVG recording buffer — base path segments, relative to center (pre-symmetry)
-const SVG_MAX = 60000;
+const SVG_MAX = 10000;  // ~120KB SVG per figure, fits ~30 figures in localStorage
 let svgBuffer = []; // {px, py, qx, qy, color}
 
 const SCHEMES = [
@@ -464,8 +464,7 @@ canvas.addEventListener('dblclick', randomize);
 playPauseBtn.addEventListener('click', () => {
     isPlaying = !isPlaying;
     playPauseBtn.textContent = isPlaying ? (isRu ? 'Стоп' : 'Stop') : (isRu ? 'Старт' : 'Start');
-    // Show Pin button only when paused
-    if (pinBtn) pinBtn.style.display = isPlaying ? 'none' : '';
+    // Pin is always visible — no show/hide
 });
 
 // ── SVG Export ────────────────────────────────────────────────────────────
@@ -583,41 +582,26 @@ if (pinModal) pinModal.addEventListener('click', e => { if (e.target === pinModa
 
 if (pinConfirmBtn) {
     pinConfirmBtn.addEventListener('click', () => {
-        const name     = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
-        const safeName = name.replace(/[^a-z0-9\u0400-\u04FF]/gi, '_');
+        const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
 
-        // ── 1. Vector SVG download (transparent bg, infinite scale for print) ──
-        const svgText = generateSVG(name);
-        if (svgText) {
-            const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-            const svgLink = document.createElement('a');
-            svgLink.href     = URL.createObjectURL(blob);
-            svgLink.download = safeName + '.svg';
-            document.body.appendChild(svgLink);
-            svgLink.click();
-            document.body.removeChild(svgLink);
-            setTimeout(() => URL.revokeObjectURL(svgLink.href), 5000);
+        // Generate SVG from recorded buffer
+        const svgData = generateSVG(name);
+        if (!svgData) {
+            alert(isRu ? 'Нет данных. Подождите, пока фигура нарисуется.' : 'Nothing to pin yet — let the figure draw first.');
+            return;
         }
 
-        // ── 2. Gallery thumbnail: canvas snapshot at 800px (for display) ───────
-        const THUMB_W = 800;
-        const THUMB_H = Math.round((canvas.height / canvas.width) * THUMB_W);
-        const off = document.createElement('canvas');
-        off.width = THUMB_W; off.height = THUMB_H;
-        off.getContext('2d').drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
-        const dataUrl = off.toDataURL('image/jpeg', 0.90);
-
-        // ── 3. Save to gallery ─────────────────────────────────────────────────
+        // Save SVG text to gallery (display + download both happen in gallery page)
         let gallery = [];
         try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
-        gallery.unshift({ id: Date.now(), dataUrl, name, formula: buildFormula(), ts: Date.now() });
-        if (gallery.length > 60) gallery = gallery.slice(0, 60);
+        gallery.unshift({ id: Date.now(), svgData, name, formula: buildFormula(), ts: Date.now() });
+        if (gallery.length > 30) gallery = gallery.slice(0, 30);
         try {
             localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
             if (pinModal) pinModal.style.display = 'none';
             if (pinBtn) {
                 const prev = pinBtn.textContent;
-                pinBtn.textContent = isRu ? '✓ SVG сохранён' : '✓ SVG Saved!';
+                pinBtn.textContent = isRu ? '✓ В галерею!' : '✓ Pinned!';
                 setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2500);
             }
         } catch(e) {
