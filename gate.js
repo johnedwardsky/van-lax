@@ -56,105 +56,134 @@ const GATE_HASHES = new Set([
   "037df7e42ba6a3c31528c2f71fd4093b00795123e77bd38ccb6196d7ee748360"
 ]);
 
-// ── SVG Golden Sacred Gate Builder ──────────────────────────
+// ── SVG Baroque Golden Gate Builder (Versailles style, two panels) ───
 function buildGateSVG() {
-  const LB  = [110, 244, 378, 512, 648];
-  const RB  = [792, 928, 1062, 1196, 1330];
-  const ALL = [...LB, ...RB];
-  const BW  = 28, RH = 24;
-  const RAIL_Y = [65, 330, 578, 846];
-
-  function fol(cx, cy, r, op) {
-    const pts = [[cx,cy],
-      ...[0,60,120,180,240,300].map(d=>[cx+r*Math.cos(d*Math.PI/180), cy+r*Math.sin(d*Math.PI/180)]),
-      ...[30,90,150,210,270,330].map(d=>[cx+r*2*Math.cos(d*Math.PI/180), cy+r*2*Math.sin(d*Math.PI/180)])
-    ];
-    return pts.map(([x,y])=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="none" stroke="rgba(229,178,54,${op})" stroke-width="1.2"/>`).join('');
+  // Baroque scroll: S-curve path helper
+  function scroll(x, y, w, h, d) {
+    // d: 1 = curl right, -1 = curl left
+    const hw = w/2, hh = h/2;
+    return `M${x},${y+hh} C${x+hw*d},${y} ${x+hw*d},${y+h} ${x+w*d},${y+hh}`;
   }
 
-  function hex(cx, cy, r, op) {
-    const s=Math.sin(Math.PI/3);
-    return `<polygon points="${cx},${cy-r} ${cx+r*s},${cy+r*.5} ${cx-r*s},${cy+r*.5}" fill="rgba(229,178,54,0.05)" stroke="rgba(229,178,54,${op})" stroke-width="1.5"/>
-    <polygon points="${cx},${cy+r} ${cx+r*s},${cy-r*.5} ${cx-r*s},${cy-r*.5}" fill="rgba(229,178,54,0.05)" stroke="rgba(229,178,54,${op})" stroke-width="1.5"/>`;
+  // Generate baroque filigree panel as SVG path (right half, mirror for left)
+  function baroquePanel(side) {
+    // side: 'L' left panel (right edge = seam), 'R' right panel (left edge = seam)
+    const W = 500, H = 1000;
+    const mx = side==='L' ? W : 0; // mirror x for left panel
+    const sx = side==='L' ? -1 : 1; // scale x direction
+
+    // Outer thick border rect
+    const border = `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#panelBg)"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="url(#gldH)" stroke-width="8"/>
+      <rect x="10" y="10" width="${W-20}" height="${H-20}" fill="none" stroke="url(#gldH)" stroke-width="2" opacity="0.5"/>`;
+
+    // Top decorative arch
+    const topArch = `<path d="M30,120 Q${W/2},20 ${W-30},120" fill="none" stroke="url(#gldH)" stroke-width="3"/>
+      <path d="M60,130 Q${W/2},50 ${W-60},130" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.6"/>`;
+
+    // Bottom mirror arch
+    const botArch = `<path d="M30,${H-120} Q${W/2},${H-20} ${W-30},${H-120}" fill="none" stroke="url(#gldH)" stroke-width="3"/>
+      <path d="M60,${H-130} Q${W/2},${H-50} ${W-60},${H-130}" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.6"/>`;
+
+    // Horizontal dividers
+    const divY = [120, H/2-20, H/2+20, H-120];
+    const dividers = divY.map(y =>
+      `<line x1="30" y1="${y}" x2="${W-30}" y2="${y}" stroke="url(#gldH)" stroke-width="2.5"/>
+       <line x1="30" y1="${y+4}" x2="${W-30}" y2="${y+4}" stroke="url(#gldH)" stroke-width="0.8" opacity="0.4"/>`
+    ).join('');
+
+    // Baroque scrollwork in upper panel (between top arch and middle)
+    const upperScrolls = `
+      <path d="M${W/2},160 C${W/2-60},180 ${W/2-80},220 ${W/2-40},250 C${W/2},270 ${W/2+40},250 ${W/2+40},220 C${W/2+40},190 ${W/2+10},175 ${W/2},160Z" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M${W/2-80},180 C${W/2-120},160 ${W/2-160},200 ${W/2-130},240 C${W/2-110},260 ${W/2-80},250 ${W/2-80},240" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M${W/2+80},180 C${W/2+120},160 ${W/2+160},200 ${W/2+130},240 C${W/2+110},260 ${W/2+80},250 ${W/2+80},240" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M${W/2-160},200 C${W/2-190},185 ${W/2-220},205 ${W/2-210},230 C${W/2-200},250 ${W/2-175},248 ${W/2-170},240" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.7"/>
+      <path d="M${W/2+160},200 C${W/2+190},185 ${W/2+220},205 ${W/2+210},230 C${W/2+200},250 ${W/2+175},248 ${W/2+170},240" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.7"/>
+      <path d="M80,160 C60,140 40,155 45,175 C50,195 70,195 80,190 C90,185 95,165 80,160Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>
+      <path d="M${W-80},160 C${W-60},140 ${W-40},155 ${W-45},175 C${W-50},195 ${W-70},195 ${W-80},190 C${W-90},185 ${W-95},165 ${W-80},160Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>`;
+
+    // Central urn / vase medallion
+    const urnX = W/2, urnY = H/2;
+    const urn = `
+      <ellipse cx="${urnX}" cy="${urnY-80}" rx="55" ry="12" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M${urnX-55},${urnY-80} C${urnX-70},${urnY-20} ${urnX-50},${urnY+40} ${urnX-20},${urnY+60} L${urnX+20},${urnY+60} C${urnX+50},${urnY+40} ${urnX+70},${urnY-20} ${urnX+55},${urnY-80}" fill="url(#urnFill)" stroke="url(#gldH)" stroke-width="2.5"/>
+      <ellipse cx="${urnX}" cy="${urnY+60}" rx="28" ry="8" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <rect x="${urnX-18}" y="${urnY+62}" width="36" height="14" rx="3" fill="url(#gldH)" opacity="0.7"/>
+      <path d="M${urnX-55},${urnY-80} C${urnX-80},${urnY-100} ${urnX-70},${urnY-120} ${urnX-45},${urnY-110}" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M${urnX+55},${urnY-80} C${urnX+80},${urnY-100} ${urnX+70},${urnY-120} ${urnX+45},${urnY-110}" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <ellipse cx="${urnX}" cy="${urnY-110}" rx="30" ry="22" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M${urnX-15},${urnY-140} Q${urnX},${urnY-165} ${urnX+15},${urnY-140}" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <circle cx="${urnX}" cy="${urnY-165}" r="6" fill="url(#gldH)"/>
+      <circle cx="${urnX}" cy="${urnY}" r="4" fill="url(#gldH)" opacity="0.5"/>
+      <circle cx="${urnX}" cy="${urnY-80}" r="4" fill="url(#gldH)"/>`;
+
+    // Acanthus leaves flanking the urn
+    const leaves = `
+      <path d="M${urnX-60},${urnY-60} C${urnX-90},${urnY-80} ${urnX-110},${urnY-50} ${urnX-100},${urnY-30} C${urnX-95},${urnY-20} ${urnX-80},${urnY-18} ${urnX-75},${urnY-30} C${urnX-70},${urnY-45} ${urnX-60},${urnY-40} ${urnX-55},${urnY-55}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>
+      <path d="M${urnX-75},${urnY-35} C${urnX-100},${urnY-25} ${urnX-120},${urnY} ${urnX-100},${urnY+20} C${urnX-90},${urnY+30} ${urnX-75},${urnY+28} ${urnX-70},${urnY+15}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>
+      <path d="M${urnX+60},${urnY-60} C${urnX+90},${urnY-80} ${urnX+110},${urnY-50} ${urnX+100},${urnY-30} C${urnX+95},${urnY-20} ${urnX+80},${urnY-18} ${urnX+75},${urnY-30} C${urnX+70},${urnY-45} ${urnX+60},${urnY-40} ${urnX+55},${urnY-55}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>
+      <path d="M${urnX+75},${urnY-35} C${urnX+100},${urnY-25} ${urnX+120},${urnY} ${urnX+100},${urnY+20} C${urnX+90},${urnY+30} ${urnX+75},${urnY+28} ${urnX+70},${urnY+15}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>`;
+
+    // Baroque scrollwork in lower panel
+    const lowerScrolls = `
+      <path d="M${W/2},${H-160} C${W/2-60},${H-180} ${W/2-80},${H-220} ${W/2-40},${H-250} C${W/2},${H-270} ${W/2+40},${H-250} ${W/2+40},${H-220} C${W/2+40},${H-190} ${W/2+10},${H-175} ${W/2},${H-160}Z" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+      <path d="M80,${H-160} C60,${H-140} 40,${H-155} 45,${H-175} C50,${H-195} 70,${H-195} 80,${H-190} C90,${H-185} 95,${H-165} 80,${H-160}Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>
+      <path d="M${W-80},${H-160} C${W-60},${H-140} ${W-40},${H-155} ${W-45},${H-175} C${W-50},${H-195} ${W-70},${H-195} ${W-80},${H-190} C${W-90},${H-185} ${W-95},${H-165} ${W-80},${H-160}Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>`;
+
+    // Corner rosettes
+    const corners = [[50,50],[W-50,50],[50,H-50],[W-50,H-50]].map(([cx,cy]) =>
+      `<circle cx="${cx}" cy="${cy}" r="22" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+       <circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>
+       <circle cx="${cx}" cy="${cy}" r="6" fill="url(#gldH)"/>
+       <line x1="${cx-22}" y1="${cy}" x2="${cx+22}" y2="${cy}" stroke="url(#gldH)" stroke-width="1" opacity="0.5"/>
+       <line x1="${cx}" y1="${cy-22}" x2="${cx}" y2="${cy+22}" stroke="url(#gldH)" stroke-width="1" opacity="0.5"/>`
+    ).join('');
+
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" width="100%" height="100%">
+      <defs>
+        <linearGradient id="gldH" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#7a4800"/>
+          <stop offset="25%"  stop-color="#c98a14"/>
+          <stop offset="50%"  stop-color="#f0c040"/>
+          <stop offset="75%"  stop-color="#c98a14"/>
+          <stop offset="100%" stop-color="#7a4800"/>
+        </linearGradient>
+        <linearGradient id="gldV" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stop-color="#7a4800"/>
+          <stop offset="30%"  stop-color="#d4a020"/>
+          <stop offset="50%"  stop-color="#f0c040"/>
+          <stop offset="70%"  stop-color="#d4a020"/>
+          <stop offset="100%" stop-color="#7a4800"/>
+        </linearGradient>
+        <linearGradient id="panelBg" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#1a0d00" stop-opacity="0.92"/>
+          <stop offset="40%"  stop-color="#0d0600" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="urnFill" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#4a2800" stop-opacity="0.8"/>
+          <stop offset="35%"  stop-color="#b07018" stop-opacity="0.9"/>
+          <stop offset="50%"  stop-color="#e8a828" stop-opacity="0.95"/>
+          <stop offset="65%"  stop-color="#b07018" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#4a2800" stop-opacity="0.8"/>
+        </linearGradient>
+        <linearGradient id="leafFill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#6a3c00" stop-opacity="0.6"/>
+          <stop offset="100%" stop-color="#c48010" stop-opacity="0.4"/>
+        </linearGradient>
+        <filter id="glowF">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g filter="url(#glowF)">
+        ${border}${topArch}${botArch}${dividers}
+        ${upperScrolls}${urn}${leaves}${lowerScrolls}${corners}
+      </g>
+    </svg>`;
   }
 
-  function rings(cx, cy, rs, op) {
-    return rs.map(r=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(229,178,54,${op})" stroke-width="0.8" stroke-dasharray="4,5"/>`).join('');
-  }
-
-  function rosette(cx, cy) {
-    return `<circle cx="${cx}" cy="${cy}" r="20" fill="none" stroke="rgba(229,178,54,0.45)" stroke-width="1"/>
-    <circle cx="${cx}" cy="${cy}" r="12" fill="none" stroke="rgba(229,178,54,0.35)" stroke-width="1"/>
-    <circle cx="${cx}" cy="${cy}" r="3" fill="rgba(229,178,54,0.7)"/>`;
-  }
-
-  const bars = ALL.map(cx => {
-    const x = cx-BW/2;
-    return `<rect x="${x}" y="-80" width="${BW}" height="1180" fill="url(#gb)" filter="url(#bs)"/>
-    <rect x="${cx-5}" y="-80" width="10" height="1180" fill="rgba(255,230,100,0.07)"/>
-    <polygon points="${cx},-68 ${cx-11},-28 ${cx},-10 ${cx+11},-28" fill="url(#gb)"/>
-    <ellipse cx="${cx}" cy="-30" rx="9" ry="9" fill="url(#gb)"/>
-    <path d="M${cx-11},-33 Q${cx-22},-47 ${cx-14},-57 Q${cx-7},-44 ${cx-11},-33" fill="url(#gb)"/>
-    <path d="M${cx+11},-33 Q${cx+22},-47 ${cx+14},-57 Q${cx+7},-44 ${cx+11},-33" fill="url(#gb)"/>`;
-  }).join('');
-
-  const rails = RAIL_Y.map(ry =>
-    `<rect x="0" y="${ry}" width="1440" height="${RH}" fill="url(#gr)"/>` +
-    ALL.map(cx=>`<circle cx="${cx}" cy="${ry+RH/2}" r="5.5" fill="#120800" stroke="rgba(229,178,54,0.85)" stroke-width="1.5"/><circle cx="${cx}" cy="${ry+RH/2}" r="2.5" fill="rgba(255,215,60,0.7)"/>`).join('')
-  ).join('');
-
-  const geom =
-    fol(360,452,78,.2)+hex(360,452,52,.32)+rings(360,452,[105,130],.12)+
-    fol(1080,452,78,.2)+hex(1080,452,52,.32)+rings(1080,452,[105,130],.12)+
-    fol(720,452,52,.28)+hex(720,452,36,.42)+rings(720,452,[75,95],.18)+
-    `<path d="M200,452 A80,80 0 0,1 280,372" fill="none" stroke="rgba(229,178,54,.15)" stroke-width="1"/>
-     <path d="M1240,452 A80,80 0 0,0 1160,372" fill="none" stroke="rgba(229,178,54,.15)" stroke-width="1"/>`;
-
-  const arches = [180,360,540,720,900,1080,1260].map(x=>
-    `<path d="M${x-60},60 Q${x},18 ${x+60},60" fill="none" stroke="rgba(229,178,54,0.3)" stroke-width="1"/>`
-  ).join('');
-
-  return `<svg viewBox="0 0 1440 1100" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
-  <defs>
-    <linearGradient id="gb" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   stop-color="#180900"/><stop offset="12%"  stop-color="#7a4200"/>
-      <stop offset="28%"  stop-color="#c98618"/><stop offset="46%"  stop-color="#e8b530"/>
-      <stop offset="50%"  stop-color="#ffe050"/><stop offset="54%"  stop-color="#e8b530"/>
-      <stop offset="72%"  stop-color="#c98618"/><stop offset="88%"  stop-color="#7a4200"/>
-      <stop offset="100%" stop-color="#180900"/>
-    </linearGradient>
-    <linearGradient id="gr" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%"   stop-color="#0e0500"/><stop offset="25%"  stop-color="#a07015"/>
-      <stop offset="50%"  stop-color="#e0ae30"/><stop offset="75%"  stop-color="#a07015"/>
-      <stop offset="100%" stop-color="#0e0500"/>
-    </linearGradient>
-    <linearGradient id="band" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   stop-color="#0a0500"/><stop offset="18%"  stop-color="#5a3800"/>
-      <stop offset="50%"  stop-color="#b88010"/><stop offset="82%"  stop-color="#5a3800"/>
-      <stop offset="100%" stop-color="#0a0500"/>
-    </linearGradient>
-    <filter id="bs" x="-25%" y="-2%" width="150%" height="104%">
-      <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#000" flood-opacity="0.95"/>
-    </filter>
-    <filter id="sg" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="3.5" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-  <g filter="url(#sg)">${geom}</g>
-  ${rails}
-  ${bars}
-  <rect x="715" y="65" width="10" height="975" fill="url(#gb)" filter="url(#bs)"/>
-  <rect x="718" y="65" width="4"  height="975" fill="rgba(255,230,100,0.09)"/>
-  <rect x="0" y="0" width="1440" height="63" fill="url(#band)"/>
-  <rect x="0" y="61" width="1440" height="2.5" fill="rgba(255,225,80,0.65)"/>
-  ${arches}
-  <text x="720" y="40" text-anchor="middle" font-family="Cormorant Garamond,Georgia,serif" font-size="17" fill="rgba(255,215,60,0.6)" letter-spacing="10">THE HOUSE OF VAN LAX</text>
-  ${rosette(42,31)}${rosette(1398,31)}
-  <rect x="0" y="1040" width="1440" height="60" fill="url(#band)"/>
-  <rect x="0" y="1038" width="1440" height="2.5" fill="rgba(255,225,80,0.55)"/>
-  ${rosette(42,1062)}${rosette(1398,1062)}
-</svg>`;
+  return { left: baroquePanel('L'), right: baroquePanel('R') };
 }
 
 // ── GATE Logic ───────────────────────────────────────────────
@@ -252,19 +281,20 @@ function openGate() {
   const gate    = document.getElementById('gothic-gate-container');
   const overlay = document.getElementById('welcome-popup-overlay');
 
-  gate.classList.add('gate-rising');
+  // Trigger two-panel split open
+  gate.classList.add('gate-opening');
 
-  // Start fading overlay while gate is rising
+  // Fade overlay after panels start opening
   setTimeout(() => {
     overlay.style.transition = 'opacity 0.9s ease';
     overlay.style.opacity = '0';
-  }, 1400);
+  }, 1200);
 
   // Hide everything after animation
   setTimeout(() => {
     overlay.style.display = 'none';
     gate.style.display    = 'none';
-  }, 2600);
+  }, 2400);
 }
 
 function acceptCookies() {
@@ -284,9 +314,19 @@ function formatCodeInput(e) {
 
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  // Build SVG gate
+  // Build two-panel baroque gate
   const gateEl = document.getElementById('gothic-gate-container');
-  if (gateEl) gateEl.innerHTML = buildGateSVG();
+  if (gateEl) {
+    const panels = buildGateSVG();
+    const left = document.createElement('div');
+    left.className = 'gate-panel-left';
+    left.innerHTML = panels.left;
+    const right = document.createElement('div');
+    right.className = 'gate-panel-right';
+    right.innerHTML = panels.right;
+    gateEl.appendChild(left);
+    gateEl.appendChild(right);
+  }
 
   // Check stored access
   if (GATE.isValid()) {

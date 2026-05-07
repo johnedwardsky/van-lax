@@ -1,27 +1,41 @@
-/* ============ GOTHIC GATE CONTAINER ============ */
+/* ============================================================
+   VAN LAX — BAROQUE GOLDEN GATE  (Versailles / Peterhof style)
+   Gate covers only the center image box, two panels split open
+   ============================================================ */
+
+/* ── Gate wrapper: covers the center square image area ──────── */
 #gothic-gate-container {
   position: fixed;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  /* The hub-image-box is 100vh × 100vh square centered */
+  width: min(100vh, 100vw);
+  height: 100vh;
   z-index: 8500;
   pointer-events: none;
-  will-change: transform;
   overflow: hidden;
-}
-#gothic-gate-container svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-#gothic-gate-container.gate-rising {
-  animation: gateRise 2.4s cubic-bezier(0.4, 0, 0.08, 1) forwards;
-}
-@keyframes gateRise {
-  0%   { transform: translateY(0); }
-  5%   { transform: translateY(-2%); }
-  100% { transform: translateY(-112%); }
+  display: flex;
 }
 
-/* ============ WELCOME POPUP UPDATES ============ */
+/* Two SVG panels side by side */
+#gothic-gate-container .gate-panel-left,
+#gothic-gate-container .gate-panel-right {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  will-change: transform;
+  transition: transform 2s cubic-bezier(0.4, 0, 0.1, 1);
+}
+#gothic-gate-container .gate-panel-left  { left: 0; }
+#gothic-gate-container .gate-panel-right { right: 0; }
+
+/* Opening animation: panels slide apart */
+#gothic-gate-container.gate-opening .gate-panel-left  { transform: translateX(-100%); }
+#gothic-gate-container.gate-opening .gate-panel-right { transform: translateX(100%); }
+
+/* ── INVITE FORM ─────────────────────────────────────────── */
 .wlc-invite-label {
   font-family: 'Montserrat', sans-serif;
   font-size: 0.58rem;
@@ -31,10 +45,7 @@
   margin: 0 0 14px;
   display: block;
 }
-.wlc-code-wrap {
-  position: relative;
-  margin-bottom: 6px;
-}
+.wlc-code-wrap { position: relative; margin-bottom: 6px; }
 .wlc-code-input {
   font-family: 'Montserrat', sans-serif;
   font-size: 1.15rem;
@@ -57,10 +68,10 @@
 .wlc-code-input.shake { animation: codeShake 0.5s ease; }
 @keyframes codeShake {
   0%,100% { transform: translateX(0); }
-  20%     { transform: translateX(-9px); }
-  40%     { transform: translateX(9px); }
-  60%     { transform: translateX(-5px); }
-  80%     { transform: translateX(5px); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(9px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
 }
 .wlc-gate-error {
   font-family: 'Montserrat', sans-serif;
@@ -80,12 +91,37 @@
   margin-bottom: 14px;
   animation: grantedPulse 1.2s ease infinite;
 }
-@keyframes grantedPulse {
-  0%,100% { opacity: 1; }
-  50%     { opacity: 0.4; }
-}
+@keyframes grantedPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 .wlc-gate-form { transition: opacity 0.3s; }
-#welcome-enter-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
+.wlc-gate-submit {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #E5B236;
+  background: transparent;
+  border: 1px solid rgba(229,178,54,0.5);
+  padding: 14px 44px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  margin-top: 22px;
 }
+.wlc-gate-submit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(229,178,54,0.08), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+.wlc-gate-submit:hover::before { transform: scaleX(1); }
+.wlc-gate-submit:hover {
+  color: #fff;
+  border-color: rgba(229,178,54,0.85);
+  box-shadow: 0 0 20px rgba(229,178,54,0.2);
+}
+.wlc-gate-submit:disabled { opacity: 0.5; cursor: default; }
