@@ -1,0 +1,91 @@
+/* ============ GOTHIC GATE CONTAINER ============ */
+#gothic-gate-container {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  pointer-events: none;
+  will-change: transform;
+  overflow: hidden;
+}
+#gothic-gate-container svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#gothic-gate-container.gate-rising {
+  animation: gateRise 2.4s cubic-bezier(0.4, 0, 0.08, 1) forwards;
+}
+@keyframes gateRise {
+  0%   { transform: translateY(0); }
+  5%   { transform: translateY(-2%); }
+  100% { transform: translateY(-112%); }
+}
+
+/* ============ WELCOME POPUP UPDATES ============ */
+.wlc-invite-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.55em;
+  color: rgba(229,178,54,0.5);
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  display: block;
+}
+.wlc-code-wrap {
+  position: relative;
+  margin-bottom: 6px;
+}
+.wlc-code-input {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 300;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(229,178,54,0.3);
+  width: 100%;
+  padding: 10px 0;
+  outline: none;
+  transition: border-color 0.35s;
+  caret-color: #E5B236;
+}
+.wlc-code-input::placeholder { color: rgba(255,255,255,0.18); letter-spacing: 0.3em; }
+.wlc-code-input:focus { border-bottom-color: rgba(229,178,54,0.75); }
+.wlc-code-input.shake { animation: codeShake 0.5s ease; }
+@keyframes codeShake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-9px); }
+  40%     { transform: translateX(9px); }
+  60%     { transform: translateX(-5px); }
+  80%     { transform: translateX(5px); }
+}
+.wlc-gate-error {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  color: rgba(255,70,70,0.85);
+  min-height: 18px;
+  margin: 10px 0 0;
+}
+.wlc-gate-success { text-align: center; }
+.wlc-access-granted {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.65em;
+  color: #E5B236;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  animation: grantedPulse 1.2s ease infinite;
+}
+@keyframes grantedPulse {
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0.4; }
+}
+.wlc-gate-form { transition: opacity 0.3s; }
+#welcome-enter-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

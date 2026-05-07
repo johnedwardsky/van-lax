@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The House of Van Lax</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gate.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Montserrat:wght@100;200;300;400&display=swap" rel="stylesheet">
@@ -16,7 +17,12 @@
 <body>
 
   <!-- ===============================
-       WELCOME POPUP
+       GOTHIC GATE (behind overlay)
+       =============================== -->
+  <div id="gothic-gate-container"></div>
+
+  <!-- ===============================
+       WELCOME POPUP / INVITE GATE
        =============================== -->
   <div id="welcome-popup-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-popup-title">
     <div id="welcome-popup">
@@ -25,19 +31,29 @@
       <h2 id="welcome-popup-title" class="wlc-logo">VAN LAX</h2>
       <div class="wlc-divider"></div>
       <p class="wlc-body">
-        Welcome to the House of Art of VAN LAX — a space where you are invited to explore the
-        creative vision and philosophy of a contemporary artist ahead of his time.
-        Through an innovative lens, he translates visual and sonic imagery through the prism
-        of his own philosophy, inspiring countless minds with the boundless flight of his imagination.
-      </p>
-      <p class="wlc-body">
-        Here, every element of our world is perceived through mathematics, geometric forms,
-        the Golden Ratio, and the profound interconnection between all things — an interconnection
-        that inevitably forges not only new neural pathways and thought-forms, but a new,
-        sequential reality of our shared matrix of life.
+        Welcome to the House of Art of VAN LAX — a private space where you are invited to explore
+        the creative vision and philosophy of a contemporary artist ahead of his time.
       </p>
       <p class="wlc-quote">Everything in our world is ordered and connected.</p>
-      <button id="welcome-enter-btn" onclick="closeWelcomePopup()">ENTER THE HOUSE</button>
+
+      <!-- Invite code form -->
+      <div id="gate-form" class="wlc-gate-form">
+        <span class="wlc-invite-label">Enter your invite code</span>
+        <div class="wlc-code-wrap">
+          <input id="invite-code-input" class="wlc-code-input"
+                 type="text" maxlength="13"
+                 placeholder="VLX-XXXX-XXXX"
+                 autocomplete="off" spellcheck="false"/>
+        </div>
+        <p id="gate-error" class="wlc-gate-error" aria-live="polite"></p>
+        <button id="invite-submit-btn" class="wlc-gate-submit" onclick="submitInviteCode()">VERIFY ACCESS</button>
+      </div>
+
+      <!-- Success state -->
+      <div id="gate-success" class="wlc-gate-success" style="display:none">
+        <p class="wlc-access-granted">&#10003;&ensp;ACCESS GRANTED</p>
+        <p class="wlc-body" style="margin:0;">The gates of the House of Van Lax open before you.</p>
+      </div>
     </div>
   </div>
 
@@ -1010,7 +1026,7 @@
       margin: 22px 0 36px;
       line-height: 1.6;
     }
-    #welcome-enter-btn {
+    .wlc-gate-submit {
       font-family: 'Montserrat', sans-serif;
       font-weight: 300;
       font-size: 0.75rem;
@@ -1024,8 +1040,9 @@
       transition: all 0.4s ease;
       position: relative;
       overflow: hidden;
+      margin-top: 22px;
     }
-    #welcome-enter-btn::before {
+    .wlc-gate-submit::before {
       content: '';
       position: absolute;
       inset: 0;
@@ -1034,8 +1051,8 @@
       transform-origin: left;
       transition: transform 0.4s ease;
     }
-    #welcome-enter-btn:hover::before { transform: scaleX(1); }
-    #welcome-enter-btn:hover {
+    .wlc-gate-submit:hover::before { transform: scaleX(1); }
+    .wlc-gate-submit:hover {
       color: #fff;
       border-color: rgba(229,178,54,0.85);
       box-shadow: 0 0 20px rgba(229,178,54,0.2);
@@ -1103,39 +1120,8 @@
   </style>
 
   <script src="script.js" defer></script>
+  <script src="gate.js" defer></script>
   <script>
-    // ---- Welcome Popup Logic ----
-    function closeWelcomePopup() {
-      const overlay = document.getElementById('welcome-popup-overlay');
-      overlay.classList.add('hidden');
-      overlay.addEventListener('animationend', () => {
-        overlay.style.display = 'none';
-      }, { once: true });
-      localStorage.setItem('vanlax_welcomed', '1');
-    }
-
-    // ---- Cookie Consent Logic ----
-    function acceptCookies() {
-      const banner = document.getElementById('cookie-banner');
-      banner.classList.add('hidden');
-      banner.addEventListener('animationend', () => {
-        banner.style.display = 'none';
-      }, { once: true });
-      localStorage.setItem('vanlax_cookies', '1');
-    }
-
-    // On load: respect saved preferences
-    window.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('vanlax_welcomed') === '1') {
-        const overlay = document.getElementById('welcome-popup-overlay');
-        overlay.style.display = 'none';
-      }
-      if (localStorage.getItem('vanlax_cookies') === '1') {
-        const banner = document.getElementById('cookie-banner');
-        banner.style.display = 'none';
-      }
-    });
-
     // Deep linking for specific sections
     window.addEventListener('load', () => {
       const urlParams = new URLSearchParams(window.location.search);
