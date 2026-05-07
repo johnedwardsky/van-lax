@@ -550,134 +550,37 @@ function generateSVG(figName) {
 }
 
 
-// ── Pin / Gallery ────────────────────────────────────────────────────────────
-function buildFormula() {
-    const p = params;
-    const f = n => (typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '?');
-    return [
-        `ω₁ = ${f(p.lrota)}`,
-        `ω₂ = ${f(p.rrota)}`,
-        `L₁ = ${Math.round(p.larm1)}`,
-        `L₂ = ${Math.round(p.larm2)}`,
-        `R₁ = ${Math.round(p.rarm1)}`,
-        `R₂ = ${Math.round(p.rarm2)}`,
-        `d = ${Math.round(p.hdist)}`,
-        `ext = ${Math.round(p.ext)}`,
-        `S = ${p.symmetry || 1}×`
-    ].join('   ');
-}
-
-if (pinBtn) {
-    pinBtn.addEventListener('click', () => {
-        // Populate modal
-        if (pinFormulaEl) pinFormulaEl.textContent = buildFormula();
-        if (pinNameInput) pinNameInput.value = '';
-        if (pinModal) {
-            pinModal.style.display = 'flex';
-            setTimeout(() => { if (pinNameInput) pinNameInput.focus(); }, 50);
+// ── Download SVG ─────────────────────────────────────────────────────────────
+const downloadBtn = document.getElementById('download');
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+        if (svgBuffer.length < 2) {
+            alert(isRu ? 'Подождите, пока фигура нарисуется.' : 'Let the figure draw first.');
+            return;
         }
-    });
-}
 
-if (pinModalClose) pinModalClose.addEventListener('click', () => { if (pinModal) pinModal.style.display = 'none'; });
-if (pinModal) pinModal.addEventListener('click', e => { if (e.target === pinModal) pinModal.style.display = 'none'; });
+        // Build figure name from parameters
+        const p = params;
+        const f = n => (typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '?');
+        const figName = `Abrakadabra_ω${f(p.lrota)}_${f(p.rrota)}_S${p.symmetry||1}`;
 
-// ── Auto-crop thumbnail: finds content bounding box, fills card ──────────────
-function captureThumb(srcCanvas, size) {
-    // Scan 200×200 proxy for non-background pixels to find content bounds
-    const P = 200;
-    const proxy = document.createElement('canvas');
-    proxy.width = P; proxy.height = P;
-    proxy.getContext('2d').drawImage(srcCanvas, 0, 0, P, P);
-    const px = proxy.getContext('2d').getImageData(0, 0, P, P).data;
-
-    let x0 = P, y0 = P, x1 = 0, y1 = 0;
-    for (let y = 0; y < P; y++) {
-        for (let x = 0; x < P; x++) {
-            const i = (y * P + x) * 4;
-            // Background is #05050a ≈ (5,5,10) — any brighter pixel is content
-            if (px[i] > 18 || px[i+1] > 18 || px[i+2] > 18) {
-                if (x < x0) x0 = x; if (x > x1) x1 = x;
-                if (y < y0) y0 = y; if (y > y1) y1 = y;
-            }
+        const svgText = generateSVG(figName);
+        if (!svgText) {
+            alert(isRu ? 'Нет данных для экспорта.' : 'Nothing to export yet.');
+            return;
         }
-    }
 
-    const off = document.createElement('canvas');
-    off.width = size; off.height = size;
-    const oc  = off.getContext('2d');
-    oc.fillStyle = '#05050a';
-    oc.fillRect(0, 0, size, size);
+        const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = figName.replace(/[^\w\u0400-\u04FF]/g, '_') + '.svg';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 
-    if (x0 < x1 && y0 < y1) {
-        // Add 8% padding around the content
-        const pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.08);
-        x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
-        x1 = Math.min(P - 1, x1 + pad); y1 = Math.min(P - 1, y1 + pad);
-        // Map from proxy coords back to source canvas coords
-        const sx = x0 / P * srcCanvas.width,  sy = y0 / P * srcCanvas.height;
-        const sw = (x1 - x0) / P * srcCanvas.width, sh = (y1 - y0) / P * srcCanvas.height;
-        // Fit the crop into the square (90% fill)
-        const f  = Math.min(size / sw, size / sh) * 0.90;
-        const dw = sw * f, dh = sh * f;
-        oc.drawImage(srcCanvas, sx, sy, sw, sh, (size - dw) / 2, (size - dh) / 2, dw, dh);
-    } else {
-        // Fallback: letterbox full canvas
-        const r = Math.min(size / srcCanvas.width, size / srcCanvas.height);
-        oc.drawImage(srcCanvas,
-            (size - srcCanvas.width  * r) / 2,
-            (size - srcCanvas.height * r) / 2,
-            srcCanvas.width * r, srcCanvas.height * r);
-    }
-    return off;
-}
-
-if (pinConfirmBtn) {
-    pinConfirmBtn.addEventListener('click', () => {
-        const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
-
-        // SVG for vector download
-        const svgData = generateSVG(name);
-
-        // Auto-crop thumbnail: detects figure bounding box, fills 1200×1200 JPEG
-        const off = captureThumb(canvas, 1200);
-        const jpeg90 = off.toDataURL('image/jpeg', 0.90);
-        const jpeg60 = () => off.toDataURL('image/jpeg', 0.60);
-        const jpeg40 = () => off.toDataURL('image/jpeg', 0.40);
-
-        const tryStore = (entry) => {
-            let g = [];
-            try { g = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
-            g.unshift(entry);
-            if (g.length > 200) g = g.slice(0, 200);
-            localStorage.setItem('vanlax_galaxy', JSON.stringify(g)); // throws if full
-        };
-
-        const succeed = () => {
-            if (pinModal) pinModal.style.display = 'none';
-            if (pinBtn) {
-                const prev = pinBtn.textContent;
-                pinBtn.textContent = isRu ? '✓ В галерею!' : '✓ Pinned!';
-                setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2500);
-            }
-        };
-
-        const base = { id: Date.now(), name, formula: buildFormula(), ts: Date.now() };
-        const steps = [
-            () => tryStore({ ...base, canvasPng: jpeg90, svgData: svgData || null }),
-            () => tryStore({ ...base, canvasPng: jpeg90 }),
-            () => tryStore({ ...base, canvasPng: jpeg60() }),
-            () => tryStore({ ...base, canvasPng: jpeg40() }),
-        ];
-        let ok = false;
-        for (const step of steps) {
-            try { step(); ok = true; break; } catch(e) { /* try next quality */ }
-        }
-        if (ok) succeed();
-        else alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
-    });
-    if (pinNameInput) pinNameInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') pinConfirmBtn.click();
+        // Flash button
+        const prev = downloadBtn.textContent;
+        downloadBtn.textContent = isRu ? '✓ SVG скачан' : '✓ Downloaded!';
+        setTimeout(() => { downloadBtn.textContent = prev; }, 2000);
     });
 }
 window.addEventListener('resize', resize);
