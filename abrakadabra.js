@@ -456,6 +456,22 @@ if (returnBtn) {
 randomizeBtn.addEventListener('click', randomize);
 canvas.addEventListener('dblclick', randomize);
 
+// ── Redraw — same figure, fresh canvas ──────────────────────────────────────
+const redrawBtn = document.getElementById('redraw');
+if (redrawBtn) {
+    redrawBtn.addEventListener('click', function() {
+        // Keep current params exactly as-is — just reset drawing state
+        clearCanvas();
+        isPlaying = true;
+        playPauseBtn.textContent = isRu ? 'Стоп' : 'Stop';
+        // Dim download button again
+        if (downloadBtn) {
+            downloadBtn.classList.add('secondary');
+            downloadBtn.disabled = true;
+        }
+    });
+}
+
 
 // ── SVG Export ────────────────────────────────────────────────────────────────
 function generateSVG(figName) {
