@@ -3,12 +3,6 @@ const canvas       = document.getElementById('canvas');
 const ctx          = canvas.getContext('2d');
 const playPauseBtn = document.getElementById('play-pause');
 const randomizeBtn = document.getElementById('randomize');
-const pinBtn       = document.getElementById('pin');
-const pinModal     = document.getElementById('pin-modal');
-const pinModalClose= document.getElementById('pin-modal-close');
-const pinNameInput = document.getElementById('pin-name');
-const pinFormulaEl = document.getElementById('pin-formula');
-const pinConfirmBtn= document.getElementById('pin-confirm');
 const shapeNameEl  = document.getElementById('shape-name');
 const valLrpmEl    = document.getElementById('val-lrpm');
 const valRrpmEl    = document.getElementById('val-rrpm');
@@ -465,14 +459,47 @@ if (returnBtn) {
 randomizeBtn.addEventListener('click', randomize);
 canvas.addEventListener('dblclick', randomize);
 
-// ── Play / Pause ────────────────────────────────────────────────────────────
+// ── Play / Pause + auto-download on Stop ───────────────────────────
+function doSvgDownload() {
+    if (svgBuffer.length < 2) return;
+    const p = params;
+    const fv = n => (typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '?');
+    const figName = `Abrakadabra_${fv(p.lrota)}_${fv(p.rrota)}_S${p.symmetry||1}`;
+    const svgText = generateSVG(figName);
+    if (!svgText) return;
+    const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = figName.replace(/[^\w\u0400-\u04FF.-]/g, '_') + '.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
 playPauseBtn.addEventListener('click', () => {
     isPlaying = !isPlaying;
-    playPauseBtn.textContent = isPlaying ? (isRu ? 'Стоп' : 'Stop') : (isRu ? 'Старт' : 'Start');
-    // Pin is always visible — no show/hide
+    const label = isPlaying ? (isRu ? 'Стоп' : 'Stop') : (isRu ? 'Старт' : 'Start');
+    playPauseBtn.textContent = label;
+    // Auto-download SVG whenever the user presses Stop
+    if (!isPlaying) doSvgDownload();
 });
 
-// ── SVG Export ────────────────────────────────────────────────────────────
+// Download button (manual trigger anytime)
+const downloadBtn = document.getElementById('download');
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+        if (svgBuffer.length < 2) {
+            alert(isRu ? 'Подождите, пока фигура нарисуется.' : 'Let the figure draw first.');
+            return;
+        }
+        doSvgDownload();
+        const prev = downloadBtn.textContent;
+        downloadBtn.textContent = isRu ? '✓ Скачан!' : '✓ Downloaded!';
+        setTimeout(() => { downloadBtn.textContent = prev; }, 2000);
+    });
+}
+
 function generateSVG(figName) {
     if (svgBuffer.length < 2) return null;
     const sym = params.symmetry || 1;
@@ -528,7 +555,7 @@ function generateSVG(figName) {
      width="${mmSize}mm" height="${mmSize}mm"
      viewBox="0 0 ${SIZE} ${SIZE}">
   <title>${figName}</title>
-  <desc>Formula: ${buildFormula()} | Van Lax Abrakadabra</desc>
+  <desc>Van Lax Abrakadabra | ω1=${params.lrota?.toFixed(4)} ω2=${params.rrota?.toFixed(4)} S=${params.symmetry||1}</desc>
   <defs>
     <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur stdDeviation="2" result="b"/>
@@ -550,39 +577,6 @@ function generateSVG(figName) {
 }
 
 
-// ── Download SVG ─────────────────────────────────────────────────────────────
-const downloadBtn = document.getElementById('download');
-if (downloadBtn) {
-    downloadBtn.addEventListener('click', () => {
-        if (svgBuffer.length < 2) {
-            alert(isRu ? 'Подождите, пока фигура нарисуется.' : 'Let the figure draw first.');
-            return;
-        }
-
-        // Build figure name from parameters
-        const p = params;
-        const f = n => (typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '?');
-        const figName = `Abrakadabra_ω${f(p.lrota)}_${f(p.rrota)}_S${p.symmetry||1}`;
-
-        const svgText = generateSVG(figName);
-        if (!svgText) {
-            alert(isRu ? 'Нет данных для экспорта.' : 'Nothing to export yet.');
-            return;
-        }
-
-        const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = figName.replace(/[^\w\u0400-\u04FF]/g, '_') + '.svg';
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-
-        // Flash button
-        const prev = downloadBtn.textContent;
-        downloadBtn.textContent = isRu ? '✓ SVG скачан' : '✓ Downloaded!';
-        setTimeout(() => { downloadBtn.textContent = prev; }, 2000);
-    });
-}
 window.addEventListener('resize', resize);
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
