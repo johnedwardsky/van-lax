@@ -270,10 +270,11 @@ function randomize() {
     const names = isRu ? SHAPE_NAMES.ru : SHAPE_NAMES.en;
     const adjs  = isRu ? ['Хаотичный', 'Дикий', 'Свободный', 'Случайный', 'Бесконечный']
                        : ['Chaotic',   'Wild',   'Free',      'Random',    'Infinite'];
+    // Shape name indicator shows gallery title only (no per-figure names)
     if (shapeNameEl) {
-        const n = names[Math.floor(Math.random() * names.length)];
-        const a = adjs[Math.floor(Math.random()  * adjs.length)];
-        shapeNameEl.innerHTML = `<span style="opacity:0.5;font-weight:200;">AMUSE B: </span>${a} ${n}`;
+        shapeNameEl.innerHTML = isRu
+            ? '<span style="opacity:0.5;font-weight:200;">ABRAKADABRA</span> GENERATIVE GALLERY'
+            : '<span style="opacity:0.5;font-weight:200;">ABRAKADABRA</span> GENERATIVE GALLERY';
     }
 
     params = { ...targetParams };
