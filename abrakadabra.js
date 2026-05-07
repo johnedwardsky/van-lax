@@ -24,8 +24,8 @@ let pen = { x: null, y: null };
 let startPoint = null;
 let isFinished = false;
 
-// SVG recording buffer — circular, always keeps the MOST RECENT steps
-const SVG_MAX = 60000; // ~1 sec at 400steps/frame@60fps; circular so later draws stay
+// SVG recording buffer — linear (no wrap), captures ALL drawing up to limit
+const SVG_MAX = 500000; // 500k segments — enough for long dense figures (~8-15 sec)
 let svgBuffer    = [];
 let svgBufferPos = 0;  // circular write head
 
@@ -415,12 +415,9 @@ function draw() {
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;
 
-                // Circular SVG buffer — overwrite oldest once full
+                // Record for SVG — linear buffer, stop when full
                 if (svgBuffer.length < SVG_MAX) {
                     svgBuffer.push({ px, py, qx, qy, color: stroke });
-                } else {
-                    svgBuffer[svgBufferPos] = { px, py, qx, qy, color: stroke };
-                    svgBufferPos = (svgBufferPos + 1) % SVG_MAX;
                 }
             }
             pen.x = fx;
@@ -465,10 +462,8 @@ function generateSVG(figName) {
     if (svgBuffer.length < 2) return null;
     const sym = params.symmetry || 1;
 
-    // Read circular buffer in correct order (oldest → newest)
-    const buf = svgBuffer.length < SVG_MAX
-        ? svgBuffer
-        : [...svgBuffer.slice(svgBufferPos), ...svgBuffer.slice(0, svgBufferPos)];
+    // Use full buffer (linear, no circular reorder needed)
+    const buf = svgBuffer;
 
     // Bounding radius → scale to fill 90% of 1000×1000
     let maxR = 0;
@@ -495,7 +490,7 @@ function generateSVG(figName) {
     if (cur) paths.push({ color: prevColor, d: cur });
 
     const baseGroup = paths.map(p =>
-        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="1" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.2" stroke-width="0.4" fill="none" stroke-linecap="round"/>`
     ).join('\n      ');
 
     // ── Step 4: symmetry copies via <use> + rotate ─────────────────────────
@@ -518,17 +513,17 @@ function generateSVG(figName) {
   <title>${figName}</title>
   <desc>Van Lax Abrakadabra | ω1=${params.lrota?.toFixed(4)} ω2=${params.rrota?.toFixed(4)} S=${params.symmetry||1}</desc>
   <defs>
-    <!-- Glow filter: soft blur blended over sharp line = luminous paths on any background -->
+    <!-- Glow filter available but not applied by default for crisp linework -->
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feGaussianBlur stdDeviation="2" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <g id="arm">
       ${baseGroup}
     </g>
   </defs>
-  <!-- Transparent background — place on any colour in Illustrator / Inkscape -->
-  <g filter="url(#glow)">
+  <!-- Transparent background — place on any colour in print software -->
+  <g>
     <use href="#arm"/>
     ${useTags}
   </g>
