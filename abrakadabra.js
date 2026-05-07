@@ -586,53 +586,58 @@ if (pinConfirmBtn) {
     pinConfirmBtn.addEventListener('click', () => {
         const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
 
-        // Generate SVG for vector download
+        // SVG for vector download
         const svgData = generateSVG(name);
 
-        // Capture canvas as high-res PNG — this IS the figure as drawn (screen blend etc.)
-        const THUMB_W = 2000;
-        const THUMB_H = Math.round((canvas.height / canvas.width) * THUMB_W);
+        // 1200×1200 square JPEG (~100-200 KB) — JPEG on dark bg compresses 10× vs PNG
+        const T = 1200;
         const off = document.createElement('canvas');
-        off.width = THUMB_W; off.height = THUMB_H;
-        off.getContext('2d').drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
-        const canvasPng = off.toDataURL('image/png');
+        off.width = T; off.height = T;
+        const offCtx = off.getContext('2d');
+        offCtx.fillStyle = '#05050a';
+        offCtx.fillRect(0, 0, T, T);
+        const ratio = Math.min(T / canvas.width, T / canvas.height);
+        offCtx.drawImage(canvas, (T - canvas.width * ratio) / 2, (T - canvas.height * ratio) / 2,
+                         canvas.width * ratio, canvas.height * ratio);
+        const jpeg90 = off.toDataURL('image/jpeg', 0.90);
+        const jpeg60 = () => off.toDataURL('image/jpeg', 0.60);
+        const jpeg40 = () => off.toDataURL('image/jpeg', 0.40);
 
-        // Save both to gallery
-        let gallery = [];
-        try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
-        gallery.unshift({
-            id: Date.now(),
-            canvasPng,         // hi-res PNG for identical display
-            svgData: svgData || null,  // SVG text for vector download (may be null)
-            name,
-            formula: buildFormula(),
-            ts: Date.now()
-        });
-        if (gallery.length > 200) gallery = gallery.slice(0, 200);
-        try {
-            localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
+        const tryStore = (entry) => {
+            let g = [];
+            try { g = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
+            g.unshift(entry);
+            if (g.length > 200) g = g.slice(0, 200);
+            localStorage.setItem('vanlax_galaxy', JSON.stringify(g)); // throws if full
+        };
+
+        const succeed = () => {
             if (pinModal) pinModal.style.display = 'none';
             if (pinBtn) {
                 const prev = pinBtn.textContent;
                 pinBtn.textContent = isRu ? '✓ В галерею!' : '✓ Pinned!';
                 setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2500);
             }
-        } catch(e) {
-            // localStorage full — try with lower quality PNG
-            try {
-                gallery[0].canvasPng = off.toDataURL('image/jpeg', 0.7);
-                localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
-                if (pinModal) pinModal.style.display = 'none';
-            } catch(e2) {
-                alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
-            }
+        };
+
+        const base = { id: Date.now(), name, formula: buildFormula(), ts: Date.now() };
+        const steps = [
+            () => tryStore({ ...base, canvasPng: jpeg90, svgData: svgData || null }),
+            () => tryStore({ ...base, canvasPng: jpeg90 }),
+            () => tryStore({ ...base, canvasPng: jpeg60() }),
+            () => tryStore({ ...base, canvasPng: jpeg40() }),
+        ];
+        let ok = false;
+        for (const step of steps) {
+            try { step(); ok = true; break; } catch(e) { /* try next quality */ }
         }
+        if (ok) succeed();
+        else alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
     });
     if (pinNameInput) pinNameInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') pinConfirmBtn.click();
     });
 }
-
 window.addEventListener('resize', resize);
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
