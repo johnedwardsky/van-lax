@@ -56,133 +56,105 @@ const GATE_HASHES = new Set([
   "037df7e42ba6a3c31528c2f71fd4093b00795123e77bd38ccb6196d7ee748360"
 ]);
 
-// ── SVG Gothic Portcullis Builder ────────────────────────────
+// ── SVG Golden Sacred Gate Builder ──────────────────────────
 function buildGateSVG() {
-  const barCX  = [152, 276, 400, 524, 648, 792, 916, 1040, 1164, 1288];
-  const BW = 22, BODY = 1150;
-  const crossYs = [70, 250, 430, 610, 790];
-  const CH = 18;
+  const LB  = [110, 244, 378, 512, 648];
+  const RB  = [792, 928, 1062, 1196, 1330];
+  const ALL = [...LB, ...RB];
+  const BW  = 28, RH = 24;
+  const RAIL_Y = [65, 330, 578, 846];
 
-  const bars = barCX.map(cx => {
-    const x = cx - BW / 2;
-    return `
-      <rect x="${x}" y="-350" width="${BW}" height="${BODY + 350}" fill="url(#bG)" filter="url(#ms)"/>
-      <rect x="${cx - 4}" y="-350" width="8" height="${BODY + 350}" fill="rgba(255,255,255,0.055)"/>
-      <polygon points="${x},${BODY} ${cx},${BODY + 65} ${x + BW},${BODY}" fill="url(#bG)" filter="url(#ms)"/>`;
+  function fol(cx, cy, r, op) {
+    const pts = [[cx,cy],
+      ...[0,60,120,180,240,300].map(d=>[cx+r*Math.cos(d*Math.PI/180), cy+r*Math.sin(d*Math.PI/180)]),
+      ...[30,90,150,210,270,330].map(d=>[cx+r*2*Math.cos(d*Math.PI/180), cy+r*2*Math.sin(d*Math.PI/180)])
+    ];
+    return pts.map(([x,y])=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="none" stroke="rgba(229,178,54,${op})" stroke-width="1.2"/>`).join('');
+  }
+
+  function hex(cx, cy, r, op) {
+    const s=Math.sin(Math.PI/3);
+    return `<polygon points="${cx},${cy-r} ${cx+r*s},${cy+r*.5} ${cx-r*s},${cy+r*.5}" fill="rgba(229,178,54,0.05)" stroke="rgba(229,178,54,${op})" stroke-width="1.5"/>
+    <polygon points="${cx},${cy+r} ${cx+r*s},${cy-r*.5} ${cx-r*s},${cy-r*.5}" fill="rgba(229,178,54,0.05)" stroke="rgba(229,178,54,${op})" stroke-width="1.5"/>`;
+  }
+
+  function rings(cx, cy, rs, op) {
+    return rs.map(r=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(229,178,54,${op})" stroke-width="0.8" stroke-dasharray="4,5"/>`).join('');
+  }
+
+  function rosette(cx, cy) {
+    return `<circle cx="${cx}" cy="${cy}" r="20" fill="none" stroke="rgba(229,178,54,0.45)" stroke-width="1"/>
+    <circle cx="${cx}" cy="${cy}" r="12" fill="none" stroke="rgba(229,178,54,0.35)" stroke-width="1"/>
+    <circle cx="${cx}" cy="${cy}" r="3" fill="rgba(229,178,54,0.7)"/>`;
+  }
+
+  const bars = ALL.map(cx => {
+    const x = cx-BW/2;
+    return `<rect x="${x}" y="-80" width="${BW}" height="1180" fill="url(#gb)" filter="url(#bs)"/>
+    <rect x="${cx-5}" y="-80" width="10" height="1180" fill="rgba(255,230,100,0.07)"/>
+    <polygon points="${cx},-68 ${cx-11},-28 ${cx},-10 ${cx+11},-28" fill="url(#gb)"/>
+    <ellipse cx="${cx}" cy="-30" rx="9" ry="9" fill="url(#gb)"/>
+    <path d="M${cx-11},-33 Q${cx-22},-47 ${cx-14},-57 Q${cx-7},-44 ${cx-11},-33" fill="url(#gb)"/>
+    <path d="M${cx+11},-33 Q${cx+22},-47 ${cx+14},-57 Q${cx+7},-44 ${cx+11},-33" fill="url(#gb)"/>`;
   }).join('');
 
-  const crosses = crossYs.map(cy =>
-    `<rect x="108" y="${cy}" width="1224" height="${CH}" fill="url(#hG)" rx="5"/>` +
-    barCX.map(cx =>
-      `<circle cx="${cx}" cy="${cy + CH / 2}" r="8" fill="#1c1c1c" stroke="#555" stroke-width="1.5"/>
-       <circle cx="${cx}" cy="${cy + CH / 2}" r="3.5" fill="#777"/>`
-    ).join('')
+  const rails = RAIL_Y.map(ry =>
+    `<rect x="0" y="${ry}" width="1440" height="${RH}" fill="url(#gr)"/>` +
+    ALL.map(cx=>`<circle cx="${cx}" cy="${ry+RH/2}" r="5.5" fill="#120800" stroke="rgba(229,178,54,0.85)" stroke-width="1.5"/><circle cx="${cx}" cy="${ry+RH/2}" r="2.5" fill="rgba(255,215,60,0.7)"/>`).join('')
   ).join('');
 
-  // Gothic arch: two pointed arcs meeting at top center
-  const archPath = `M108,120 C108,0 440,0 720,0 C1000,0 1332,0 1332,120`;
+  const geom =
+    fol(360,452,78,.2)+hex(360,452,52,.32)+rings(360,452,[105,130],.12)+
+    fol(1080,452,78,.2)+hex(1080,452,52,.32)+rings(1080,452,[105,130],.12)+
+    fol(720,452,52,.28)+hex(720,452,36,.42)+rings(720,452,[75,95],.18)+
+    `<path d="M200,452 A80,80 0 0,1 280,372" fill="none" stroke="rgba(229,178,54,.15)" stroke-width="1"/>
+     <path d="M1240,452 A80,80 0 0,0 1160,372" fill="none" stroke="rgba(229,178,54,.15)" stroke-width="1"/>`;
 
-  // Gothic trefoils along top band (decorative)
-  const trefoils = [240,400,560,720,880,1040,1200].map(tx =>
-    `<circle cx="${tx}" cy="25" r="10" fill="none" stroke="rgba(229,178,54,0.2)" stroke-width="1"/>
-     <circle cx="${tx - 10}" cy="32" r="8" fill="none" stroke="rgba(229,178,54,0.15)" stroke-width="1"/>
-     <circle cx="${tx + 10}" cy="32" r="8" fill="none" stroke="rgba(229,178,54,0.15)" stroke-width="1"/>`
+  const arches = [180,360,540,720,900,1080,1260].map(x=>
+    `<path d="M${x-60},60 Q${x},18 ${x+60},60" fill="none" stroke="rgba(229,178,54,0.3)" stroke-width="1"/>`
   ).join('');
 
-  return `<svg viewBox="0 0 1440 1200" preserveAspectRatio="xMidYMid slice"
-      width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="bG" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%"   stop-color="#060606"/>
-        <stop offset="20%"  stop-color="#2c2c2c"/>
-        <stop offset="48%"  stop-color="#5c5c5c"/>
-        <stop offset="52%"  stop-color="#686868"/>
-        <stop offset="80%"  stop-color="#2a2a2a"/>
-        <stop offset="100%" stop-color="#060606"/>
-      </linearGradient>
-      <linearGradient id="hG" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%"   stop-color="#0a0a0a"/>
-        <stop offset="30%"  stop-color="#424242"/>
-        <stop offset="50%"  stop-color="#5e5e5e"/>
-        <stop offset="70%"  stop-color="#3e3e3e"/>
-        <stop offset="100%" stop-color="#0a0a0a"/>
-      </linearGradient>
-      <linearGradient id="stG" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%"   stop-color="#0c0a08"/>
-        <stop offset="40%"  stop-color="#201c16"/>
-        <stop offset="100%" stop-color="#0c0a08"/>
-      </linearGradient>
-      <linearGradient id="stGR" x1="100%" y1="0%" x2="0%" y2="0%">
-        <stop offset="0%"   stop-color="#0c0a08"/>
-        <stop offset="40%"  stop-color="#201c16"/>
-        <stop offset="100%" stop-color="#0c0a08"/>
-      </linearGradient>
-      <linearGradient id="gldG" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%"   stop-color="#3d2b00"/>
-        <stop offset="40%"  stop-color="#c9901a"/>
-        <stop offset="60%"  stop-color="#e5b236"/>
-        <stop offset="100%" stop-color="#3d2b00"/>
-      </linearGradient>
-      <filter id="ms" x="-10%" y="-5%" width="120%" height="110%">
-        <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.95"/>
-      </filter>
-      <filter id="stShadow">
-        <feDropShadow dx="4" dy="0" stdDeviation="6" flood-color="#000" flood-opacity="0.7"/>
-      </filter>
-      <filter id="stShadowR">
-        <feDropShadow dx="-4" dy="0" stdDeviation="6" flood-color="#000" flood-opacity="0.7"/>
-      </filter>
-    </defs>
-
-    <!-- Deep background -->
-    <rect width="1440" height="1200" fill="#04030a"/>
-
-    <!-- Gate fill (space between bars, subtle dark tone) -->
-    <rect x="108" y="-350" width="1224" height="1550" fill="rgba(0,0,0,0.45)"/>
-
-    <!-- Crossbars (behind bars) -->
-    ${crosses}
-
-    <!-- Vertical iron bars -->
-    ${bars}
-
-    <!-- ── Stone pillars ── -->
-    <rect x="0" y="0" width="110" height="1200" fill="url(#stG)" filter="url(#stShadow)"/>
-    <rect x="1330" y="0" width="110" height="1200" fill="url(#stGR)" filter="url(#stShadowR)"/>
-
-    <!-- Pillar inner edge highlight -->
-    <line x1="110" y1="0" x2="110" y2="1200" stroke="rgba(229,178,54,0.12)" stroke-width="1.5"/>
-    <line x1="1330" y1="0" x2="1330" y2="1200" stroke="rgba(229,178,54,0.12)" stroke-width="1.5"/>
-
-    <!-- Pillar carved grooves (gothic columns) -->
-    <line x1="30" y1="0" x2="30" y2="1200" stroke="rgba(0,0,0,0.5)" stroke-width="2"/>
-    <line x1="60" y1="0" x2="60" y2="1200" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
-    <line x1="80" y1="0" x2="80" y2="1200" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-    <line x1="1360" y1="0" x2="1360" y2="1200" stroke="rgba(0,0,0,0.5)" stroke-width="2"/>
-    <line x1="1380" y1="0" x2="1380" y2="1200" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
-    <line x1="1410" y1="0" x2="1410" y2="1200" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-
-    <!-- Gothic arch (top stone lintel) -->
-    <path d="${archPath}" stroke="rgba(229,178,54,0.25)" stroke-width="2" fill="none"/>
-
-    <!-- Top stone band -->
-    <rect x="0" y="0" width="1440" height="52" fill="url(#stG)"/>
-    <!-- Gold accent line under top band -->
-    <rect x="0" y="50" width="1440" height="3" fill="url(#gldG)" opacity="0.7"/>
-    <!-- Second thin line -->
-    <rect x="0" y="55" width="1440" height="1" fill="url(#gldG)" opacity="0.3"/>
-
-    <!-- Gothic trefoil decorations in top band -->
-    ${trefoils}
-
-    <!-- VAN LAX monogram hint in top center of band -->
-    <text x="720" y="36" text-anchor="middle" font-family="serif" font-size="14"
-          fill="rgba(229,178,54,0.3)" letter-spacing="8">V A N   L A X</text>
-
-    <!-- Bottom stone sill -->
-    <rect x="0" y="1140" width="1440" height="60" fill="url(#stG)"/>
-    <rect x="0" y="1138" width="1440" height="3" fill="url(#gldG)" opacity="0.5"/>
-  </svg>`;
+  return `<svg viewBox="0 0 1440 1100" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
+  <defs>
+    <linearGradient id="gb" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#180900"/><stop offset="12%"  stop-color="#7a4200"/>
+      <stop offset="28%"  stop-color="#c98618"/><stop offset="46%"  stop-color="#e8b530"/>
+      <stop offset="50%"  stop-color="#ffe050"/><stop offset="54%"  stop-color="#e8b530"/>
+      <stop offset="72%"  stop-color="#c98618"/><stop offset="88%"  stop-color="#7a4200"/>
+      <stop offset="100%" stop-color="#180900"/>
+    </linearGradient>
+    <linearGradient id="gr" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#0e0500"/><stop offset="25%"  stop-color="#a07015"/>
+      <stop offset="50%"  stop-color="#e0ae30"/><stop offset="75%"  stop-color="#a07015"/>
+      <stop offset="100%" stop-color="#0e0500"/>
+    </linearGradient>
+    <linearGradient id="band" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#0a0500"/><stop offset="18%"  stop-color="#5a3800"/>
+      <stop offset="50%"  stop-color="#b88010"/><stop offset="82%"  stop-color="#5a3800"/>
+      <stop offset="100%" stop-color="#0a0500"/>
+    </linearGradient>
+    <filter id="bs" x="-25%" y="-2%" width="150%" height="104%">
+      <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#000" flood-opacity="0.95"/>
+    </filter>
+    <filter id="sg" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#sg)">${geom}</g>
+  ${rails}
+  ${bars}
+  <rect x="715" y="65" width="10" height="975" fill="url(#gb)" filter="url(#bs)"/>
+  <rect x="718" y="65" width="4"  height="975" fill="rgba(255,230,100,0.09)"/>
+  <rect x="0" y="0" width="1440" height="63" fill="url(#band)"/>
+  <rect x="0" y="61" width="1440" height="2.5" fill="rgba(255,225,80,0.65)"/>
+  ${arches}
+  <text x="720" y="40" text-anchor="middle" font-family="Cormorant Garamond,Georgia,serif" font-size="17" fill="rgba(255,215,60,0.6)" letter-spacing="10">THE HOUSE OF VAN LAX</text>
+  ${rosette(42,31)}${rosette(1398,31)}
+  <rect x="0" y="1040" width="1440" height="60" fill="url(#band)"/>
+  <rect x="0" y="1038" width="1440" height="2.5" fill="rgba(255,225,80,0.55)"/>
+  ${rosette(42,1062)}${rosette(1398,1062)}
+</svg>`;
 }
 
 // ── GATE Logic ───────────────────────────────────────────────
