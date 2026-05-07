@@ -586,18 +586,29 @@ if (pinConfirmBtn) {
     pinConfirmBtn.addEventListener('click', () => {
         const name = (pinNameInput ? pinNameInput.value.trim() : '') || (isRu ? 'Галактика' : 'My Galaxy');
 
-        // Generate SVG from recorded buffer
+        // Generate SVG for vector download
         const svgData = generateSVG(name);
-        if (!svgData) {
-            alert(isRu ? 'Нет данных. Подождите, пока фигура нарисуется.' : 'Nothing to pin yet — let the figure draw first.');
-            return;
-        }
 
-        // Save SVG text to gallery (display + download both happen in gallery page)
+        // Capture canvas as high-res PNG — this IS the figure as drawn (screen blend etc.)
+        const THUMB_W = 2000;
+        const THUMB_H = Math.round((canvas.height / canvas.width) * THUMB_W);
+        const off = document.createElement('canvas');
+        off.width = THUMB_W; off.height = THUMB_H;
+        off.getContext('2d').drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
+        const canvasPng = off.toDataURL('image/png');
+
+        // Save both to gallery
         let gallery = [];
         try { gallery = JSON.parse(localStorage.getItem('vanlax_galaxy') || '[]'); } catch(e) {}
-        gallery.unshift({ id: Date.now(), svgData, name, formula: buildFormula(), ts: Date.now() });
-        if (gallery.length > 200) gallery = gallery.slice(0, 200); // soft safety cap
+        gallery.unshift({
+            id: Date.now(),
+            canvasPng,         // hi-res PNG for identical display
+            svgData: svgData || null,  // SVG text for vector download (may be null)
+            name,
+            formula: buildFormula(),
+            ts: Date.now()
+        });
+        if (gallery.length > 200) gallery = gallery.slice(0, 200);
         try {
             localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
             if (pinModal) pinModal.style.display = 'none';
@@ -607,7 +618,14 @@ if (pinConfirmBtn) {
                 setTimeout(() => { if (pinBtn) pinBtn.textContent = prev; }, 2500);
             }
         } catch(e) {
-            alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
+            // localStorage full — try with lower quality PNG
+            try {
+                gallery[0].canvasPng = off.toDataURL('image/jpeg', 0.7);
+                localStorage.setItem('vanlax_galaxy', JSON.stringify(gallery));
+                if (pinModal) pinModal.style.display = 'none';
+            } catch(e2) {
+                alert(isRu ? 'Хранилище заполнено. Удалите фигуры из галереи.' : 'Storage full. Delete some figures from the gallery.');
+            }
         }
     });
     if (pinNameInput) pinNameInput.addEventListener('keydown', e => {

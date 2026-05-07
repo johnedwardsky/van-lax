@@ -371,7 +371,8 @@
                 card.className = 'figure-card';
                 const shortFormula = fig.formula ? fig.formula.split('|')[0].trim() : '';
                 const fullFormula  = fig.formula || '';
-                const imgSrc = fig.svgData ? svgBlobUrl(fig.svgData) : (fig.dataUrl || '');
+                // Display: use canvasPng (pixel-identical to generator), fallback to SVG/legacy
+                const imgSrc = fig.canvasPng || (fig.svgData ? svgBlobUrl(fig.svgData) : (fig.dataUrl || ''));
                 card.innerHTML = `
                     <div class="figure-img-wrap">
                         <img class="figure-img" src="${imgSrc}" alt="${fig.name}" loading="lazy">
@@ -432,11 +433,11 @@
         }
 
         function openLightbox(fig) {
-            const imgSrc = fig.svgData ? svgBlobUrl(fig.svgData) : (fig.dataUrl || '');
+            const imgSrc = fig.canvasPng || (fig.svgData ? svgBlobUrl(fig.svgData) : (fig.dataUrl || ''));
             document.getElementById('lightbox-img').src = imgSrc;
             document.getElementById('lightbox-title').textContent = fig.name;
             document.getElementById('lightbox-formula').textContent = fig.formula || '';
-            // Download SVG (only if svgData exists)
+            // Download SVG when available
             const dlBtn = document.getElementById('lightbox-download');
             if (fig.svgData) {
                 dlBtn.style.display = '';
@@ -449,7 +450,7 @@
                     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
                 };
             } else {
-                dlBtn.style.display = 'none'; // old JPEG entries have no SVG to download
+                dlBtn.style.display = 'none';
             }
             document.getElementById('lightbox').classList.add('active');
         }
