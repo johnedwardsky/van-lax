@@ -495,7 +495,7 @@ function generateSVG(figName) {
     if (cur) paths.push({ color: prevColor, d: cur });
 
     const baseGroup = paths.map(p =>
-        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="0.95" stroke-width="0.8" fill="none" stroke-linecap="round"/>`
+        `<path d="${p.d}" stroke="${p.color}" stroke-opacity="1" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
     ).join('\n      ');
 
     // ── Step 4: symmetry copies via <use> + rotate ─────────────────────────
@@ -518,18 +518,17 @@ function generateSVG(figName) {
   <title>${figName}</title>
   <desc>Van Lax Abrakadabra | ω1=${params.lrota?.toFixed(4)} ω2=${params.rrota?.toFixed(4)} S=${params.symmetry||1}</desc>
   <defs>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="2" result="b"/>
+    <!-- Glow filter: soft blur blended over sharp line = luminous paths on any background -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <g id="arm">
       ${baseGroup}
     </g>
   </defs>
-  <!-- Dark background matches canvas — required for screen blend glow -->
-  <rect width="${SIZE}" height="${SIZE}" fill="#05050a"/>
-  <!-- screen blend-mode replicates canvas globalCompositeOperation:'screen' -->
-  <g filter="url(#glow)" style="mix-blend-mode:screen">
+  <!-- Transparent background — place on any colour in Illustrator / Inkscape -->
+  <g filter="url(#glow)">
     <use href="#arm"/>
     ${useTags}
   </g>
