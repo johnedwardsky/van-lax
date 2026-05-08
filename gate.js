@@ -56,90 +56,14 @@ const GATE_HASHES = new Set([
   "037df7e42ba6a3c31528c2f71fd4093b00795123e77bd38ccb6196d7ee748360"
 ]);
 
-// ── SVG Baroque Golden Gate Builder (Versailles style, two panels) ───
+// ── SVG Russian Art Golden Gate Builder (Intertwined patterns, two panels) ───
 function buildGateSVG() {
-  // Baroque scroll: S-curve path helper
-  function scroll(x, y, w, h, d) {
-    // d: 1 = curl right, -1 = curl left
-    const hw = w/2, hh = h/2;
-    return `M${x},${y+hh} C${x+hw*d},${y} ${x+hw*d},${y+h} ${x+w*d},${y+hh}`;
-  }
-
-  // Generate baroque filigree panel as SVG path (right half, mirror for left)
-  function baroquePanel(side) {
-    // side: 'L' left panel (right edge = seam), 'R' right panel (left edge = seam)
+  // Generate Russian filigree panel as SVG path (right half, mirror for left)
+  function russianPanel(side) {
     const W = 500, H = 1000;
-    const mx = side==='L' ? W : 0; // mirror x for left panel
-    const sx = side==='L' ? -1 : 1; // scale x direction
-
-    // Outer thick border rect
-    const border = `<rect x="0" y="0" width="${W}" height="${H}" fill="url(#panelBg)"/>
-      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="url(#gldH)" stroke-width="8"/>
-      <rect x="10" y="10" width="${W-20}" height="${H-20}" fill="none" stroke="url(#gldH)" stroke-width="2" opacity="0.5"/>`;
-
-    // Top decorative arch
-    const topArch = `<path d="M30,120 Q${W/2},20 ${W-30},120" fill="none" stroke="url(#gldH)" stroke-width="3"/>
-      <path d="M60,130 Q${W/2},50 ${W-60},130" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.6"/>`;
-
-    // Bottom mirror arch
-    const botArch = `<path d="M30,${H-120} Q${W/2},${H-20} ${W-30},${H-120}" fill="none" stroke="url(#gldH)" stroke-width="3"/>
-      <path d="M60,${H-130} Q${W/2},${H-50} ${W-60},${H-130}" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.6"/>`;
-
-    // Horizontal dividers
-    const divY = [120, H/2-20, H/2+20, H-120];
-    const dividers = divY.map(y =>
-      `<line x1="30" y1="${y}" x2="${W-30}" y2="${y}" stroke="url(#gldH)" stroke-width="2.5"/>
-       <line x1="30" y1="${y+4}" x2="${W-30}" y2="${y+4}" stroke="url(#gldH)" stroke-width="0.8" opacity="0.4"/>`
-    ).join('');
-
-    // Baroque scrollwork in upper panel (between top arch and middle)
-    const upperScrolls = `
-      <path d="M${W/2},160 C${W/2-60},180 ${W/2-80},220 ${W/2-40},250 C${W/2},270 ${W/2+40},250 ${W/2+40},220 C${W/2+40},190 ${W/2+10},175 ${W/2},160Z" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M${W/2-80},180 C${W/2-120},160 ${W/2-160},200 ${W/2-130},240 C${W/2-110},260 ${W/2-80},250 ${W/2-80},240" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M${W/2+80},180 C${W/2+120},160 ${W/2+160},200 ${W/2+130},240 C${W/2+110},260 ${W/2+80},250 ${W/2+80},240" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M${W/2-160},200 C${W/2-190},185 ${W/2-220},205 ${W/2-210},230 C${W/2-200},250 ${W/2-175},248 ${W/2-170},240" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.7"/>
-      <path d="M${W/2+160},200 C${W/2+190},185 ${W/2+220},205 ${W/2+210},230 C${W/2+200},250 ${W/2+175},248 ${W/2+170},240" fill="none" stroke="url(#gldH)" stroke-width="1.5" opacity="0.7"/>
-      <path d="M80,160 C60,140 40,155 45,175 C50,195 70,195 80,190 C90,185 95,165 80,160Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>
-      <path d="M${W-80},160 C${W-60},140 ${W-40},155 ${W-45},175 C${W-50},195 ${W-70},195 ${W-80},190 C${W-90},185 ${W-95},165 ${W-80},160Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>`;
-
-    // Central urn / vase medallion
-    const urnX = W/2, urnY = H/2;
-    const urn = `
-      <ellipse cx="${urnX}" cy="${urnY-80}" rx="55" ry="12" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M${urnX-55},${urnY-80} C${urnX-70},${urnY-20} ${urnX-50},${urnY+40} ${urnX-20},${urnY+60} L${urnX+20},${urnY+60} C${urnX+50},${urnY+40} ${urnX+70},${urnY-20} ${urnX+55},${urnY-80}" fill="url(#urnFill)" stroke="url(#gldH)" stroke-width="2.5"/>
-      <ellipse cx="${urnX}" cy="${urnY+60}" rx="28" ry="8" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <rect x="${urnX-18}" y="${urnY+62}" width="36" height="14" rx="3" fill="url(#gldH)" opacity="0.7"/>
-      <path d="M${urnX-55},${urnY-80} C${urnX-80},${urnY-100} ${urnX-70},${urnY-120} ${urnX-45},${urnY-110}" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M${urnX+55},${urnY-80} C${urnX+80},${urnY-100} ${urnX+70},${urnY-120} ${urnX+45},${urnY-110}" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <ellipse cx="${urnX}" cy="${urnY-110}" rx="30" ry="22" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M${urnX-15},${urnY-140} Q${urnX},${urnY-165} ${urnX+15},${urnY-140}" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <circle cx="${urnX}" cy="${urnY-165}" r="6" fill="url(#gldH)"/>
-      <circle cx="${urnX}" cy="${urnY}" r="4" fill="url(#gldH)" opacity="0.5"/>
-      <circle cx="${urnX}" cy="${urnY-80}" r="4" fill="url(#gldH)"/>`;
-
-    // Acanthus leaves flanking the urn
-    const leaves = `
-      <path d="M${urnX-60},${urnY-60} C${urnX-90},${urnY-80} ${urnX-110},${urnY-50} ${urnX-100},${urnY-30} C${urnX-95},${urnY-20} ${urnX-80},${urnY-18} ${urnX-75},${urnY-30} C${urnX-70},${urnY-45} ${urnX-60},${urnY-40} ${urnX-55},${urnY-55}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>
-      <path d="M${urnX-75},${urnY-35} C${urnX-100},${urnY-25} ${urnX-120},${urnY} ${urnX-100},${urnY+20} C${urnX-90},${urnY+30} ${urnX-75},${urnY+28} ${urnX-70},${urnY+15}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>
-      <path d="M${urnX+60},${urnY-60} C${urnX+90},${urnY-80} ${urnX+110},${urnY-50} ${urnX+100},${urnY-30} C${urnX+95},${urnY-20} ${urnX+80},${urnY-18} ${urnX+75},${urnY-30} C${urnX+70},${urnY-45} ${urnX+60},${urnY-40} ${urnX+55},${urnY-55}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>
-      <path d="M${urnX+75},${urnY-35} C${urnX+100},${urnY-25} ${urnX+120},${urnY} ${urnX+100},${urnY+20} C${urnX+90},${urnY+30} ${urnX+75},${urnY+28} ${urnX+70},${urnY+15}" fill="url(#leafFill)" stroke="url(#gldH)" stroke-width="1.5"/>`;
-
-    // Baroque scrollwork in lower panel
-    const lowerScrolls = `
-      <path d="M${W/2},${H-160} C${W/2-60},${H-180} ${W/2-80},${H-220} ${W/2-40},${H-250} C${W/2},${H-270} ${W/2+40},${H-250} ${W/2+40},${H-220} C${W/2+40},${H-190} ${W/2+10},${H-175} ${W/2},${H-160}Z" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-      <path d="M80,${H-160} C60,${H-140} 40,${H-155} 45,${H-175} C50,${H-195} 70,${H-195} 80,${H-190} C90,${H-185} 95,${H-165} 80,${H-160}Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>
-      <path d="M${W-80},${H-160} C${W-60},${H-140} ${W-40},${H-155} ${W-45},${H-175} C${W-50},${H-195} ${W-70},${H-195} ${W-80},${H-190} C${W-90},${H-185} ${W-95},${H-165} ${W-80},${H-160}Z" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>`;
-
-    // Corner rosettes
-    const corners = [[50,50],[W-50,50],[50,H-50],[W-50,H-50]].map(([cx,cy]) =>
-      `<circle cx="${cx}" cy="${cy}" r="22" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-       <circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="url(#gldH)" stroke-width="1.5"/>
-       <circle cx="${cx}" cy="${cy}" r="6" fill="url(#gldH)"/>
-       <line x1="${cx-22}" y1="${cy}" x2="${cx+22}" y2="${cy}" stroke="url(#gldH)" stroke-width="1" opacity="0.5"/>
-       <line x1="${cx}" y1="${cy-22}" x2="${cx}" y2="${cy+22}" stroke="url(#gldH)" stroke-width="1" opacity="0.5"/>`
-    ).join('');
-
-    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" width="100%" height="100%">
+    
+    // Gradient definitions and patterns
+    const defs = `
       <defs>
         <linearGradient id="gldH" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%"   stop-color="#7a4800"/>
@@ -148,42 +72,58 @@ function buildGateSVG() {
           <stop offset="75%"  stop-color="#c98a14"/>
           <stop offset="100%" stop-color="#7a4800"/>
         </linearGradient>
-        <linearGradient id="gldV" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%"   stop-color="#7a4800"/>
-          <stop offset="30%"  stop-color="#d4a020"/>
-          <stop offset="50%"  stop-color="#f0c040"/>
-          <stop offset="70%"  stop-color="#d4a020"/>
-          <stop offset="100%" stop-color="#7a4800"/>
-        </linearGradient>
-        <linearGradient id="panelBg" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stop-color="#1a0d00" stop-opacity="0.92"/>
-          <stop offset="40%"  stop-color="#0d0600" stop-opacity="0.85"/>
-          <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
-        </linearGradient>
-        <linearGradient id="urnFill" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stop-color="#4a2800" stop-opacity="0.8"/>
-          <stop offset="35%"  stop-color="#b07018" stop-opacity="0.9"/>
-          <stop offset="50%"  stop-color="#e8a828" stop-opacity="0.95"/>
-          <stop offset="65%"  stop-color="#b07018" stop-opacity="0.9"/>
-          <stop offset="100%" stop-color="#4a2800" stop-opacity="0.8"/>
-        </linearGradient>
-        <linearGradient id="leafFill" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stop-color="#6a3c00" stop-opacity="0.6"/>
-          <stop offset="100%" stop-color="#c48010" stop-opacity="0.4"/>
-        </linearGradient>
         <filter id="glowF">
-          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feGaussianBlur stdDeviation="3" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-      </defs>
+      </defs>`;
+
+    // Russian patterns: intertwined vines and circular motifs
+    const border = `
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="url(#gldH)" stroke-width="12" opacity="0.9"/>
+      <rect x="15" y="15" width="${W-30}" height="${H-30}" fill="none" stroke="url(#gldH)" stroke-width="2" opacity="0.5"/>`;
+
+    // Intertwining vines (simplified Khokhloma/Zhostovo style)
+    let vines = "";
+    for(let y=100; y<H; y+=180) {
+      const offset = (y/180) % 2 === 0 ? 0 : 40;
+      vines += `
+        <path d="M${50+offset},${y} C${150+offset},${y-80} ${350-offset},${y+80} ${W-50-offset},${y}" fill="none" stroke="url(#gldH)" stroke-width="4" opacity="0.8"/>
+        <path d="M${50+offset},${y+20} C${150+offset},${y+100} ${350-offset},${y-60} ${W-50-offset},${y+20}" fill="none" stroke="url(#gldH)" stroke-width="4" opacity="0.8"/>
+        <circle cx="${W/2+offset/2}" cy="${y+10}" r="15" fill="none" stroke="url(#gldH)" stroke-width="2"/>
+        <path d="M${W/2-20+offset/2},${y+10} L${W/2+20+offset/2},${y+10} M${W/2+offset/2},${y-10} L${W/2+offset/2},${y+30}" stroke="url(#gldH)" stroke-width="1.5"/>
+      `;
+    }
+
+    // Larger circular medallions
+    const medallions = `
+      <g transform="translate(${W/2}, 250) scale(1.2)">
+        <circle cx="0" cy="0" r="80" fill="none" stroke="url(#gldH)" stroke-width="3"/>
+        <circle cx="0" cy="0" r="70" fill="none" stroke="url(#gldH)" stroke-width="1" stroke-dasharray="5,5"/>
+        <path d="M-50,-50 L50,50 M-50,50 L50,-50 M0,-70 L0,70 M-70,0 L70,0" stroke="url(#gldH)" stroke-width="2"/>
+        <path d="M-40,0 A40,40 0 1,1 40,0 A40,40 0 1,1 -40,0" fill="none" stroke="url(#gldH)" stroke-width="5" stroke-dasharray="10,15"/>
+      </g>
+      <g transform="translate(${W/2}, 750) scale(1.2)">
+        <circle cx="0" cy="0" r="80" fill="none" stroke="url(#gldH)" stroke-width="3"/>
+        <path d="M-60,0 Q0,-80 60,0 Q0,80 -60,0" fill="none" stroke="url(#gldH)" stroke-width="3"/>
+        <path d="M0,-60 Q-80,0 0,60 Q80,0 0,-60" fill="none" stroke="url(#gldH)" stroke-width="3"/>
+      </g>
+    `;
+
+    // Side seam detail
+    const seam = side==='L' 
+      ? `<rect x="${W-8}" y="0" width="8" height="${H}" fill="url(#gldH)"/>`
+      : `<rect x="0" y="0" width="8" height="${H}" fill="url(#gldH)"/>`;
+
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" width="100%" height="100%" style="background:rgba(0,0,0,0.1)">
+      ${defs}
       <g filter="url(#glowF)">
-        ${border}${topArch}${botArch}${dividers}
-        ${upperScrolls}${urn}${leaves}${lowerScrolls}${corners}
+        ${border}${vines}${medallions}${seam}
       </g>
     </svg>`;
   }
 
-  return { left: baroquePanel('L'), right: baroquePanel('R') };
+  return { left: russianPanel('L'), right: russianPanel('R') };
 }
 
 // ── GATE Logic ───────────────────────────────────────────────
