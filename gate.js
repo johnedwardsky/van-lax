@@ -56,74 +56,163 @@ const GATE_HASHES = new Set([
   "037df7e42ba6a3c31528c2f71fd4093b00795123e77bd38ccb6196d7ee748360"
 ]);
 
-// ── SVG Russian Art Golden Gate Builder (Intertwined patterns, two panels) ───
+// ── SVG Islamic Golden Gate Builder ──────────────────────────
 function buildGateSVG() {
-  // Generate Russian filigree panel as SVG path (right half, mirror for left)
-  function russianPanel(side) {
-    const W = 500, H = 1000;
-    
-    // Gradient definitions and patterns
-    const defs = `
-      <defs>
-        <linearGradient id="gldH" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stop-color="#7a4800"/>
-          <stop offset="25%"  stop-color="#c98a14"/>
-          <stop offset="50%"  stop-color="#f0c040"/>
-          <stop offset="75%"  stop-color="#c98a14"/>
-          <stop offset="100%" stop-color="#7a4800"/>
-        </linearGradient>
-        <filter id="glowF">
-          <feGaussianBlur stdDeviation="3" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>`;
 
-    // Russian patterns: intertwined vines and circular motifs
-    const border = `
-      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="url(#gldH)" stroke-width="12" opacity="0.9"/>
-      <rect x="15" y="15" width="${W-30}" height="${H-30}" fill="none" stroke="url(#gldH)" stroke-width="2" opacity="0.5"/>`;
+  function panel(side) {
+    const W = 500, H = 1000, L = side === 'L';
 
-    // Intertwining vines (simplified Khokhloma/Zhostovo style)
-    let vines = "";
-    for(let y=100; y<H; y+=180) {
-      const offset = (y/180) % 2 === 0 ? 0 : 40;
-      vines += `
-        <path d="M${50+offset},${y} C${150+offset},${y-80} ${350-offset},${y+80} ${W-50-offset},${y}" fill="none" stroke="url(#gldH)" stroke-width="4" opacity="0.8"/>
-        <path d="M${50+offset},${y+20} C${150+offset},${y+100} ${350-offset},${y-60} ${W-50-offset},${y+20}" fill="none" stroke="url(#gldH)" stroke-width="4" opacity="0.8"/>
-        <circle cx="${W/2+offset/2}" cy="${y+10}" r="15" fill="none" stroke="url(#gldH)" stroke-width="2"/>
-        <path d="M${W/2-20+offset/2},${y+10} L${W/2+20+offset/2},${y+10} M${W/2+offset/2},${y-10} L${W/2+offset/2},${y+30}" stroke="url(#gldH)" stroke-width="1.5"/>
-      `;
+    // Gold gradient stops (shared prefix avoids ID collision between panels)
+    const pfx = L ? 'l' : 'r';
+
+    // 8-pointed star polygon (cx,cy,outerR,innerR)
+    function star8(cx, cy, ro, ri) {
+      let p = '';
+      for (let i = 0; i < 16; i++) {
+        const a = i * Math.PI / 8 - Math.PI / 2;
+        const r = i % 2 === 0 ? ro : ri;
+        p += `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)} `;
+      }
+      return `<polygon points="${p}" fill="none" stroke="url(#g${pfx})" stroke-width="2.5" stroke-linejoin="round"/>`;
     }
 
-    // Larger circular medallions
-    const medallions = `
-      <g transform="translate(${W/2}, 250) scale(1.2)">
-        <circle cx="0" cy="0" r="80" fill="none" stroke="url(#gldH)" stroke-width="3"/>
-        <circle cx="0" cy="0" r="70" fill="none" stroke="url(#gldH)" stroke-width="1" stroke-dasharray="5,5"/>
-        <path d="M-50,-50 L50,50 M-50,50 L50,-50 M0,-70 L0,70 M-70,0 L70,0" stroke="url(#gldH)" stroke-width="2"/>
-        <path d="M-40,0 A40,40 0 1,1 40,0 A40,40 0 1,1 -40,0" fill="none" stroke="url(#gldH)" stroke-width="5" stroke-dasharray="10,15"/>
-      </g>
-      <g transform="translate(${W/2}, 750) scale(1.2)">
-        <circle cx="0" cy="0" r="80" fill="none" stroke="url(#gldH)" stroke-width="3"/>
-        <path d="M-60,0 Q0,-80 60,0 Q0,80 -60,0" fill="none" stroke="url(#gldH)" stroke-width="3"/>
-        <path d="M0,-60 Q-80,0 0,60 Q80,0 0,-60" fill="none" stroke="url(#gldH)" stroke-width="3"/>
-      </g>
-    `;
+    // Islamic star grid (lower 55%)
+    let grid = '';
+    const gs = 72, gy0 = H * 0.44;
+    for (let y = gy0 + gs / 2; y < H + gs; y += gs) {
+      for (let x = gs / 2; x < W + gs; x += gs) {
+        grid += star8(x, y, gs * 0.38, gs * 0.17);
+        // Centre dot
+        grid += `<circle cx="${x}" cy="${y}" r="${gs * 0.08}" fill="url(#g${pfx})"/>`;
+        // Cross connectors between stars
+        grid += `<line x1="${x - gs * 0.38}" y1="${y}" x2="${x - gs * 0.5}" y2="${y}" stroke="url(#g${pfx})" stroke-width="2"/>`;
+        grid += `<line x1="${x + gs * 0.38}" y1="${y}" x2="${x + gs * 0.5}" y2="${y}" stroke="url(#g${pfx})" stroke-width="2"/>`;
+        grid += `<line x1="${x}" y1="${y - gs * 0.38}" x2="${x}" y2="${y - gs * 0.5}" stroke="url(#g${pfx})" stroke-width="2"/>`;
+        grid += `<line x1="${x}" y1="${y + gs * 0.38}" x2="${x}" y2="${y + gs * 0.5}" stroke="url(#g${pfx})" stroke-width="2"/>`;
+        // Diagonal connectors (corner stars)
+        grid += `<line x1="${x - gs * 0.27}" y1="${y - gs * 0.27}" x2="${x - gs * 0.38}" y2="${y - gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
+        grid += `<line x1="${x + gs * 0.27}" y1="${y - gs * 0.27}" x2="${x + gs * 0.38}" y2="${y - gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
+        grid += `<line x1="${x + gs * 0.27}" y1="${y + gs * 0.27}" x2="${x + gs * 0.38}" y2="${y + gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
+        grid += `<line x1="${x - gs * 0.27}" y1="${y + gs * 0.27}" x2="${x - gs * 0.38}" y2="${y + gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
+        // Small octagon at each grid crossing
+        let op = '';
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4 + Math.PI / 8;
+          op += `${x + gs * 0.12 * Math.cos(a)},${y + gs * 0.12 * Math.sin(a)} `;
+        }
+        grid += `<polygon points="${op}" fill="none" stroke="url(#g${pfx})" stroke-width="1.2" opacity="0.8"/>`;
+      }
+    }
 
-    // Side seam detail
-    const seam = side==='L' 
-      ? `<rect x="${W-8}" y="0" width="8" height="${H}" fill="url(#gldH)"/>`
-      : `<rect x="0" y="0" width="8" height="${H}" fill="url(#gldH)"/>`;
+    // Arabesque medallion (upper 44%)
+    const mx = L ? W * 0.5 : W * 0.5, my = H * 0.24, mr = 155;
+    let med = '';
+    // Outer ring + inner rings
+    med += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="none" stroke="url(#g${pfx})" stroke-width="5"/>`;
+    med += `<circle cx="${mx}" cy="${my}" r="${mr * 0.78}" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+    med += `<circle cx="${mx}" cy="${my}" r="${mr * 0.55}" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+    med += `<circle cx="${mx}" cy="${my}" r="${mr * 0.3}" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+    // 16 petals
+    for (let i = 0; i < 16; i++) {
+      const a = i * Math.PI / 8, a2 = a + Math.PI / 16;
+      const x1 = mx + mr * 0.78 * Math.cos(a), y1 = my + mr * 0.78 * Math.sin(a);
+      const x2 = mx + mr * 0.55 * Math.cos(a2), y2 = my + mr * 0.55 * Math.sin(a2);
+      const xc = mx + mr * 0.65 * Math.cos(a + Math.PI / 32), yc = my + mr * 0.65 * Math.sin(a + Math.PI / 32);
+      med += `<path d="M${mx},${my} Q${xc},${yc} ${x1},${y1}" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
+    }
+    // 8-pointed star in centre
+    med += star8(mx, my, mr * 0.28, mr * 0.13);
+    // Radiating spokes
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      med += `<line x1="${mx + mr * 0.3 * Math.cos(a)}" y1="${my + mr * 0.3 * Math.sin(a)}" x2="${mx + mr * 0.78 * Math.cos(a)}" y2="${my + mr * 0.78 * Math.sin(a)}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.6"/>`;
+    }
+    // Lotus tips at outer ring
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 - Math.PI / 8;
+      const tx = mx + mr * Math.cos(a), ty = my + mr * Math.sin(a);
+      const bl = mx + (mr - 18) * Math.cos(a - 0.2), bly = my + (mr - 18) * Math.sin(a - 0.2);
+      const br = mx + (mr - 18) * Math.cos(a + 0.2), bry = my + (mr - 18) * Math.sin(a + 0.2);
+      med += `<path d="M${bl},${bly} Q${tx},${ty} ${br},${bry}" fill="none" stroke="url(#g${pfx})" stroke-width="2.5"/>`;
+    }
 
-    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" width="100%" height="100%" style="background:rgba(0,0,0,0.1)">
+    // Top frieze band
+    let frieze = '';
+    const fh = 70, fs = 28;
+    frieze += `<rect x="0" y="0" width="${W}" height="${fh}" fill="rgba(40,15,0,0.45)"/>`;
+    for (let x = 0; x < W; x += fs) {
+      frieze += `<rect x="${x + 2}" y="4" width="${fs - 4}" height="${fh - 8}" rx="3" fill="none" stroke="url(#g${pfx})" stroke-width="1" opacity="0.8"/>`;
+      frieze += `<circle cx="${x + fs / 2}" cy="${fh / 2}" r="${fs * 0.22}" fill="none" stroke="url(#g${pfx})" stroke-width="1.2"/>`;
+      frieze += `<circle cx="${x + fs / 2}" cy="${fh / 2}" r="${fs * 0.1}" fill="url(#g${pfx})" opacity="0.7"/>`;
+      frieze += `<line x1="${x + fs / 2}" y1="4" x2="${x + fs / 2}" y2="${fh - 4}" stroke="url(#g${pfx})" stroke-width="0.6" opacity="0.3"/>`;
+    }
+
+    // Pointed Moorish arch edge (inner edge of panel)
+    const archEdge = L
+      ? `M${W},0 C${W},150 ${W * 0.75},300 ${W * 0.6},450 C${W * 0.45},600 ${W},750 ${W},${H}`
+      : `M0,0 C0,150 ${W * 0.25},300 ${W * 0.4},450 C${W * 0.55},600 0,750 0,${H}`;
+    // Draw the arch edge with double gold lines
+    const aw = 10;
+    const archEdge2 = L
+      ? `M${W - aw},0 C${W - aw},150 ${W * 0.75 - aw},300 ${W * 0.6 - aw},450 C${W * 0.45 - aw},600 ${W - aw},750 ${W - aw},${H}`
+      : `M${aw},0 C${aw},150 ${W * 0.25 + aw},300 ${W * 0.4 + aw},450 C${W * 0.55 + aw},600 ${aw},750 ${aw},${H}`;
+
+    // Clip: cut panel along arch edge so background shows through
+    const clipId = `archClip${pfx}`;
+    const clipPath = L
+      ? `<clipPath id="${clipId}"><path d="M0,0 L${W},0 C${W},150 ${W*0.75},300 ${W*0.6},450 C${W*0.45},600 ${W},750 ${W},${H} L0,${H} Z"/></clipPath>`
+      : `<clipPath id="${clipId}"><path d="M${W},0 L0,0 C0,150 ${W*0.25},300 ${W*0.4},450 C${W*0.55},600 0,750 0,${H} L${W},${H} Z"/></clipPath>`;
+
+    // Seam bar (vertical gold bar along inner edge where doors meet)
+    const seamBar = L
+      ? `<rect x="${W - 14}" y="0" width="14" height="${H}" fill="url(#g${pfx})"/>`
+      : `<rect x="0" y="0" width="14" height="${H}" fill="url(#g${pfx})"/>`;
+
+    // Outer frame
+    const frame = `
+      <rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="url(#g${pfx})" stroke-width="14"/>
+      <rect x="7" y="7" width="${W - 14}" height="${H - 14}" fill="none" stroke="url(#g${pfx})" stroke-width="2.5" opacity="0.5"/>`;
+
+    const defs = `<defs>
+      <linearGradient id="g${pfx}" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#5c2d00"/>
+        <stop offset="20%"  stop-color="#b06010"/>
+        <stop offset="48%"  stop-color="#ffd050"/>
+        <stop offset="52%"  stop-color="#ffe878"/>
+        <stop offset="80%"  stop-color="#b06010"/>
+        <stop offset="100%" stop-color="#5c2d00"/>
+      </linearGradient>
+      <linearGradient id="g${pfx}v" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#5c2d00"/>
+        <stop offset="40%"  stop-color="#c07820"/>
+        <stop offset="50%"  stop-color="#ffd050"/>
+        <stop offset="60%"  stop-color="#c07820"/>
+        <stop offset="100%" stop-color="#5c2d00"/>
+      </linearGradient>
+      <filter id="glow${pfx}">
+        <feGaussianBlur stdDeviation="3.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      ${clipPath}
+    </defs>`;
+
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" width="100%" height="100%">
       ${defs}
-      <g filter="url(#glowF)">
-        ${border}${vines}${medallions}${seam}
+      <g clip-path="url(#${clipId})">
+        <g filter="url(#glow${pfx})">
+          ${grid}
+          ${med}
+          ${frieze}
+          ${frame}
+          ${seamBar}
+          <path d="${archEdge}" fill="none" stroke="url(#g${pfx})" stroke-width="14"/>
+          <path d="${archEdge2}" fill="none" stroke="url(#g${pfx})" stroke-width="3" opacity="0.5"/>
+        </g>
       </g>
     </svg>`;
   }
 
-  return { left: russianPanel('L'), right: russianPanel('R') };
+  return { left: panel('L'), right: panel('R') };
 }
 
 // ── GATE Logic ───────────────────────────────────────────────
