@@ -614,6 +614,28 @@ if (downloadBtn) {
             var dw = srcW * ratio, dh = srcH * ratio;
             oc.drawImage(canvas, (OUT - dw) / 2, (OUT - dh) / 2, dw, dh);
 
+            // ── Watermark ───────────────────────────────────────────────────
+            var pad   = 54;   // distance from edges
+            var line1 = 'ABRAKADABRA  GENERATIVE  GALLERY';
+            var line2 = '\u00a9  Inspired by Van Lax';
+            oc.textAlign    = 'right';
+            oc.textBaseline = 'alphabetic';
+
+            // Line 1 — subtle gold
+            oc.font         = '500 28px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha  = 0.35;
+            oc.fillStyle    = '#e5b236';
+            oc.fillText(line1, OUT - pad, OUT - pad - 38);
+
+            // Line 2 — silver
+            oc.font         = '300 22px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha  = 0.25;
+            oc.fillStyle    = '#c0c0c0';
+            oc.fillText(line2, OUT - pad, OUT - pad);
+
+            oc.globalAlpha  = 1.0;
+            // ────────────────────────────────────────────────────────────────
+
             off.toBlob(function(blob) {
                 var url = URL.createObjectURL(blob);
                 var a   = document.createElement('a');
