@@ -596,15 +596,21 @@ if (downloadBtn) {
             var safeName = ('Abrakadabra_' + fv(p.lrota) + '_' + fv(p.rrota) + '_S' + (p.symmetry || 1))
                            .replace(/[^A-Za-z0-9._-]/g, '_');
 
-            // 3000x3000 offscreen canvas — identical to screen, just bigger
-            var OUT = 3000;
+            // ── Canvas layout: 3000×3000 — figure area + formula band ────────
+            var OUT   = 3000;
+            var BAND  = 240;  // bottom metadata strip height
+            var FIG_H = OUT - BAND; // 2760px for the figure
+
             var off = document.createElement('canvas');
             off.width  = OUT;
             off.height = OUT;
             var oc = off.getContext('2d');
 
+            // Fill entire canvas with dark background
+            oc.fillStyle = '#05050a';
+            oc.fillRect(0, 0, OUT, OUT);
+
             // ── Auto-crop: find tight bounding box of the figure ─────────────
-            // Scan a small proxy to locate non-background pixels efficiently
             var PROXY = 150;
             var px = document.createElement('canvas');
             px.width = px.height = PROXY;
@@ -612,11 +618,10 @@ if (downloadBtn) {
             pc.drawImage(canvas, 0, 0, PROXY, PROXY);
             var id = pc.getImageData(0, 0, PROXY, PROXY).data;
             var minX = PROXY, minY = PROXY, maxX = 0, maxY = 0;
-            var BG_THRESH = 12; // brightness above which a pixel is "figure"
             for (var row = 0; row < PROXY; row++) {
                 for (var col = 0; col < PROXY; col++) {
                     var i = (row * PROXY + col) * 4;
-                    if (id[i] > BG_THRESH || id[i+1] > BG_THRESH || id[i+2] > BG_THRESH) {
+                    if (id[i] > 12 || id[i+1] > 12 || id[i+2] > 12) {
                         if (col < minX) minX = col;
                         if (col > maxX) maxX = col;
                         if (row < minY) minY = row;
@@ -624,54 +629,84 @@ if (downloadBtn) {
                     }
                 }
             }
-            // Fallback: full canvas if nothing found
-            if (maxX <= minX || maxY <= minY) {
-                minX = 0; minY = 0; maxX = PROXY - 1; maxY = PROXY - 1;
-            }
-            // Add 8% padding around the figure
-            var PAD_F = 0.08;
+            if (maxX <= minX || maxY <= minY) { minX = 0; minY = 0; maxX = PROXY-1; maxY = PROXY-1; }
             var bw = maxX - minX, bh = maxY - minY;
-            var padX = Math.max(bw * PAD_F, 4), padY = Math.max(bh * PAD_F, 4);
+            var padX = Math.max(bw * 0.08, 4), padY = Math.max(bh * 0.08, 4);
             minX = Math.max(0, minX - padX);
             minY = Math.max(0, minY - padY);
-            maxX = Math.min(PROXY - 1, maxX + padX);
-            maxY = Math.min(PROXY - 1, maxY + padY);
+            maxX = Math.min(PROXY-1, maxX + padX);
+            maxY = Math.min(PROXY-1, maxY + padY);
 
-            // Map proxy coords back to real canvas coords
             var srcW = canvas.width, srcH = canvas.height;
-            var scaleX = srcW / PROXY, scaleY = srcH / PROXY;
-            var cropX = Math.floor(minX * scaleX);
-            var cropY = Math.floor(minY * scaleY);
-            var cropW = Math.ceil((maxX - minX) * scaleX);
-            var cropH = Math.ceil((maxY - minY) * scaleY);
+            var cropX = Math.floor(minX * srcW / PROXY);
+            var cropY = Math.floor(minY * srcH / PROXY);
+            var cropW = Math.ceil((maxX - minX) * srcW / PROXY);
+            var cropH = Math.ceil((maxY - minY) * srcH / PROXY);
 
-            // Fill with same dark background
-            oc.fillStyle = '#05050a';
-            oc.fillRect(0, 0, OUT, OUT);
-
-            // Draw the cropped figure region scaled to fill the output square
-            oc.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, OUT, OUT);
+            // Draw figure into top portion (letterbox-fit within FIG_H)
+            var figRatio = Math.min(OUT / cropW, FIG_H / cropH);
+            var figW = cropW * figRatio, figH = cropH * figRatio;
+            oc.drawImage(canvas, cropX, cropY, cropW, cropH,
+                         (OUT - figW) / 2, (FIG_H - figH) / 2, figW, figH);
             // ─────────────────────────────────────────────────────────────────
 
-            // ── Watermark ────────────────────────────────────────────────────
-            var wPad  = 54;
-            var line1 = 'ABRAKADABRA  GENERATIVE  GALLERY';
-            var line2 = '\u00a9  Inspired by Van Lax';
+            // ── Separator line ────────────────────────────────────────────────
+            oc.strokeStyle = 'rgba(229,178,54,0.18)';
+            oc.lineWidth   = 1;
+            oc.beginPath();
+            oc.moveTo(60, FIG_H);
+            oc.lineTo(OUT - 60, FIG_H);
+            oc.stroke();
+
+            // ── Formula band ─────────────────────────────────────────────────
+            // Build the unique parameter string for this figure
+            var n  = function(v, d) { return typeof v === 'number' ? v.toFixed(d) : '—'; };
+            var formulaLine1 =
+                '\u03c9\u2081 = ' + n(p.lrota, 4) + '   \u00b7   ' +
+                '\u03c9\u2082 = ' + n(p.rrota, 4) + '   \u00b7   ' +
+                '\u03c9c = ' + n(p.crota, 3)  + '   \u00b7   ' +
+                'S = '  + (p.symmetry || 1);
+
+            var formulaLine2 =
+                'Hub (' + n(p.hbx, 1) + ', ' + n(p.hby, 1) + ')   \u00b7   ' +
+                'Dist ' + n(p.hdist, 1) + '   \u00b7   ' +
+                'L\u2081 ' + n(p.larm1, 1) + '  L\u2082 ' + n(p.larm2, 1) + '   \u00b7   ' +
+                'R\u2081 ' + n(p.rarm1, 1) + '  R\u2082 ' + n(p.rarm2, 1) + '   \u00b7   ' +
+                'Ext ' + n(p.ext, 1) + '   \u00b7   ' +
+                '\u03b8 = ' + n(p.handlrot, 1) + '\u00b0';
+
+            oc.textAlign    = 'center';
+            oc.textBaseline = 'middle';
+
+            // Formula line 1 — gold
+            oc.font        = '400 30px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha = 0.65;
+            oc.fillStyle   = '#e5b236';
+            oc.fillText(formulaLine1, OUT / 2, FIG_H + 68);
+
+            // Formula line 2 — silver
+            oc.font        = '300 24px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha = 0.45;
+            oc.fillStyle   = '#b0b8c8';
+            oc.fillText(formulaLine2, OUT / 2, FIG_H + 122);
+
+            // ── Gallery name + copyright (bottom-right) ───────────────────────
             oc.textAlign    = 'right';
             oc.textBaseline = 'alphabetic';
 
-            oc.font        = '500 28px "Helvetica Neue", Helvetica, Arial, sans-serif';
-            oc.globalAlpha = 0.35;
+            oc.font        = '500 22px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha = 0.3;
             oc.fillStyle   = '#e5b236';
-            oc.fillText(line1, OUT - wPad, OUT - wPad - 38);
+            oc.fillText('ABRAKADABRA  GENERATIVE  GALLERY', OUT - 54, FIG_H + 186);
 
-            oc.font        = '300 22px "Helvetica Neue", Helvetica, Arial, sans-serif';
-            oc.globalAlpha = 0.25;
+            oc.font        = '300 18px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha = 0.22;
             oc.fillStyle   = '#c0c0c0';
-            oc.fillText(line2, OUT - wPad, OUT - wPad);
+            oc.fillText('\u00a9  Inspired by Van Lax', OUT - 54, FIG_H + 214);
 
             oc.globalAlpha = 1.0;
             // ─────────────────────────────────────────────────────────────────
+
 
 
             off.toBlob(function(blob) {
