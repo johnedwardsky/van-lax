@@ -603,38 +603,76 @@ if (downloadBtn) {
             off.height = OUT;
             var oc = off.getContext('2d');
 
-            // Same dark background as the live canvas
+            // ── Auto-crop: find tight bounding box of the figure ─────────────
+            // Scan a small proxy to locate non-background pixels efficiently
+            var PROXY = 150;
+            var px = document.createElement('canvas');
+            px.width = px.height = PROXY;
+            var pc = px.getContext('2d');
+            pc.drawImage(canvas, 0, 0, PROXY, PROXY);
+            var id = pc.getImageData(0, 0, PROXY, PROXY).data;
+            var minX = PROXY, minY = PROXY, maxX = 0, maxY = 0;
+            var BG_THRESH = 12; // brightness above which a pixel is "figure"
+            for (var row = 0; row < PROXY; row++) {
+                for (var col = 0; col < PROXY; col++) {
+                    var i = (row * PROXY + col) * 4;
+                    if (id[i] > BG_THRESH || id[i+1] > BG_THRESH || id[i+2] > BG_THRESH) {
+                        if (col < minX) minX = col;
+                        if (col > maxX) maxX = col;
+                        if (row < minY) minY = row;
+                        if (row > maxY) maxY = row;
+                    }
+                }
+            }
+            // Fallback: full canvas if nothing found
+            if (maxX <= minX || maxY <= minY) {
+                minX = 0; minY = 0; maxX = PROXY - 1; maxY = PROXY - 1;
+            }
+            // Add 8% padding around the figure
+            var PAD_F = 0.08;
+            var bw = maxX - minX, bh = maxY - minY;
+            var padX = Math.max(bw * PAD_F, 4), padY = Math.max(bh * PAD_F, 4);
+            minX = Math.max(0, minX - padX);
+            minY = Math.max(0, minY - padY);
+            maxX = Math.min(PROXY - 1, maxX + padX);
+            maxY = Math.min(PROXY - 1, maxY + padY);
+
+            // Map proxy coords back to real canvas coords
+            var srcW = canvas.width, srcH = canvas.height;
+            var scaleX = srcW / PROXY, scaleY = srcH / PROXY;
+            var cropX = Math.floor(minX * scaleX);
+            var cropY = Math.floor(minY * scaleY);
+            var cropW = Math.ceil((maxX - minX) * scaleX);
+            var cropH = Math.ceil((maxY - minY) * scaleY);
+
+            // Fill with same dark background
             oc.fillStyle = '#05050a';
             oc.fillRect(0, 0, OUT, OUT);
 
-            // Scale live canvas into the square (letterbox, centred)
-            var srcW = canvas.width;   // already dpr-scaled
-            var srcH = canvas.height;
-            var ratio = Math.min(OUT / srcW, OUT / srcH);
-            var dw = srcW * ratio, dh = srcH * ratio;
-            oc.drawImage(canvas, (OUT - dw) / 2, (OUT - dh) / 2, dw, dh);
+            // Draw the cropped figure region scaled to fill the output square
+            oc.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, OUT, OUT);
+            // ─────────────────────────────────────────────────────────────────
 
-            // ── Watermark ───────────────────────────────────────────────────
-            var pad   = 54;   // distance from edges
+            // ── Watermark ────────────────────────────────────────────────────
+            var wPad  = 54;
             var line1 = 'ABRAKADABRA  GENERATIVE  GALLERY';
             var line2 = '\u00a9  Inspired by Van Lax';
             oc.textAlign    = 'right';
             oc.textBaseline = 'alphabetic';
 
-            // Line 1 — subtle gold
-            oc.font         = '500 28px "Helvetica Neue", Helvetica, Arial, sans-serif';
-            oc.globalAlpha  = 0.35;
-            oc.fillStyle    = '#e5b236';
-            oc.fillText(line1, OUT - pad, OUT - pad - 38);
+            oc.font        = '500 28px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha = 0.35;
+            oc.fillStyle   = '#e5b236';
+            oc.fillText(line1, OUT - wPad, OUT - wPad - 38);
 
-            // Line 2 — silver
-            oc.font         = '300 22px "Helvetica Neue", Helvetica, Arial, sans-serif';
-            oc.globalAlpha  = 0.25;
-            oc.fillStyle    = '#c0c0c0';
-            oc.fillText(line2, OUT - pad, OUT - pad);
+            oc.font        = '300 22px "Helvetica Neue", Helvetica, Arial, sans-serif';
+            oc.globalAlpha = 0.25;
+            oc.fillStyle   = '#c0c0c0';
+            oc.fillText(line2, OUT - wPad, OUT - wPad);
 
-            oc.globalAlpha  = 1.0;
-            // ────────────────────────────────────────────────────────────────
+            oc.globalAlpha = 1.0;
+            // ─────────────────────────────────────────────────────────────────
+
 
             off.toBlob(function(blob) {
                 var url = URL.createObjectURL(blob);
