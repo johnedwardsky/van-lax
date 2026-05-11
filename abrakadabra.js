@@ -573,7 +573,6 @@ playPauseBtn.addEventListener('click', function() {
     playPauseBtn.textContent = isPlaying
         ? (isRu ? 'Стоп' : 'Stop')
         : (isRu ? 'Старт' : 'Start');
-    // When stopped: light up Download button (gold). When playing: dim it.
     if (downloadBtn) {
         if (!isPlaying) {
             downloadBtn.classList.remove('secondary');
@@ -585,36 +584,47 @@ playPauseBtn.addEventListener('click', function() {
     }
 });
 
-// ── Download SVG — only works when stopped ───────────────────────────────────
+// ── Download PNG — pixel-perfect 3000x3000 capture of the canvas ────────────────
 if (downloadBtn) {
     downloadBtn.classList.add('secondary');
     downloadBtn.disabled = true;
     downloadBtn.addEventListener('click', function() {
         if (isPlaying) return;
-        if (svgBuffer.length < 2) {
-            alert(isRu ? 'Подождите, пока фигура нарисуется.' : 'Let the figure draw first.');
-            return;
-        }
         try {
             var p  = params;
-            var fv = function(n) { return typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(4) : n.toFixed(2)) : '0'; };
-            var figName = 'Abrakadabra_' + fv(p.lrota) + '_' + fv(p.rrota) + '_S' + (p.symmetry || 1);
-            var safeName = figName.replace(/[^A-Za-z0-9._-]/g, '_');
-            var svgText = generateSVG(figName);
-            if (!svgText) { alert(isRu ? 'Нет данных.' : 'No data to export.'); return; }
-            var blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-            var url  = URL.createObjectURL(blob);
-            var a    = document.createElement('a');
-            a.href   = url;
-            a.setAttribute('download', safeName + '.svg');
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(function() {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 3000);
-            // Flash success
+            var fv = function(n) { return typeof n === 'number' ? (Math.abs(n) < 1 ? n.toFixed(3) : n.toFixed(2)) : '0'; };
+            var safeName = ('Abrakadabra_' + fv(p.lrota) + '_' + fv(p.rrota) + '_S' + (p.symmetry || 1))
+                           .replace(/[^A-Za-z0-9._-]/g, '_');
+
+            // 3000x3000 offscreen canvas — identical to screen, just bigger
+            var OUT = 3000;
+            var off = document.createElement('canvas');
+            off.width  = OUT;
+            off.height = OUT;
+            var oc = off.getContext('2d');
+
+            // Same dark background as the live canvas
+            oc.fillStyle = '#05050a';
+            oc.fillRect(0, 0, OUT, OUT);
+
+            // Scale live canvas into the square (letterbox, centred)
+            var srcW = canvas.width;   // already dpr-scaled
+            var srcH = canvas.height;
+            var ratio = Math.min(OUT / srcW, OUT / srcH);
+            var dw = srcW * ratio, dh = srcH * ratio;
+            oc.drawImage(canvas, (OUT - dw) / 2, (OUT - dh) / 2, dw, dh);
+
+            off.toBlob(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var a   = document.createElement('a');
+                a.href  = url;
+                a.setAttribute('download', safeName + '.png');
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 3000);
+            }, 'image/png');
+
             var prev = downloadBtn.textContent;
             downloadBtn.textContent = isRu ? '✓ Скачан!' : '✓ Downloaded!';
             setTimeout(function() { downloadBtn.textContent = prev; }, 2500);
