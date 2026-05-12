@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Point to sitemap
+Sitemap: https://vanlax.space/sitemap.xml
+
+# Disallow backup and source files
+Disallow: /.src-backup/
+Disallow: /*.md$
+Disallow: /convert-to-webp.sh

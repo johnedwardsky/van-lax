@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Main Hub — English (canonical) -->
+  <url>
+    <loc>https://vanlax.space/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/index-ru.html"/>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Main Hub — Russian -->
+  <url>
+    <loc>https://vanlax.space/index-ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/index-ru.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/"/>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Phi Geometry — English -->
+  <url>
+    <loc>https://vanlax.space/phi-geometry.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/phi-geometry.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/phi-geometry-ru.html"/>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Phi Geometry — Russian -->
+  <url>
+    <loc>https://vanlax.space/phi-geometry-ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/phi-geometry-ru.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/phi-geometry.html"/>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Abrakadabra — English -->
+  <url>
+    <loc>https://vanlax.space/abrakadabra.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/abrakadabra.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/abrakadabra-ru.html"/>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Abrakadabra — Russian -->
+  <url>
+    <loc>https://vanlax.space/abrakadabra-ru.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/abrakadabra-ru.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/abrakadabra.html"/>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- The Book -->
+  <url>
+    <loc>https://vanlax.space/book/</loc>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>
