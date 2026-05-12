@@ -6,12 +6,42 @@
     <title>Phi Geometry | Generative Sacred Art</title>
     <meta name="description" content="Interactive generative geometry based on the laws of Phi, the golden ratio, and sacred proportions.">
     <link rel="stylesheet" href="phi-geometry.css">
+    <link rel="stylesheet" href="gate.css">
+    <script>window.GATE_LOCKED_PAGE = true;</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 </head>
 <body>
+    <div id="gothic-gate-container"></div>
+    <div id="welcome-popup-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="welcome-popup-title">
+      <div id="welcome-popup">
+        <button class="wlc-close-btn" onclick="closeGatePopup()" aria-label="Close">&times;</button>
+        <div class="wlc-ornament">&#9830;</div>
+        <p class="wlc-sup">THE HOUSE OF</p>
+        <h2 id="welcome-popup-title" class="wlc-logo">VAN LAX</h2>
+        <div class="wlc-divider"></div>
+        <p class="wlc-body">This is a private space. Enter your invite code to access Phi Geometry.</p>
+        <div id="gate-form" class="wlc-gate-form">
+          <span class="wlc-invite-label">Enter your invite code</span>
+          <div class="wlc-code-wrap">
+            <input id="invite-code-input" class="wlc-code-input" type="text" maxlength="13"
+                   placeholder="VLX-XXXX-XXXX" autocomplete="off" spellcheck="false"/>
+          </div>
+          <p id="gate-error" class="wlc-gate-error" aria-live="polite"></p>
+          <button id="invite-submit-btn" class="wlc-gate-submit" onclick="submitInviteCode()">VERIFY ACCESS</button>
+        </div>
+        <div id="gate-success" class="wlc-gate-success" style="display:none">
+          <p class="wlc-access-granted">&#10003;&ensp;ACCESS GRANTED</p>
+          <p class="wlc-body" style="margin:0;">The gates of Van Lax open before you.</p>
+        </div>
+      </div>
+    </div>
+    <div id="cookie-banner" role="complementary">
+      <span class="cookie-text">&#x1F36A;&ensp;We use cookies to enhance your experience.</span>
+      <button id="cookie-accept-btn" onclick="acceptCookies()">Accept</button>
+    </div>
     <div id="app">
         <div class="lang-switch-global">
             <a href="phi-geometry.html" class="active">EN</a>
@@ -49,5 +79,6 @@
     </div>
 
     <script src="phi-geometry.js"></script>
+    <script src="gate.js" defer></script>
 </body>
 </html>

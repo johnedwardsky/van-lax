@@ -306,8 +306,13 @@ async function submitInviteCode() {
   }
 }
 
-// Close popup without entering code (user stays on main hub)
+// Close popup without entering code
 function closeGatePopup() {
+  // On a fully locked page (e.g. phi-geometry), send user back to hub
+  if (window.GATE_LOCKED_PAGE) {
+    window.location.href = 'index.html';
+    return;
+  }
   const overlay = document.getElementById('welcome-popup-overlay');
   const gate    = document.getElementById('gothic-gate-container');
   if (overlay) { overlay.style.transition = 'opacity 0.4s ease'; overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity = '1'; overlay.style.transition = ''; }, 420); }
@@ -402,6 +407,14 @@ window.addEventListener('DOMContentLoaded', () => {
   if (inp) {
     inp.addEventListener('input', formatCodeInput);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitInviteCode(); });
+  }
+
+  // On fully locked pages (phi-geometry etc.), show gate immediately if not valid
+  if (window.GATE_LOCKED_PAGE) {
+    if (!GATE.isValid()) {
+      showGatePopup();
+    }
+    return; // No need to wrap flyThrough/enterSection on standalone pages
   }
 
   // Sections that require an invite code
