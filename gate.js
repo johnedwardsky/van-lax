@@ -306,6 +306,15 @@ async function submitInviteCode() {
   }
 }
 
+// Close popup without entering code (user stays on main hub)
+function closeGatePopup() {
+  const overlay = document.getElementById('welcome-popup-overlay');
+  const gate    = document.getElementById('gothic-gate-container');
+  if (overlay) { overlay.style.transition = 'opacity 0.4s ease'; overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity = '1'; overlay.style.transition = ''; }, 420); }
+  if (gate)    gate.style.display = 'none';
+  window._vanlaxPendingNav = null;
+}
+
 // Show invite popup when user clicks a restricted section
 function showGatePopup() {
   const gateEl  = document.getElementById('gothic-gate-container');

@@ -125,3 +125,24 @@
   box-shadow: 0 0 20px rgba(229,178,54,0.2);
 }
 .wlc-gate-submit:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Close (×) button ──────────────────────────────────────── */
+.wlc-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: rgba(229,178,54,0.45);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.25s ease, transform 0.25s ease;
+  z-index: 1;
+}
+.wlc-close-btn:hover {
+  color: rgba(229,178,54,0.9);
+  transform: scale(1.15);
+}
+
