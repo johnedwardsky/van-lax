@@ -306,23 +306,43 @@ async function submitInviteCode() {
   }
 }
 
+// Show invite popup when user clicks a restricted section
+function showGatePopup() {
+  const gateEl  = document.getElementById('gothic-gate-container');
+  const overlay = document.getElementById('welcome-popup-overlay');
+  if (gateEl)  { gateEl.style.display = 'block'; gateEl.classList.remove('gate-opening'); }
+  if (overlay) { overlay.style.display = 'flex'; overlay.style.opacity = '1'; overlay.style.transition = ''; }
+  const form    = document.getElementById('gate-form');
+  const success = document.getElementById('gate-success');
+  const err     = document.getElementById('gate-error');
+  const btn     = document.getElementById('invite-submit-btn');
+  const inp     = document.getElementById('invite-code-input');
+  if (form)    { form.style.display = ''; form.style.opacity = '1'; }
+  if (success) success.style.display = 'none';
+  if (err)     err.textContent = '';
+  if (btn)     { btn.textContent = 'VERIFY ACCESS'; btn.disabled = false; }
+  if (inp)     { inp.value = ''; setTimeout(() => inp.focus(), 100); }
+}
+
 function openGate() {
   const gate    = document.getElementById('gothic-gate-container');
   const overlay = document.getElementById('welcome-popup-overlay');
 
-  // Trigger two-panel split open
-  gate.classList.add('gate-opening');
+  if (gate) gate.classList.add('gate-opening');
 
-  // Fade overlay after panels start opening
   setTimeout(() => {
-    overlay.style.transition = 'opacity 0.9s ease';
-    overlay.style.opacity = '0';
+    if (overlay) { overlay.style.transition = 'opacity 0.9s ease'; overlay.style.opacity = '0'; }
   }, 1200);
 
-  // Hide everything after animation
   setTimeout(() => {
-    overlay.style.display = 'none';
-    gate.style.display    = 'none';
+    if (overlay) overlay.style.display = 'none';
+    if (gate)    gate.style.display    = 'none';
+    // Proceed to the section user originally clicked
+    if (window._vanlaxPendingNav) {
+      const nav = window._vanlaxPendingNav;
+      window._vanlaxPendingNav = null;
+      nav();
+    }
   }, 2400);
 }
 
@@ -343,7 +363,7 @@ function formatCodeInput(e) {
 
 // ── Init ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-  // Build two-panel baroque gate
+  // Build two-panel baroque gate (hidden by default)
   const gateEl = document.getElementById('gothic-gate-container');
   if (gateEl) {
     const panels = buildGateSVG();
@@ -355,14 +375,12 @@ window.addEventListener('DOMContentLoaded', () => {
     right.innerHTML = panels.right;
     gateEl.appendChild(left);
     gateEl.appendChild(right);
+    gateEl.style.display = 'none';
   }
 
-  // Check stored access
-  if (GATE.isValid()) {
-    if (gateEl) gateEl.style.display = 'none';
-    const overlay = document.getElementById('welcome-popup-overlay');
-    if (overlay) overlay.style.display = 'none';
-  }
+  // Overlay always hidden on load — shown only when entering restricted section
+  const overlay = document.getElementById('welcome-popup-overlay');
+  if (overlay) overlay.style.display = 'none';
 
   // Cookie banner
   if (localStorage.getItem('vanlax_cookies') === '1') {
@@ -375,5 +393,34 @@ window.addEventListener('DOMContentLoaded', () => {
   if (inp) {
     inp.addEventListener('input', formatCodeInput);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitInviteCode(); });
+  }
+
+  // Sections that require an invite code
+  const RESTRICTED = new Set([1, 2, 3, 4, 9, 11]);
+
+  // Wrap flyThrough
+  if (typeof window.flyThrough === 'function') {
+    const _orig = window.flyThrough;
+    window.flyThrough = function(n, ...args) {
+      if (RESTRICTED.has(n) && !GATE.isValid()) {
+        window._vanlaxPendingNav = () => _orig.call(window, n, ...args);
+        showGatePopup();
+        return;
+      }
+      _orig.call(window, n, ...args);
+    };
+  }
+
+  // Wrap enterSection
+  if (typeof window.enterSection === 'function') {
+    const _orig = window.enterSection;
+    window.enterSection = function(n, ...args) {
+      if (RESTRICTED.has(n) && !GATE.isValid()) {
+        window._vanlaxPendingNav = () => _orig.call(window, n, ...args);
+        showGatePopup();
+        return;
+      }
+      _orig.call(window, n, ...args);
+    };
   }
 });
