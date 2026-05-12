@@ -19,7 +19,7 @@ let targetCameraZ = 0;
 
 // Shift these up so they are ready for any function calls
 const nodeSpacing = 200; 
-const totalNodes = 12; 
+const totalNodes = 13; 
 const spiralLength = nodeSpacing * (totalNodes - 1);
 const nodes = document.querySelectorAll('.gallery-node');
 

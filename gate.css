@@ -146,3 +146,42 @@
   transform: scale(1.15);
 }
 
+
+/* ── Overlay & Popup ─────────────────────────────────────────── */
+#welcome-popup-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.4); padding: 20px;
+}
+#welcome-popup {
+  position: relative; max-width: 680px; width: 100%;
+  background: linear-gradient(145deg, rgba(25,20,10,0.92) 0%, rgba(10,8,20,0.95) 100%);
+  border: 1px solid rgba(229,178,54,0.35); border-radius: 4px;
+  padding: 56px 52px 48px; text-align: center;
+  box-shadow: 0 0 60px rgba(229,178,54,0.08), 0 0 120px rgba(0,0,0,0.6);
+  animation: wlcSlideUp 1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+}
+@keyframes wlcSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+#welcome-popup::before, #welcome-popup::after {
+  content: ''; position: absolute; left: 52px; right: 52px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(229,178,54,0.6), transparent);
+}
+#welcome-popup::before { top: 24px; } #welcome-popup::after { bottom: 24px; }
+.wlc-ornament { font-size: 1rem; color: rgba(229,178,54,0.5); letter-spacing: 0.4em; margin-bottom: 18px; }
+.wlc-sup { font-family: 'Montserrat',sans-serif; font-weight: 200; font-size: 0.65rem; letter-spacing: 0.5em; color: rgba(229,178,54,0.55); text-transform: uppercase; margin: 0 0 6px; }
+.wlc-logo { font-family: 'Cormorant Garamond',serif; font-weight: 300; font-size: clamp(2.6rem,5vw,3.6rem); letter-spacing: 0.28em; color: #E5B236; text-shadow: 0 0 40px rgba(229,178,54,0.4); margin: 0 0 20px; }
+.wlc-divider { width: 60px; height: 1px; background: linear-gradient(90deg,transparent,#E5B236,transparent); margin: 0 auto 28px; }
+.wlc-body { font-family: 'Cormorant Garamond',serif; font-size: clamp(0.95rem,2vw,1.08rem); font-weight: 300; line-height: 1.85; color: rgba(220,210,190,0.82); margin: 0 0 18px; }
+.wlc-quote { font-family: 'Cormorant Garamond',serif; font-style: italic; font-size: clamp(1rem,2.2vw,1.18rem); color: rgba(229,178,54,0.75); border-left: 2px solid rgba(229,178,54,0.4); padding-left: 16px; text-align: left; margin: 22px 0 36px; line-height: 1.6; }
+.wlc-invite-label { font-family: 'Montserrat',sans-serif; font-size: 0.65rem; letter-spacing: 0.3em; color: rgba(255,255,255,0.4); text-transform: uppercase; display: block; margin-bottom: 12px; }
+.wlc-code-wrap { display: flex; justify-content: center; }
+.wlc-code-input { background: transparent; border: none; border-bottom: 1px solid rgba(229,178,54,0.4); color: #E5B236; font-family: 'Montserrat',sans-serif; font-size: 1.4rem; letter-spacing: 0.25em; text-align: center; width: 220px; padding: 8px 0; outline: none; }
+.wlc-gate-error { font-size: 0.75rem; color: #ff6b6b; min-height: 20px; margin: 8px 0 0; }
+.wlc-access-granted { font-family: 'Montserrat',sans-serif; font-size: 0.85rem; letter-spacing: 0.3em; color: #4caf50; margin-bottom: 16px; }
+#cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9100; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 14px 28px; background: rgba(8,6,16,0.92); border-top: 1px solid rgba(229,178,54,0.2); backdrop-filter: blur(10px); font-family: 'Montserrat',sans-serif; }
+#cookie-banner.hidden { animation: cookieSlideDown 0.4s ease forwards; }
+@keyframes cookieSlideDown { from { transform: translateY(0); } to { transform: translateY(120%); } }
+.cookie-text { font-size: 0.75rem; font-weight: 300; letter-spacing: 0.06em; color: rgba(200,190,170,0.75); line-height: 1.5; }
+#cookie-accept-btn { font-family: 'Montserrat',sans-serif; font-size: 0.7rem; font-weight: 400; letter-spacing: 0.25em; text-transform: uppercase; background: transparent; border: 1px solid rgba(229,178,54,0.5); color: #E5B236; padding: 8px 24px; cursor: pointer; flex-shrink: 0; transition: all 0.3s ease; }
+#cookie-accept-btn:hover { background: rgba(229,178,54,0.1); border-color: rgba(229,178,54,0.85); color: #fff; }
+@media (max-width: 600px) { #welcome-popup { padding: 40px 24px 36px; } }

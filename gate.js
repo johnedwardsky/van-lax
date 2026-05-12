@@ -306,6 +306,17 @@ async function submitInviteCode() {
   }
 }
 
+// Enter Phi Geometry page (separate locked page)
+window.enterPhi = function(lang) {
+  const dest = lang === 'ru' ? 'phi-geometry-ru.html' : 'phi-geometry.html';
+  if (GATE.isValid()) {
+    window.location.href = dest;
+  } else {
+    window._vanlaxPendingNav = () => { window.location.href = dest; };
+    showGatePopup();
+  }
+};
+
 // Close popup without entering code
 function closeGatePopup() {
   // On a fully locked page (e.g. phi-geometry), send user back to hub
