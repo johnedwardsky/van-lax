@@ -29,6 +29,10 @@ const SVG_MAX = 500000; // 500k segments — enough for long dense figures (~8-1
 let svgBuffer    = [];
 let svgBufferPos = 0;  // circular write head
 
+// Vignette gradient — rebuilt on resize, applied each frame to soften edge clipping
+let vignetteGradient = null;
+
+
 const SCHEMES = [
     { name: 'Rainbow', ruName: 'Радуга' },
     { name: 'Ethereal Gold', ruName: 'Эфирное Золото' },
@@ -98,6 +102,9 @@ function resize() {
     }
 
     clearCanvas();
+
+    // Rebuild vignette gradient to match new canvas size
+    vignetteGradient = null;
 }
 
 function clearCanvas() {
@@ -428,6 +435,23 @@ function draw() {
 
         totalSteps++;
     }
+
+    // ── Vignette: fade figure edges gracefully to background ─────────────────
+    // Rebuild gradient if canvas was resized or not yet created
+    if (!vignetteGradient) {
+        const cx2 = width  / 2;
+        const cy2 = height / 2;
+        const r   = Math.max(width, height) * 0.72; // gradient radius
+        vignetteGradient = ctx.createRadialGradient(cx2, cy2, r * 0.42, cx2, cy2, r);
+        vignetteGradient.addColorStop(0,   'rgba(5,5,10,0)');
+        vignetteGradient.addColorStop(0.65, 'rgba(5,5,10,0)');
+        vignetteGradient.addColorStop(1,   'rgba(5,5,10,1)');
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = vignetteGradient;
+    ctx.fillRect(0, 0, width, height);
+    // ─────────────────────────────────────────────────────────────────────────
 }
 
 // ─── Event Listeners ──────────────────────────────────────────────────────────
