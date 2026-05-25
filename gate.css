@@ -154,25 +154,35 @@
   background: rgba(0,0,0,0.4); padding: 20px;
 }
 #welcome-popup {
-  position: relative; max-width: 680px; width: 100%;
+  position: relative; max-width: 520px; width: 100%;
   background: linear-gradient(145deg, rgba(25,20,10,0.92) 0%, rgba(10,8,20,0.95) 100%);
   border: 1px solid rgba(229,178,54,0.35); border-radius: 4px;
-  padding: 56px 52px 48px; text-align: center;
+  padding: 38px 40px 34px; text-align: center;
   box-shadow: 0 0 60px rgba(229,178,54,0.08), 0 0 120px rgba(0,0,0,0.6);
   animation: wlcSlideUp 1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
 }
 @keyframes wlcSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 #welcome-popup::before, #welcome-popup::after {
-  content: ''; position: absolute; left: 52px; right: 52px; height: 1px;
+  content: ''; position: absolute; left: 40px; right: 40px; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(229,178,54,0.6), transparent);
 }
-#welcome-popup::before { top: 24px; } #welcome-popup::after { bottom: 24px; }
-.wlc-ornament { font-size: 1rem; color: rgba(229,178,54,0.5); letter-spacing: 0.4em; margin-bottom: 18px; }
-.wlc-sup { font-family: 'Montserrat',sans-serif; font-weight: 200; font-size: 0.65rem; letter-spacing: 0.5em; color: rgba(229,178,54,0.55); text-transform: uppercase; margin: 0 0 6px; }
-.wlc-logo { font-family: 'Cormorant Garamond',serif; font-weight: 300; font-size: clamp(2.6rem,5vw,3.6rem); letter-spacing: 0.28em; color: #E5B236; text-shadow: 0 0 40px rgba(229,178,54,0.4); margin: 0 0 20px; }
-.wlc-divider { width: 60px; height: 1px; background: linear-gradient(90deg,transparent,#E5B236,transparent); margin: 0 auto 28px; }
-.wlc-body { font-family: 'Cormorant Garamond',serif; font-size: clamp(0.95rem,2vw,1.08rem); font-weight: 300; line-height: 1.85; color: rgba(220,210,190,0.82); margin: 0 0 18px; }
-.wlc-quote { font-family: 'Cormorant Garamond',serif; font-style: italic; font-size: clamp(1rem,2.2vw,1.18rem); color: rgba(229,178,54,0.75); border-left: 2px solid rgba(229,178,54,0.4); padding-left: 16px; text-align: left; margin: 22px 0 36px; line-height: 1.6; }
+#welcome-popup::before { top: 18px; } #welcome-popup::after { bottom: 18px; }
+.wlc-crest {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.wlc-crest-img {
+  width: 72px;
+  height: auto;
+  filter: drop-shadow(0 0 12px rgba(229,178,54,0.25));
+}
+.wlc-sup { font-family: 'Montserrat',sans-serif; font-weight: 200; font-size: 0.65rem; letter-spacing: 0.5em; color: rgba(229,178,54,0.55); text-transform: uppercase; margin: 0 0 4px; }
+.wlc-logo { font-family: 'Cormorant Garamond',serif; font-weight: 300; font-size: clamp(2.1rem,4vw,2.7rem); letter-spacing: 0.28em; color: #E5B236; text-shadow: 0 0 30px rgba(229,178,54,0.3); margin: 0 0 12px; }
+.wlc-divider { width: 60px; height: 1px; background: linear-gradient(90deg,transparent,#E5B236,transparent); margin: 0 auto 18px; }
+.wlc-body { font-family: 'Cormorant Garamond',serif; font-size: clamp(0.95rem,1.8vw,1.05rem); font-weight: 300; line-height: 1.75; color: rgba(220,210,190,0.82); margin: 0 0 12px; }
+.wlc-quote { font-family: 'Cormorant Garamond',serif; font-style: italic; font-size: clamp(0.98rem,2vw,1.12rem); color: rgba(229,178,54,0.75); border-left: 2px solid rgba(229,178,54,0.4); padding-left: 12px; text-align: left; margin: 14px 0 22px; line-height: 1.5; }
+
 .wlc-invite-label { font-family: 'Montserrat',sans-serif; font-size: 0.65rem; letter-spacing: 0.3em; color: rgba(255,255,255,0.4); text-transform: uppercase; display: block; margin-bottom: 12px; }
 .wlc-code-wrap { display: flex; justify-content: center; }
 .wlc-code-input { background: transparent; border: none; border-bottom: 1px solid rgba(229,178,54,0.4); color: #E5B236; font-family: 'Montserrat',sans-serif; font-size: 1.4rem; letter-spacing: 0.25em; text-align: center; width: 220px; padding: 8px 0; outline: none; }

@@ -1,4 +1,13 @@
 // ==========================================
+// 0. GLOBAL WEBHOOK CONFIGURATION
+// ==========================================
+const VANLAX_CONFIG = {
+  // Paste your Google Apps Script Web App URL here (after deploying the webhook script)
+  // e.g. "https://script.google.com/macros/s/AKfycb.../exec"
+  googleAppsScriptUrl: "https://script.google.com/macros/s/AKfycbzABY3ZEp0eu0WmLxEZsEQo0WYU_5q2SVVCzyHBVe0fzwSlI5rzMBU0JOo9C2QLLhgLxg/exec"
+};
+
+// ==========================================
 // 1. GRAND HUB PARALLAX LOGIC
 // ==========================================
 const hubWrapper = document.getElementById('hub-wrapper');
@@ -317,7 +326,7 @@ function executeEnterSection(nodeIndex, isInstant = false) {
       isGallery1 = true;
     
       // Fade in Intro Text for ALL galleries
-      const titles = container.querySelectorAll('.g1-elegant-title, .g1-intro-text, .g1-intro-sub, .scroll-down-hint');
+      const titles = container.querySelectorAll('.g1-elegant-title, .g1-intro-text, .g1-intro-sub, .scroll-down-hint, .about-coat-of-arms');
       if(titles.length > 0) {
         if (isInstant) {
           gsap.set(titles, { opacity: 1, y: 0 });
@@ -1800,3 +1809,184 @@ function startEvoBgParticles() {
   };
   drawBg();
 }
+
+// ==========================================
+// 7. SIDEBAR SUBSCRIPTION LOGIC
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  const subscribeFormEn = document.getElementById('sidebar-subscribe-form');
+  const subscribeFormRu = document.getElementById('sidebar-subscribe-form-ru');
+  const successEn = document.getElementById('subscribe-success-msg');
+  const successRu = document.getElementById('subscribe-success-msg-ru');
+
+  // Check if already subscribed
+  const checkSubscribedState = () => {
+    const isSubscribed = localStorage.getItem('vanlax_subscribed') === 'true';
+    if (isSubscribed) {
+      if (subscribeFormEn) subscribeFormEn.style.display = 'none';
+      if (subscribeFormRu) subscribeFormRu.style.display = 'none';
+      if (successEn) successEn.classList.add('active');
+      if (successRu) successRu.classList.add('active');
+    }
+  };
+
+  // Sync aria-invalid with native validation state
+  const syncAriaInvalidState = (input) => {
+    if (!input.checkValidity()) {
+      input.setAttribute('aria-invalid', 'true');
+    } else {
+      input.removeAttribute('aria-invalid');
+    }
+  };
+
+  const handleSubscriptionSubmit = (form, successEl, isRu) => {
+    if (!form) return;
+    
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = form.querySelector('.subscribe-input');
+      const button = form.querySelector('.subscribe-btn');
+      
+      if (!input || !button) return;
+
+      // Programmatic trigger of validation styling
+      syncAriaInvalidState(input);
+
+      if (!form.checkValidity()) {
+        input.focus();
+        return;
+      }
+
+      // Simulation of premium subscription process
+      button.disabled = true;
+      input.disabled = true;
+      button.innerText = isRu ? 'ПОДПИСКА...' : 'SUBSCRIBING...';
+
+      // Send lead to Google Sheets webhook
+      const email = input.value;
+      const leadData = {
+        type: 'subscription',
+        email: email,
+        language: isRu ? 'ru' : 'en',
+        referrer: window.location.href
+      };
+
+      if (VANLAX_CONFIG.googleAppsScriptUrl) {
+        fetch(VANLAX_CONFIG.googleAppsScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(leadData)
+        }).catch(err => console.error("Sheets submit failed", err));
+      }
+
+      setTimeout(() => {
+        // Save state in localStorage
+        localStorage.setItem('vanlax_subscribed', 'true');
+        localStorage.setItem('vanlax_subscribed_email', input.value);
+
+        // Hide form and show success message with active class
+        gsap.to(form, {
+          opacity: 0,
+          duration: 0.5,
+          onComplete: () => {
+            form.style.display = 'none';
+            if (successEl) {
+              successEl.style.opacity = 0;
+              successEl.classList.add('active');
+              gsap.to(successEl, { opacity: 1, duration: 0.8 });
+            }
+            checkSubscribedState();
+          }
+        });
+      }, 1200);
+    });
+
+    // Sync aria attributes during user interaction
+    const input = form.querySelector('.subscribe-input');
+    if (input) {
+      input.addEventListener('blur', () => {
+        syncAriaInvalidState(input);
+      });
+      input.addEventListener('input', () => {
+        if (input.checkValidity()) {
+          input.removeAttribute('aria-invalid');
+        }
+      });
+    }
+  };
+
+  if (subscribeFormEn) handleSubscriptionSubmit(subscribeFormEn, successEn, false);
+  if (subscribeFormRu) handleSubscriptionSubmit(subscribeFormRu, successRu, true);
+
+  // ==========================================
+  // 8. CONTACT FORM SUBMISSION TO GOOGLE SHEETS
+  // ==========================================
+  const handleContactSubmit = (formId, isRu) => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const nameInput = form.querySelector('input[name="name"]');
+      const emailInput = form.querySelector('input[name="email"]');
+      const messageInput = form.querySelector('textarea[name="message"]');
+      const submitBtn = form.querySelector('.contact-submit');
+
+      if (!nameInput || !emailInput || !messageInput || !submitBtn) return;
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const message = messageInput.value.trim();
+
+      if (!name || !email || !message) return;
+
+      // Visual state update
+      submitBtn.disabled = true;
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = isRu ? 'ОТПРАВКА...' : 'SENDING...';
+
+      const leadData = {
+        type: 'contact',
+        name: name,
+        email: email,
+        message: message,
+        language: isRu ? 'ru' : 'en',
+        referrer: window.location.href
+      };
+
+      const completeSubmit = () => {
+        // Reset form & visual states
+        form.reset();
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        
+        // Show success notification
+        alert(isRu ? 'Сообщение успешно отправлено! Мы ответим вам в ближайшее время.' : 'Message sent successfully! We will get back to you soon.');
+      };
+
+      if (VANLAX_CONFIG.googleAppsScriptUrl) {
+        try {
+          await fetch(VANLAX_CONFIG.googleAppsScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(leadData)
+          });
+        } catch (err) {
+          console.error("Sheets submit failed", err);
+        }
+      }
+      
+      completeSubmit();
+    });
+  };
+
+  handleContactSubmit('contact-form-en', false);
+  handleContactSubmit('contact-form-ru', true);
+
+  // Initialize page load subscription state
+  checkSubscribedState();
+});
+

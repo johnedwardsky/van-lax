@@ -39,7 +39,9 @@
   <div id="welcome-popup-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="welcome-popup-title">
     <div id="welcome-popup">
       <button class="wlc-close-btn" onclick="closeGatePopup()" aria-label="Закрыть">&times;</button>
-      <div class="wlc-ornament">&#9830;</div>
+      <div class="wlc-crest">
+        <img src="assets/coat_of_arms.svg" alt="Crest" class="wlc-crest-img">
+      </div>
       <p class="wlc-sup">ТВОРЧЕСКИЙ ДОМ</p>
       <h2 id="welcome-popup-title" class="wlc-logo">ВАН ЛАКС</h2>
       <div class="wlc-divider"></div>
@@ -190,6 +192,23 @@
             <h2 class="section-title right-title gold">МАГАЗИН</h2>
           </div>
         </div>
+
+        <!-- Подписка на новости галереи -->
+        <div class="panel-subscribe">
+          <h3 class="subscribe-title">Новости галереи</h3>
+          <p class="subscribe-desc">Подпишитесь, чтобы получать приглашения на открытия выставок и новости о новых работах.</p>
+          <form id="sidebar-subscribe-form-ru" class="subscribe-form" novalidate>
+            <input type="email" id="subscribe-email-ru" name="email" class="subscribe-input" required placeholder="Ваш email" autocomplete="email" aria-label="Электронный адрес">
+            <div class="subscribe-error" role="alert" aria-live="polite">
+              <span aria-hidden="true">❌</span> Пожалуйста, введите корректный email.
+            </div>
+            <button type="submit" class="subscribe-btn">ПОДПИСАТЬСЯ</button>
+          </form>
+          <div id="subscribe-success-msg-ru" class="subscribe-success" role="status" aria-live="polite">
+            <span aria-hidden="true">✓</span> Вы успешно подписались на обновления галереи.
+          </div>
+        </div>
+
         <div class="footer-right" style="margin-top:auto;">
           <p class="copyright">&copy; 2026 Van Lax. Все права защищены.<br>Настоящий сайт и все представленные на нем предметы искусства являются авторскими работами Ивана Лакшинского под творческим псевдонимом Ван Лакс.</p>
         </div>
@@ -725,6 +744,9 @@
       </div>
       
       <div class="sacred-story" style="margin-top: 0; padding-top: 0;">
+        <div class="about-coat-of-arms">
+          <img src="assets/coat_of_arms.svg" alt="Герб творческого дома Ван Лакс" class="coat-img">
+        </div>
         <p>На стыке эпох мы получили колоссальные знания. Сегодня старый мир рушится, а контуры нового только начинают проступать сквозь туман неизвестности. Во все времена искусство отражало дух эпохи и готовило умы к глубокой трансформации. Меня зовут Иван Лакшинский (Ivan Lakshinsky) aka Van Lax. Я родом из России, родился в Сибири, учился в Англии и непрерывно совершенствовал свое творчество, вдохновляясь многогранностью этого мира. Я — исследователь и проводник в будущее.</p>
         
         <p>«Творческий дом Ван Лакс» — это не просто моё портфолио. Это первое и единственное в мире виртуальное пространство, где академическое искусство сливается с новейшими веб-технологиями и сакральной геометрией. Здесь древние знания сбрасывают свою вуаль благодаря цифровому коду. Искусство сегодня как никогда жаждет не просто зрителя, а активного соучастника, способного мыслить и чувствовать.</p>
@@ -785,7 +807,7 @@
 
         <div class="contact-form-container">
           <h3 class="contact-title">Отправить сообщение</h3>
-          <form class="contact-form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Сообщение отправлено. Мы ответим вам в ближайшее время.');">
+          <form class="contact-form" id="contact-form-ru" action="#" method="POST">
             <div class="form-group">
               <label for="contact-name-ru">Имя</label>
               <input type="text" id="contact-name-ru" name="name" required placeholder="Ваше полное имя">
@@ -877,26 +899,35 @@
     @keyframes wlcFadeIn  { from { opacity: 0; } to { opacity: 1; } }
     @keyframes wlcFadeOut { from { opacity: 1; } to { opacity: 0; } }
     #welcome-popup {
-      position: relative; max-width: 680px; width: 100%;
+      position: relative; max-width: 520px; width: 100%;
       background: linear-gradient(145deg, rgba(25,20,10,0.85) 0%, rgba(10,8,20,0.9) 100%);
-      border: 1px solid rgba(229,178,54,0.35); border-radius: 4px; padding: 56px 52px 48px;
+      border: 1px solid rgba(229,178,54,0.35); border-radius: 4px; padding: 38px 40px 34px;
       text-align: center;
       box-shadow: 0 0 60px rgba(229,178,54,0.08), 0 0 120px rgba(0,0,0,0.6), inset 0 0 60px rgba(229,178,54,0.03);
       animation: wlcSlideUp 1s cubic-bezier(0.22,1,0.36,1) 0.2s both;
     }
     @keyframes wlcSlideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     #welcome-popup::before, #welcome-popup::after {
-      content: ''; position: absolute; left: 52px; right: 52px; height: 1px;
+      content: ''; position: absolute; left: 40px; right: 40px; height: 1px;
       background: linear-gradient(90deg, transparent, rgba(229,178,54,0.6), transparent);
     }
-    #welcome-popup::before { top: 24px; } #welcome-popup::after { bottom: 24px; }
-    .wlc-ornament { font-size: 1rem; color: rgba(229,178,54,0.5); letter-spacing: 0.4em; margin-bottom: 18px; }
-    .wlc-sup { font-family: 'Montserrat',sans-serif; font-weight: 200; font-size: 0.65rem; letter-spacing: 0.5em; color: rgba(229,178,54,0.55); text-transform: uppercase; margin: 0 0 6px; }
-    .wlc-logo { font-family: 'Cormorant Garamond',serif; font-weight: 300; font-size: clamp(2.6rem,5vw,3.6rem); letter-spacing: 0.28em; color: #E5B236; text-shadow: 0 0 40px rgba(229,178,54,0.4); margin: 0 0 20px; }
-    .wlc-divider { width: 60px; height: 1px; background: linear-gradient(90deg,transparent,#E5B236,transparent); margin: 0 auto 28px; }
-    .wlc-body { font-family: 'Cormorant Garamond',serif; font-size: clamp(0.95rem,2vw,1.08rem); font-weight: 300; line-height: 1.85; color: rgba(220,210,190,0.82); margin: 0 0 18px; }
-    .wlc-quote { font-family: 'Cormorant Garamond',serif; font-style: italic; font-size: clamp(1rem,2.2vw,1.18rem); color: rgba(229,178,54,0.75); border-left: 2px solid rgba(229,178,54,0.4); padding-left: 16px; text-align: left; margin: 22px 0 36px; line-height: 1.6; }
-    .wlc-gate-submit { font-family: 'Montserrat',sans-serif; font-weight: 300; font-size: 0.75rem; letter-spacing: 0.35em; text-transform: uppercase; color: #E5B236; background: transparent; border: 1px solid rgba(229,178,54,0.5); padding: 14px 44px; cursor: pointer; transition: all 0.4s ease; position: relative; overflow: hidden; margin-top: 22px; }
+    #welcome-popup::before { top: 18px; } #welcome-popup::after { bottom: 18px; }
+    .wlc-crest {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .wlc-crest-img {
+      width: 72px;
+      height: auto;
+      filter: drop-shadow(0 0 12px rgba(229,178,54,0.25));
+    }
+    .wlc-sup { font-family: 'Montserrat',sans-serif; font-weight: 200; font-size: 0.65rem; letter-spacing: 0.5em; color: rgba(229,178,54,0.55); text-transform: uppercase; margin: 0 0 4px; }
+    .wlc-logo { font-family: 'Cormorant Garamond',serif; font-weight: 300; font-size: clamp(2.1rem,4vw,2.7rem); letter-spacing: 0.28em; color: #E5B236; text-shadow: 0 0 30px rgba(229,178,54,0.3), 0 0 60px rgba(229,178,54,0.1); margin: 0 0 12px; }
+    .wlc-divider { width: 60px; height: 1px; background: linear-gradient(90deg,transparent,#E5B236,transparent); margin: 0 auto 18px; }
+    .wlc-body { font-family: 'Cormorant Garamond',serif; font-size: clamp(0.95rem,1.8vw,1.05rem); font-weight: 300; line-height: 1.75; color: rgba(220,210,190,0.82); margin: 0 0 12px; }
+    .wlc-quote { font-family: 'Cormorant Garamond',serif; font-style: italic; font-size: clamp(0.98rem,2vw,1.12rem); color: rgba(229,178,54,0.75); border-left: 2px solid rgba(229,178,54,0.4); padding-left: 12px; text-align: left; margin: 14px 0 22px; line-height: 1.5; }
+    .wlc-gate-submit { font-family: 'Montserrat',sans-serif; font-weight: 300; font-size: 0.75rem; letter-spacing: 0.35em; text-transform: uppercase; color: #E5B236; background: transparent; border: 1px solid rgba(229,178,54,0.5); padding: 12px 36px; cursor: pointer; transition: all 0.4s ease; position: relative; overflow: hidden; margin-top: 16px; }
     .wlc-gate-submit:hover { color: #fff; border-color: rgba(229,178,54,0.85); box-shadow: 0 0 20px rgba(229,178,54,0.2); }
     .wlc-invite-label { font-family: 'Montserrat',sans-serif; font-size: 0.65rem; letter-spacing: 0.3em; color: rgba(255,255,255,0.4); text-transform: uppercase; display: block; margin-bottom: 12px; }
     .wlc-code-wrap { display: flex; justify-content: center; }

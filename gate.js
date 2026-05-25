@@ -65,108 +65,325 @@ function buildGateSVG() {
     // Gold gradient stops (shared prefix avoids ID collision between panels)
     const pfx = L ? 'l' : 'r';
 
-    // 8-pointed star polygon (cx,cy,outerR,innerR)
-    function star8(cx, cy, ro, ri) {
-      let p = '';
-      for (let i = 0; i < 16; i++) {
-        const a = i * Math.PI / 8 - Math.PI / 2;
-        const r = i % 2 === 0 ? ro : ri;
-        p += `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)} `;
-      }
-      return `<polygon points="${p}" fill="none" stroke="url(#g${pfx})" stroke-width="2.5" stroke-linejoin="round"/>`;
+    // 1. Denser Acanthus Foliage Pediment (Unclipped, top center crown)
+    let pediment = '';
+    if (L) {
+      // Main foliage arcs meeting at center
+      pediment += `<path d="M ${W - 140},100 Q ${W - 90},30 ${W},25" fill="none" stroke="url(#g${pfx})" stroke-width="7.5" />`;
+      pediment += `<path d="M ${W - 110},100 Q ${W - 70},45 ${W},40" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.95" />`;
+      
+      // PLUMES & FOLIAE WINGS
+      pediment += `<path d="M ${W - 40},42 Q ${W - 15},15 ${W},20" fill="url(#g${pfx})" opacity="0.9"/>`;
+      pediment += `<path d="M ${W - 70},65 C ${W - 35},35 ${W - 15},55 ${W},50" fill="url(#g${pfx})" opacity="0.9"/>`;
+      pediment += `<path d="M ${W - 95},85 C ${W - 65},65 ${W - 35},80 ${W},75" fill="url(#g${pfx})" opacity="0.9"/>`;
+      pediment += `<path d="M ${W - 120},100 A 20,20 0 1,1 ${W - 102},82" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" />`;
+      pediment += `<circle cx="${W - 111}" cy="91" r="8" fill="url(#g${pfx})" />`;
+      pediment += `<path d="M ${W - 20},22 Q ${W},0 ${W},22 Z" fill="url(#g${pfx})"/>`;
+      
+      // SPLIT ROYAL CROWN - LEFT HALF (at center seam x = W)
+      // Crown Base
+      pediment += `<path d="M ${W - 45},40 L ${W},40 L ${W},33 L ${W - 42},33 Z" fill="url(#g${pfx})" />`;
+      // Base Jewels
+      pediment += `<circle cx="${W - 32}" cy="36.5" r="2.5" fill="#fff" />`;
+      pediment += `<circle cx="${W - 16}" cy="36.5" r="2" fill="#ffd700" />`;
+      // Left half main dome arch
+      pediment += `<path d="M ${W - 38},33 Q ${W - 32},12 ${W},10 L ${W},14 Q ${W - 28},16 ${W - 34},33 Z" fill="url(#g${pfx})" />`;
+      // Left half side arch
+      pediment += `<path d="M ${W - 22},33 Q ${W - 17},18 ${W},16 L ${W},19 Q ${W - 14},21 ${W - 19},33 Z" fill="url(#g${pfx})" />`;
+      // Cross at the top center
+      pediment += `<path d="M ${W - 6},10 L ${W},10 L ${W},0 L ${W - 2},0 L ${W - 2},3 L ${W - 6},3 Z M ${W - 3},5 L ${W},5 L ${W},7 L ${W - 3},7 Z" fill="url(#g${pfx})" />`;
+      // Orb
+      pediment += `<path d="M ${W - 5},10 A 5,5 0 0,0 ${W},10 Z" fill="url(#g${pfx})" />`;
+      // Foliage plumes extending outwards from crown base
+      pediment += `<path d="M ${W - 50},45 C ${W - 65},20 ${W - 20},15 ${W},8 L ${W},12 C ${W - 15},18 ${W - 45},25 ${W - 48},45 Z" fill="url(#g${pfx})" opacity="0.9" />`;
+    } else {
+      // Main foliage arcs meeting at center
+      pediment += `<path d="M 140,100 Q 90,30 0,25" fill="none" stroke="url(#g${pfx})" stroke-width="7.5" />`;
+      pediment += `<path d="M 110,100 Q 70,45 0,40" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.95" />`;
+      
+      // PLUMES & FOLIAE WINGS
+      pediment += `<path d="M 40,42 Q 15,15 0,20" fill="url(#g${pfx})" opacity="0.9"/>`;
+      pediment += `<path d="M 70,65 C 35,35 15,55 0,50" fill="url(#g${pfx})" opacity="0.9"/>`;
+      pediment += `<path d="M 95,85 C 65,65 35,80 0,75" fill="url(#g${pfx})" opacity="0.9"/>`;
+      pediment += `<path d="M 120,100 A 20,20 0 1,0 102,82" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" />`;
+      pediment += `<circle cx="111" cy="91" r="8" fill="url(#g${pfx})" />`;
+      pediment += `<path d="M 20,22 Q 0,0 0,22 Z" fill="url(#g${pfx})"/>`;
+      
+      // SPLIT ROYAL CROWN - RIGHT HALF (at center seam x = 0)
+      // Crown Base
+      pediment += `<path d="M 0,40 L 45,40 L 42,33 L 0,33 Z" fill="url(#g${pfx})" />`;
+      // Base Jewels
+      pediment += `<circle cx="32" cy="36.5" r="2.5" fill="#fff" />`;
+      pediment += `<circle cx="16" cy="36.5" r="2" fill="#ffd700" />`;
+      // Right half main dome arch
+      pediment += `<path d="M 38,33 Q 32,12 0,10 L 0,14 Q 28,16 34,33 Z" fill="url(#g${pfx})" />`;
+      // Right half side arch
+      pediment += `<path d="M 22,33 Q 17,18 0,16 L 0,19 Q 14,21 19,33 Z" fill="url(#g${pfx})" />`;
+      // Cross at the top center
+      pediment += `<path d="M 6,10 L 0,10 L 0,0 L 2,0 L 2,3 L 6,3 Z M 3,5 L 0,5 L 0,7 L 3,7 Z" fill="url(#g${pfx})" />`;
+      // Orb
+      pediment += `<path d="M 5,10 A 5,5 0 0,1 0,10 Z" fill="url(#g${pfx})" />`;
+      // Foliage plumes
+      pediment += `<path d="M 50,45 C 65,20 20,15 0,8 L 0,12 C 15,18 45,25 48,45 Z" fill="url(#g${pfx})" opacity="0.9" />`;
     }
 
-    // Islamic star grid (lower 55%)
-    let grid = '';
-    const gs = 72, gy0 = H * 0.44;
-    for (let y = gy0 + gs / 2; y < H + gs; y += gs) {
-      for (let x = gs / 2; x < W + gs; x += gs) {
-        grid += star8(x, y, gs * 0.38, gs * 0.17);
-        // Centre dot
-        grid += `<circle cx="${x}" cy="${y}" r="${gs * 0.08}" fill="url(#g${pfx})"/>`;
-        // Cross connectors between stars
-        grid += `<line x1="${x - gs * 0.38}" y1="${y}" x2="${x - gs * 0.5}" y2="${y}" stroke="url(#g${pfx})" stroke-width="2"/>`;
-        grid += `<line x1="${x + gs * 0.38}" y1="${y}" x2="${x + gs * 0.5}" y2="${y}" stroke="url(#g${pfx})" stroke-width="2"/>`;
-        grid += `<line x1="${x}" y1="${y - gs * 0.38}" x2="${x}" y2="${y - gs * 0.5}" stroke="url(#g${pfx})" stroke-width="2"/>`;
-        grid += `<line x1="${x}" y1="${y + gs * 0.38}" x2="${x}" y2="${y + gs * 0.5}" stroke="url(#g${pfx})" stroke-width="2"/>`;
-        // Diagonal connectors (corner stars)
-        grid += `<line x1="${x - gs * 0.27}" y1="${y - gs * 0.27}" x2="${x - gs * 0.38}" y2="${y - gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
-        grid += `<line x1="${x + gs * 0.27}" y1="${y - gs * 0.27}" x2="${x + gs * 0.38}" y2="${y - gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
-        grid += `<line x1="${x + gs * 0.27}" y1="${y + gs * 0.27}" x2="${x + gs * 0.38}" y2="${y + gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
-        grid += `<line x1="${x - gs * 0.27}" y1="${y + gs * 0.27}" x2="${x - gs * 0.38}" y2="${y + gs * 0.38}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.7"/>`;
-        // Small octagon at each grid crossing
-        let op = '';
-        for (let i = 0; i < 8; i++) {
-          const a = i * Math.PI / 4 + Math.PI / 8;
-          op += `${x + gs * 0.12 * Math.cos(a)},${y + gs * 0.12 * Math.sin(a)} `;
-        }
-        grid += `<polygon points="${op}" fill="none" stroke="url(#g${pfx})" stroke-width="1.2" opacity="0.8"/>`;
-      }
+    // 2. Heavy Kick-Plate Area (bottom H - 140 to H = 860 to 1000)
+    let kickPlate = '';
+    
+    // Base lines
+    kickPlate += `<line x1="0" y1="${H - 140}" x2="${W}" y2="${H - 140}" stroke="url(#g${pfx})" stroke-width="7"/>`;
+    kickPlate += `<line x1="0" y1="${H - 148}" x2="${W}" y2="${H - 148}" stroke="url(#g${pfx})" stroke-width="2" opacity="0.75"/>`;
+    kickPlate += `<line x1="0" y1="${H - 14}" x2="${W}" y2="${H - 14}" stroke="url(#g${pfx})" stroke-width="10"/>`;
+    kickPlate += `<line x1="0" y1="${H - 24}" x2="${W}" y2="${H - 24}" stroke="url(#g${pfx})" stroke-width="2.5" opacity="0.8"/>`;
+
+    // Loops filled with royal fleur-de-lis
+    for (let x = 30; x < W; x += 60) {
+      // Mirrored C-scrolls forming a heart shape
+      kickPlate += `<path d="M ${x},${H - 122} C ${x - 22},${H - 117} ${x - 22},${H - 43} ${x},${H - 38} C ${x + 22},${H - 43} ${x + 22},${H - 117} ${x},${H - 122} Z" fill="none" stroke="url(#g${pfx})" stroke-width="3" opacity="0.9" />`;
+      
+      // Small royal fleur-de-lis inside the heart
+      // Center petal
+      kickPlate += `<path d="M ${x - 6},${H - 80} Q ${x},${H - 96} ${x + 6},${H - 80} Q ${x},${H - 74} ${x - 6},${H - 80} Z" fill="url(#g${pfx})" />`;
+      kickPlate += `<path d="M ${x - 2.5},${H - 80} L ${x + 2.5},${H - 80} L ${x + 2},${H - 65} L ${x - 2},${H - 65} Z" fill="url(#g${pfx})" />`;
+      // Side wings
+      kickPlate += `<path d="M ${x},${H - 80} Q ${x - 13},${H - 91} ${x - 11},${H - 73} Q ${x - 5},${H - 76} ${x},${H - 80}" fill="url(#g${pfx})" />`;
+      kickPlate += `<path d="M ${x},${H - 80} Q ${x + 13},${H - 91} ${x + 11},${H - 73} Q ${x + 5},${H - 76} ${x},${H - 80}" fill="url(#g${pfx})" />`;
+      
+      // Mini rosettes
+      kickPlate += `<circle cx="${x}" cy="${H - 80}" r="2" fill="#fff" />`;
+      
+      // Bottom leaf-tips
+      kickPlate += `<path d="M ${x - 10},${H - 30} Q ${x},${H - 10} ${x + 10},${H - 30} Z" fill="url(#g${pfx})" opacity="0.8"/>`;
     }
 
-    // Arabesque medallion (upper 44%)
-    const mx = L ? W * 0.5 : W * 0.5, my = H * 0.24, mr = 155;
-    let med = '';
-    // Outer ring + inner rings
-    med += `<circle cx="${mx}" cy="${my}" r="${mr}" fill="none" stroke="url(#g${pfx})" stroke-width="5"/>`;
-    med += `<circle cx="${mx}" cy="${my}" r="${mr * 0.78}" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
-    med += `<circle cx="${mx}" cy="${my}" r="${mr * 0.55}" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
-    med += `<circle cx="${mx}" cy="${my}" r="${mr * 0.3}" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
-    // 16 petals
-    for (let i = 0; i < 16; i++) {
-      const a = i * Math.PI / 8, a2 = a + Math.PI / 16;
-      const x1 = mx + mr * 0.78 * Math.cos(a), y1 = my + mr * 0.78 * Math.sin(a);
-      const x2 = mx + mr * 0.55 * Math.cos(a2), y2 = my + mr * 0.55 * Math.sin(a2);
-      const xc = mx + mr * 0.65 * Math.cos(a + Math.PI / 32), yc = my + mr * 0.65 * Math.sin(a + Math.PI / 32);
-      med += `<path d="M${mx},${my} Q${xc},${yc} ${x1},${y1}" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
-    }
-    // 8-pointed star in centre
-    med += star8(mx, my, mr * 0.28, mr * 0.13);
-    // Radiating spokes
-    for (let i = 0; i < 8; i++) {
-      const a = i * Math.PI / 4;
-      med += `<line x1="${mx + mr * 0.3 * Math.cos(a)}" y1="${my + mr * 0.3 * Math.sin(a)}" x2="${mx + mr * 0.78 * Math.cos(a)}" y2="${my + mr * 0.78 * Math.sin(a)}" stroke="url(#g${pfx})" stroke-width="1.5" opacity="0.6"/>`;
-    }
-    // Lotus tips at outer ring
-    for (let i = 0; i < 8; i++) {
-      const a = i * Math.PI / 4 - Math.PI / 8;
-      const tx = mx + mr * Math.cos(a), ty = my + mr * Math.sin(a);
-      const bl = mx + (mr - 18) * Math.cos(a - 0.2), bly = my + (mr - 18) * Math.sin(a - 0.2);
-      const br = mx + (mr - 18) * Math.cos(a + 0.2), bry = my + (mr - 18) * Math.sin(a + 0.2);
-      med += `<path d="M${bl},${bly} Q${tx},${ty} ${br},${bry}" fill="none" stroke="url(#g${pfx})" stroke-width="2.5"/>`;
+    // 3. Top Scrollwork Area (y = 100 to 350, clipped by arch)
+    let topScrolls = '';
+    // Let's add multiple concentric arches under the main arch edge to make it look layered and royal
+    if (L) {
+      topScrolls += `<path d="M 0,250 Q ${W*0.35},140 ${W},100" fill="none" stroke="url(#g${pfx})" stroke-width="6" opacity="0.85"/>`;
+      topScrolls += `<path d="M 0,265 Q ${W*0.35},155 ${W},115" fill="none" stroke="url(#g${pfx})" stroke-width="3" opacity="0.7"/>`;
+      topScrolls += `<path d="M 0,280 Q ${W*0.35},170 ${W},130" fill="none" stroke="url(#g${pfx})" stroke-width="1.8" stroke-dasharray="4,2" opacity="0.6"/>`;
+      
+      // Main sweeping scroll curves
+      topScrolls += `<path d="M 30,350 C 50,180 ${W * 0.5},170 ${W - 40},130" fill="none" stroke="url(#g${pfx})" stroke-width="6" opacity="0.95"/>`;
+      topScrolls += `<path d="M 30,350 C 50,180 ${W * 0.5},170 ${W - 40},130" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" stroke-dasharray="6,4" opacity="0.8"/>`;
+      topScrolls += `<path d="M ${W - 60},350 C ${W * 0.65},220 ${W * 0.25},240 40,160" fill="none" stroke="url(#g${pfx})" stroke-width="5" opacity="0.9"/>`;
+      topScrolls += `<path d="M 100,350 C 130,220 180,240 220,160" fill="none" stroke="url(#g${pfx})" stroke-width="3.5" opacity="0.8"/>`;
+      topScrolls += `<path d="M 240,350 C 270,220 320,240 360,160" fill="none" stroke="url(#g${pfx})" stroke-width="3.5" opacity="0.8"/>`;
+      
+      // Rosettes and leaflets in the top scroll voids
+      topScrolls += `<path d="M 120,220 Q 150,180 180,210 Z" fill="url(#g${pfx})" opacity="0.85"/>`;
+      topScrolls += `<path d="M 280,220 Q 310,180 340,210 Z" fill="url(#g${pfx})" opacity="0.85"/>`;
+      
+      // Gold flower centers (circles)
+      topScrolls += `<circle cx="${W - 70}" cy="150" r="14" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+      topScrolls += `<circle cx="${W - 70}" cy="150" r="7" fill="url(#g${pfx})"/>`;
+      topScrolls += `<circle cx="80" cy="180" r="12" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+      topScrolls += `<circle cx="80" cy="180" r="5" fill="url(#g${pfx})"/>`;
+      topScrolls += `<circle cx="160" cy="170" r="9" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
+      topScrolls += `<circle cx="160" cy="170" r="4" fill="url(#g${pfx})"/>`;
+      topScrolls += `<circle cx="320" cy="160" r="9" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
+      topScrolls += `<circle cx="320" cy="160" r="4" fill="url(#g${pfx})"/>`;
+    } else {
+      topScrolls += `<path d="M ${W},250 Q ${W*0.65},140 0,100" fill="none" stroke="url(#g${pfx})" stroke-width="6" opacity="0.85"/>`;
+      topScrolls += `<path d="M ${W},265 Q ${W*0.65},155 0,115" fill="none" stroke="url(#g${pfx})" stroke-width="3" opacity="0.7"/>`;
+      topScrolls += `<path d="M ${W},280 Q ${W*0.65},170 0,130" fill="none" stroke="url(#g${pfx})" stroke-width="1.8" stroke-dasharray="4,2" opacity="0.6"/>`;
+      
+      // Mirrored sweeping curves
+      topScrolls += `<path d="M ${W - 30},350 C ${W - 50},180 ${W * 0.5},170 40,130" fill="none" stroke="url(#g${pfx})" stroke-width="6" opacity="0.95"/>`;
+      topScrolls += `<path d="M ${W - 30},350 C ${W - 50},180 ${W * 0.5},170 40,130" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" stroke-dasharray="6,4" opacity="0.8"/>`;
+      topScrolls += `<path d="M 60,350 C ${W * 0.35},220 ${W * 0.75},240 ${W - 40},160" fill="none" stroke="url(#g${pfx})" stroke-width="5" opacity="0.9"/>`;
+      topScrolls += `<path d="M ${W - 100},350 C ${W - 130},220 ${W - 180},240 ${W - 220},160" fill="none" stroke="url(#g${pfx})" stroke-width="3.5" opacity="0.8"/>`;
+      topScrolls += `<path d="M ${W - 240},350 C ${W - 270},220 ${W - 320},240 ${W - 360},160" fill="none" stroke="url(#g${pfx})" stroke-width="3.5" opacity="0.8"/>`;
+      
+      topScrolls += `<path d="M ${W - 180},220 Q ${W - 150},180 ${W - 120},210 Z" fill="url(#g${pfx})" opacity="0.85"/>`;
+      topScrolls += `<path d="M ${W - 340},220 Q ${W - 310},180 ${W - 280},210 Z" fill="url(#g${pfx})" opacity="0.85"/>`;
+      
+      topScrolls += `<circle cx="70" cy="150" r="14" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+      topScrolls += `<circle cx="70" cy="150" r="7" fill="url(#g${pfx})"/>`;
+      topScrolls += `<circle cx="${W - 80}" cy="180" r="12" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+      topScrolls += `<circle cx="${W - 80}" cy="180" r="5" fill="url(#g${pfx})"/>`;
+      topScrolls += `<circle cx="${W - 160}" cy="170" r="9" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
+      topScrolls += `<circle cx="${W - 160}" cy="170" r="4" fill="url(#g${pfx})"/>`;
+      topScrolls += `<circle cx="${W - 320}" cy="160" r="9" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
+      topScrolls += `<circle cx="${W - 320}" cy="160" r="4" fill="url(#g${pfx})"/>`;
     }
 
-    // Top frieze band
+    // 4. Vertical Bars & Intermediate Scrollwork Fillers (y = 350 to H - 140)
+    let bars = '';
+    const numBars = 9;
+    const cy = H - 430; // 570
+    
+    // Cross bars (horizontal rails)
+    bars += `<line x1="0" y1="350" x2="${W}" y2="350" stroke="url(#g${pfx})" stroke-width="7"/>`;
+    bars += `<line x1="0" y1="490" x2="${W}" y2="490" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.85"/>`;
+    bars += `<line x1="0" y1="630" x2="${W}" y2="630" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.85"/>`;
+    bars += `<line x1="0" y1="770" x2="${W}" y2="770" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.85"/>`;
+    bars += `<line x1="0" y1="${H - 140}" x2="${W}" y2="${H - 140}" stroke="url(#g${pfx})" stroke-width="7"/>`;
+
+    // Draw vertical bars
+    for (let i = 1; i <= numBars; i++) {
+      const x = (W / (numBars + 1)) * i;
+      // Main bar line
+      bars += `<line x1="${x}" y1="350" x2="${x}" y2="${H - 140}" stroke="url(#g${pfx})" stroke-width="5.5" opacity="0.95"/>`;
+      
+      // Knuckles and collars at horizontal cross intersections
+      // Top intersection (y = 350)
+      bars += `<rect x="${x - 7}" y="346" width="14" height="8" fill="url(#g${pfx})"/>`;
+      // Spearhead/Fleur-de-lis finial above y = 350
+      bars += `<path d="M ${x - 8},350 L ${x},322 L ${x + 8},350 Z" fill="url(#g${pfx})" />`;
+      bars += `<path d="M ${x - 12},340 Q ${x},330 ${x + 12},340" fill="none" stroke="url(#g${pfx})" stroke-width="1.8" />`;
+      
+      // Intermediate intersections (y = 490, 630, 770)
+      bars += `<circle cx="${x}" cy="490" r="6" fill="url(#g${pfx})"/>`;
+      bars += `<circle cx="${x}" cy="630" r="6" fill="url(#g${pfx})"/>`;
+      bars += `<circle cx="${x}" cy="770" r="6" fill="url(#g${pfx})"/>`;
+      
+      // Knuckle line (y = cy = 570)
+      bars += `<rect x="${x - 7}" y="${cy - 8}" width="14" height="2" fill="url(#g${pfx})"/>`;
+      bars += `<circle cx="${x}" cy="${cy}" r="7" fill="url(#g${pfx})"/>`;
+      bars += `<rect x="${x - 7}" y="${cy + 6}" width="14" height="2" fill="url(#g${pfx})"/>`;
+      
+      // Bottom intersection (y = H - 140 = 860)
+      bars += `<rect x="${x - 7}" y="${H - 147}" width="14" height="8" fill="url(#g${pfx})"/>`;
+      bars += `<circle cx="${x}" cy="${H - 152}" r="5.5" fill="none" stroke="url(#g${pfx})" stroke-width="1.8"/>`;
+      
+      // Little scroll wings attaching bars to bottom rail
+      bars += `<path d="M ${x - 12},${H - 140} Q ${x},${H - 165} ${x + 12},${H - 140}" fill="none" stroke="url(#g${pfx})" stroke-width="2.5" opacity="0.8"/>`;
+    }
+
+    // Scrollwork fillers between bars (10 slots)
+    const slotWidth = W / (numBars + 1); // 50
+    for (let j = 0; j <= numBars; j++) {
+      const midX = slotWidth * (j + 0.5);
+
+      // Section A: y = 350 to 490 (C-scroll heart pairs + center rosette)
+      bars += `<path d="M ${midX},362 C ${midX - 22},370 ${midX - 22},470 ${midX},478" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" opacity="0.85"/>`;
+      bars += `<path d="M ${midX},362 C ${midX + 22},370 ${midX + 22},470 ${midX},478" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" opacity="0.85"/>`;
+      bars += `<circle cx="${midX}" cy="420" r="4.5" fill="url(#g${pfx})"/>`;
+      bars += `<circle cx="${midX}" cy="420" r="8" fill="none" stroke="url(#g${pfx})" stroke-width="1" stroke-dasharray="2,2"/>`;
+
+      // Section B: y = 490 to 630 (S-scroll ribbons)
+      bars += `<path d="M ${midX - 11},500 C ${midX + 16},525 ${midX - 16},595 ${midX + 11},620" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" opacity="0.8"/>`;
+      bars += `<circle cx="${midX}" cy="560" r="3.5" fill="url(#g${pfx})"/>`;
+
+      // Section C: y = 630 to 770 (Inverted C-scroll hearts + center rosette)
+      bars += `<path d="M ${midX},642 C ${midX - 22},650 ${midX - 22},750 ${midX},758" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" opacity="0.85"/>`;
+      bars += `<path d="M ${midX},642 C ${midX + 22},650 ${midX + 22},750 ${midX},758" fill="none" stroke="url(#g${pfx})" stroke-width="2.2" opacity="0.85"/>`;
+      bars += `<circle cx="${midX}" cy="700" r="4.5" fill="url(#g${pfx})"/>`;
+
+      // Section D: y = 770 to 860 (Cross braces with micro-ring center)
+      bars += `<path d="M ${midX - 16},782 L ${midX + 16},848" fill="none" stroke="url(#g${pfx})" stroke-width="1.8" opacity="0.75"/>`;
+      bars += `<path d="M ${midX + 16},782 L ${midX - 16},848" fill="none" stroke="url(#g${pfx})" stroke-width="1.8" opacity="0.75"/>`;
+      bars += `<circle cx="${midX}" cy="815" r="4" fill="none" stroke="url(#g${pfx})" stroke-width="1.5"/>`;
+    }
+
+    // 5. Heavy Baroque Cartouche framing the Coat of Arms
+    let cartouche = '';
+    const cx = W * 0.5;
+    const cty = H - 340;
+    
+    // Backing plate
+    cartouche += `<path d="M ${cx - 75},${cty} C ${cx - 75},${cty - 90} ${cx + 75},${cty - 90} ${cx + 75},${cty} C ${cx + 75},${cty + 90} ${cx - 75},${cty + 90} Z" fill="rgba(18,14,8,0.95)" stroke="url(#g${pfx})" stroke-width="5" />`;
+    cartouche += `<path d="M ${cx - 65},${cty} C ${cx - 65},${cty - 80} ${cx + 65},${cty - 80} ${cx + 65},${cty} C ${cx + 65},${cty + 80} ${cx - 65},${cty + 80} Z" fill="none" stroke="url(#g${pfx})" stroke-width="1.8" stroke-dasharray="5,3" opacity="0.85" />`;
+    
+    // Crown on top of Cartouche (y = cty - 90 to cty - 145)
+    const cbY = cty - 90;
+    cartouche += `<rect x="${cx - 40}" y="${cbY - 10}" width="80" height="10" fill="url(#g${pfx})" rx="2"/>`;
+    cartouche += `<circle cx="${cx - 25}" cy="${cbY - 5}" r="2" fill="#fff"/>`;
+    cartouche += `<circle cx="${cx}" cy="${cbY - 5}" r="2.2" fill="#ffd700"/>`;
+    cartouche += `<circle cx="${cx + 25}" cy="${cbY - 5}" r="2" fill="#fff"/>`;
+    cartouche += `<path d="M ${cx - 35},${cbY - 10} Q ${cx - 30},${cbY - 35} ${cx},${cbY - 38} Q ${cx + 30},${cbY - 35} ${cx + 35},${cbY - 10} Z" fill="none" stroke="url(#g${pfx})" stroke-width="4.5"/>`;
+    cartouche += `<path d="M ${cx - 20},${cbY - 10} Q ${cx - 15},${cbY - 30} ${cx},${cbY - 32} Q ${cx + 15},${cbY - 30} ${cx + 20},${cbY - 10} Z" fill="none" stroke="url(#g${pfx})" stroke-width="2"/>`;
+    cartouche += `<circle cx="${cx}" cy="${cbY - 42}" r="4" fill="url(#g${pfx})"/>`;
+    cartouche += `<path d="M ${cx - 1},${cbY - 52} L ${cx + 1},${cbY - 52} L ${cx + 1},${cbY - 46} L ${cx - 1},${cbY - 46} Z M ${cx - 4},${cbY - 50} L ${cx + 4},${cbY - 50} L ${cx + 4},${cbY - 48} L ${cx - 4},${cbY - 48} Z" fill="url(#g${pfx})"/>`;
+    
+    // Side acanthus wings
+    cartouche += `<path d="M ${cx - 75},${cty} Q ${cx - 105},${cty - 50} ${cx - 90},${cty - 85} Q ${cx - 60},${cty - 60} ${cx - 75},${cty}" fill="url(#g${pfx})" opacity="0.95"/>`;
+    cartouche += `<path d="M ${cx + 75},${cty} Q ${cx + 105},${cty - 50} ${cx + 90},${cty - 85} Q ${cx + 60},${cty - 60} ${cx + 75},${cty}" fill="url(#g${pfx})" opacity="0.95"/>`;
+    cartouche += `<path d="M ${cx - 75},${cty} Q ${cx - 105},${cty + 50} ${cx - 90},${cty + 85} Q ${cx - 60},${cty + 60} ${cx - 75},${cty}" fill="url(#g${pfx})" opacity="0.95"/>`;
+    cartouche += `<path d="M ${cx + 75},${cty} Q ${cx + 105},${cty + 50} ${cx + 90},${cty + 85} Q ${cx + 60},${cty + 60} ${cx + 75},${cty}" fill="url(#g${pfx})" opacity="0.95"/>`;
+    
+    // Flanking acanthus leaves
+    cartouche += `<path d="M ${cx - 75},${cty - 40} Q ${cx - 120},${cty - 80} ${cx - 100},${cty - 110} Q ${cx - 80},${cty - 70} ${cx - 75},${cty - 40}" fill="url(#g${pfx})" opacity="0.9"/>`;
+    cartouche += `<path d="M ${cx + 75},${cty - 40} Q ${cx + 120},${cty - 80} ${cx + 100},${cty - 110} Q ${cx + 80},${cty - 70} ${cx + 75},${cty - 40}" fill="url(#g${pfx})" opacity="0.9"/>`;
+    cartouche += `<path d="M ${cx - 75},${cty + 40} Q ${cx - 120},${cty + 80} ${cx - 100},${cty + 110} Q ${cx - 80},${cty + 70} ${cx - 75},${cty + 40}" fill="url(#g${pfx})" opacity="0.9"/>`;
+    cartouche += `<path d="M ${cx + 75},${cty + 40} Q ${cx + 120},${cty + 80} ${cx + 100},${cty + 110} Q ${cx + 80},${cty + 70} ${cx + 75},${cty + 40}" fill="url(#g${pfx})" opacity="0.9"/>`;
+
+    // Bottom center swag / pendant
+    cartouche += `<path d="M ${cx - 50},${cty + 80} Q ${cx},${cty + 120} ${cx + 50},${cty + 80} Q ${cx},${cty + 100} ${cx - 50},${cty + 80}" fill="url(#g${pfx})" opacity="0.9"/>`;
+    cartouche += `<path d="M ${cx - 30},${cty + 85} Q ${cx},${cty + 110} ${cx + 30},${cty + 85}" fill="none" stroke="url(#g${pfx})" stroke-width="2" opacity="0.8"/>`;
+    cartouche += `<path d="M ${cx - 15},${cty + 90} L ${cx},${cty + 115} L ${cx + 15},${cty + 90} Z" fill="url(#g${pfx})"/>`;
+    cartouche += `<circle cx="${cx}" cy="${cty + 122}" r="5.5" fill="url(#g${pfx})"/>`;
+
+    // 6. Injected Coat of Arms
+    const crestW = 96;
+    const crestH = 100;
+    const crestX = cx - crestW / 2;
+    const crestY = cty - crestH / 2;
+    const crestImg = `<image href="assets/coat_of_arms.svg" x="${crestX}" y="${crestY}" width="${crestW}" height="${crestH}" />`;
+
+    // Top frieze band (kept for classical architecture)
     let frieze = '';
     const fh = 70, fs = 28;
-    frieze += `<rect x="0" y="0" width="${W}" height="${fh}" fill="rgba(40,15,0,0.45)"/>`;
+    frieze += `<rect x="0" y="0" width="${W}" height="${fh}" fill="rgba(24,16,8,0.55)"/>`;
     for (let x = 0; x < W; x += fs) {
-      frieze += `<rect x="${x + 2}" y="4" width="${fs - 4}" height="${fh - 8}" rx="3" fill="none" stroke="url(#g${pfx})" stroke-width="1" opacity="0.8"/>`;
-      frieze += `<circle cx="${x + fs / 2}" cy="${fh / 2}" r="${fs * 0.22}" fill="none" stroke="url(#g${pfx})" stroke-width="1.2"/>`;
-      frieze += `<circle cx="${x + fs / 2}" cy="${fh / 2}" r="${fs * 0.1}" fill="url(#g${pfx})" opacity="0.7"/>`;
-      frieze += `<line x1="${x + fs / 2}" y1="4" x2="${x + fs / 2}" y2="${fh - 4}" stroke="url(#g${pfx})" stroke-width="0.6" opacity="0.3"/>`;
+      frieze += `<rect x="${x + 2}" y="4" width="${fs - 4}" height="${fh - 8}" rx="3" fill="none" stroke="url(#g${pfx})" stroke-width="1.2" opacity="0.85"/>`;
+      frieze += `<circle cx="${x + fs / 2}" cy="${fh / 2}" r="${fs * 0.22}" fill="none" stroke="url(#g${pfx})" stroke-width="1.5"/>`;
+      frieze += `<circle cx="${x + fs / 2}" cy="${fh / 2}" r="${fs * 0.1}" fill="url(#g${pfx})" opacity="0.85"/>`;
+      frieze += `<line x1="${x + fs / 2}" y1="4" x2="${x + fs / 2}" y2="${fh - 4}" stroke="url(#g${pfx})" stroke-width="0.8" opacity="0.4"/>`;
+    }
+
+    // Corner brackets
+    let cornerScrolls = '';
+    if (L) {
+      // Bottom-Outer corner (x = 0, y = H)
+      cornerScrolls += `<path d="M 14,${H - 14} Q 60,${H - 60} 14,${H - 110} M 14,${H - 14} Q 60,${H - 60} 110,${H - 14}" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.95"/>`;
+      cornerScrolls += `<path d="M 14,${H - 14} C 45,${H - 45} 45,${H - 80} 14,${H - 80}" fill="none" stroke="url(#g${pfx})" stroke-width="2" opacity="0.8"/>`;
+      cornerScrolls += `<circle cx="42" cy="${H - 42}" r="5" fill="url(#g${pfx})"/>`;
+      
+      // Bottom-Inner corner (x = W = 500, y = H)
+      cornerScrolls += `<path d="M ${W - 14},${H - 14} Q ${W - 60},${H - 60} ${W - 14},${H - 110} M ${W - 14},${H - 14} Q ${W - 60},${H - 60} ${W - 110},${H - 14}" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.95"/>`;
+      cornerScrolls += `<path d="M ${W - 14},${H - 14} C ${W - 45},${H - 45} ${W - 45},${H - 80} ${W - 14},${H - 80}" fill="none" stroke="url(#g${pfx})" stroke-width="2" opacity="0.8"/>`;
+      cornerScrolls += `<circle cx="${W - 42}" cy="${H - 42}" r="5" fill="url(#g${pfx})"/>`;
+
+      // Middle-Outer corner where the arch starts (x = 0, y = 250)
+      cornerScrolls += `<path d="M 14,250 Q 55,270 14,310 M 14,250 Q 55,270 75,250" fill="none" stroke="url(#g${pfx})" stroke-width="4" opacity="0.9"/>`;
+      cornerScrolls += `<circle cx="36" cy="272" r="4" fill="url(#g${pfx})"/>`;
+    } else {
+      // Bottom-Outer corner (x = W = 500, y = H)
+      cornerScrolls += `<path d="M ${W - 14},${H - 14} Q ${W - 60},${H - 60} ${W - 14},${H - 110} M ${W - 14},${H - 14} Q ${W - 60},${H - 60} ${W - 110},${H - 14}" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.95"/>`;
+      cornerScrolls += `<path d="M ${W - 14},${H - 14} C ${W - 45},${H - 45} ${W - 45},${H - 80} ${W - 14},${H - 80}" fill="none" stroke="url(#g${pfx})" stroke-width="2" opacity="0.8"/>`;
+      cornerScrolls += `<circle cx="${W - 42}" cy="${H - 42}" r="5" fill="url(#g${pfx})"/>`;
+      
+      // Bottom-Inner corner (x = 0, y = H)
+      cornerScrolls += `<path d="M 14,${H - 14} Q 60,${H - 60} 14,${H - 110} M 14,${H - 14} Q 60,${H - 60} 110,${H - 14}" fill="none" stroke="url(#g${pfx})" stroke-width="4.5" opacity="0.95"/>`;
+      cornerScrolls += `<path d="M 14,${H - 14} C 45,${H - 45} 45,${H - 80} 14,${H - 80}" fill="none" stroke="url(#g${pfx})" stroke-width="2" opacity="0.8"/>`;
+      cornerScrolls += `<circle cx="42" cy="${H - 42}" r="5" fill="url(#g${pfx})"/>`;
+
+      // Middle-Outer corner where the arch starts (x = W = 500, y = 250)
+      cornerScrolls += `<path d="M ${W - 14},250 Q ${W - 55},270 ${W - 14},310 M ${W - 14},250 Q ${W - 55},270 ${W - 75},250" fill="none" stroke="url(#g${pfx})" stroke-width="4" opacity="0.9"/>`;
+      cornerScrolls += `<circle cx="${W - 36}" cy="272" r="4" fill="url(#g${pfx})"/>`;
     }
 
     // Pointed Moorish arch edge (inner edge of panel)
     const archEdge = L
-      ? `M${W},0 C${W},150 ${W * 0.75},300 ${W * 0.6},450 C${W * 0.45},600 ${W},750 ${W},${H}`
-      : `M0,0 C0,150 ${W * 0.25},300 ${W * 0.4},450 C${W * 0.55},600 0,750 0,${H}`;
-    // Draw the arch edge with double gold lines
-    const aw = 10;
+      ? `M 0,${H} L 0,250 Q ${W*0.35},140 ${W},100`
+      : `M ${W},${H} L ${W},250 Q ${W*0.65},140 0,100`;
     const archEdge2 = L
-      ? `M${W - aw},0 C${W - aw},150 ${W * 0.75 - aw},300 ${W * 0.6 - aw},450 C${W * 0.45 - aw},600 ${W - aw},750 ${W - aw},${H}`
-      : `M${aw},0 C${aw},150 ${W * 0.25 + aw},300 ${W * 0.4 + aw},450 C${W * 0.55 + aw},600 ${aw},750 ${aw},${H}`;
+      ? `M 10,${H} L 10,255 Q ${W*0.35 + 2},148 ${W - 10},108`
+      : `M ${W - 10},${H} L ${W - 10},255 Q ${W*0.65 - 2},148 10,108`;
 
     // Clip: cut panel along arch edge so background shows through
     const clipId = `archClip${pfx}`;
     const clipPath = L
-      ? `<clipPath id="${clipId}"><path d="M0,0 L${W},0 C${W},150 ${W*0.75},300 ${W*0.6},450 C${W*0.45},600 ${W},750 ${W},${H} L0,${H} Z"/></clipPath>`
-      : `<clipPath id="${clipId}"><path d="M${W},0 L0,0 C0,150 ${W*0.25},300 ${W*0.4},450 C${W*0.55},600 0,750 0,${H} L${W},${H} Z"/></clipPath>`;
+      ? `<clipPath id="${clipId}"><path d="M 0,${H} L 0,250 Q ${W*0.35},140 ${W},100 L ${W},${H} Z"/></clipPath>`
+      : `<clipPath id="${clipId}"><path d="M ${W},${H} L ${W},250 Q ${W*0.65},140 0,100 L 0,${H} Z"/></clipPath>`;
 
     // Seam bar (vertical gold bar along inner edge where doors meet)
     const seamBar = L
-      ? `<rect x="${W - 14}" y="0" width="14" height="${H}" fill="url(#g${pfx})"/>`
-      : `<rect x="0" y="0" width="14" height="${H}" fill="url(#g${pfx})"/>`;
+      ? `<rect x="${W - 14}" y="100" width="14" height="${H - 100}" fill="url(#g${pfx})"/>`
+      : `<rect x="0" y="100" width="14" height="${H - 100}" fill="url(#g${pfx})"/>`;
 
     // Outer frame
     const frame = `
@@ -198,13 +415,22 @@ function buildGateSVG() {
 
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" width="100%" height="100%">
       ${defs}
+      <!-- Unclipped Group for Top Pediment -->
+      <g filter="url(#glow${pfx})">
+        ${pediment}
+      </g>
+      <!-- Clipped Group for Gate Content -->
       <g clip-path="url(#${clipId})">
         <g filter="url(#glow${pfx})">
-          ${grid}
-          ${med}
+          ${bars}
+          ${kickPlate}
+          ${topScrolls}
+          ${cartouche}
+          ${crestImg}
           ${frieze}
           ${frame}
           ${seamBar}
+          ${cornerScrolls}
           <path d="${archEdge}" fill="none" stroke="url(#g${pfx})" stroke-width="14"/>
           <path d="${archEdge2}" fill="none" stroke="url(#g${pfx})" stroke-width="3" opacity="0.5"/>
         </g>
