@@ -212,72 +212,43 @@ function randomize() {
     const isMobile  = window.innerWidth < 768;
     const mobileScale = isMobile ? 0.7 : 1;
 
-    // ── RPM strategy: High-Proportion Speeds & Harmony Resonances ───────────
-    // We alternate between perfect integer ratios (for clean star/flower closing orbits)
-    // and hybrid concentric spirals (one fast integer + one slow fractional shift).
-    const fastRPM = Math.floor(rnd(1, 8)); // clean integer speed
+    // ── RPM strategy: one fast arm + one slow arm ───────────────────────────
+    // Broader ranges for more "magical" and intricate patterns.
+    const fastRPM = rnd(0.5, 6);
+    const slowRPM = 1 / rnd(10, 200);
 
     if (Math.random() > 0.5) {
-        // Strategy A: Perfect integer ratios for clean geometric stars and flowers
-        const secondRPM = Math.floor(rnd(1, 8));
         targetParams.lrota = sign() * fastRPM;
-        targetParams.rrota = sign() * (secondRPM === fastRPM ? secondRPM + 1 : secondRPM);
+        targetParams.rrota = sign() * slowRPM;
     } else {
-        // Strategy B: Concentric organic silky spirals (one fast integer + one slow fractional drift)
-        const slowRPM = 1 / rnd(12, 160);
-        if (Math.random() > 0.5) {
-            targetParams.lrota = sign() * fastRPM;
-            targetParams.rrota = sign() * slowRPM;
-        } else {
-            targetParams.lrota = sign() * slowRPM;
-            targetParams.rrota = sign() * fastRPM;
-        }
+        targetParams.lrota = sign() * slowRPM;
+        targetParams.rrota = sign() * fastRPM;
     }
 
-    // Canvas rotation: slow and graceful, or perfectly static
-    targetParams.crota = Math.random() > 0.25 ? sign() * rnd(0.01, 0.4) : 0;
+    // Canvas rotation: often slow, but can be zero or moderate
+    targetParams.crota = Math.random() > 0.2 ? sign() * rnd(0.01, 1.2) : 0;
 
-    // ── Geometry ranges with Strict Reach Constraints (Zero broken lines / smooth edges) ──
-    targetParams.hbx      = rnd(-150, 150)  * mobileScale;
-    targetParams.hby      = rnd(-480, -250) * mobileScale;  // keep pivot away from centre
-    targetParams.hdist    = rnd(120,  450)  * mobileScale;
-    
-    // Joint arms 1 (inner rotating segments)
-    targetParams.larm1    = rnd(40,  160)   * mobileScale;
-    targetParams.rarm1    = rnd(40,  160)   * mobileScale;
-    
-    // Joint arms 2 (outer bridging segments)
-    // To ensure a valid triangle can ALWAYS close under all rotation angles (eliminating broken/jagged jumps):
-    // 1) larm2 + rarm2 > maxReach = hdist + larm1 + rarm1 (so they can always bridge the gap)
-    // 2) |larm2 - rarm2| < minReach = |hdist - larm1 - rarm1| (so they never collide when fully folded)
-    const maxReach = targetParams.hdist + targetParams.larm1 + targetParams.rarm1;
-    const outerBase = maxReach * rnd(0.55, 0.72); 
-    
-    targetParams.larm2 = outerBase;
-    // Keep rarm2 very close to larm2 so their difference is tiny, satisfying the minReach inequality
-    targetParams.rarm2 = outerBase + rnd(-15, 15) * mobileScale;
-    
-    targetParams.ext      = rnd(20,  100)   * mobileScale;
+    // ── Geometry ranges ─────────────────────────────────────────────────────
+    targetParams.hbx      = rnd(-200, 200)  * mobileScale;
+    targetParams.hby      = rnd(-550, -200) * mobileScale;  // keep pivot away from centre
+    targetParams.hdist    = rnd(50,  600)   * mobileScale;
+    targetParams.larm1    = rnd(20,  180)   * mobileScale;
+    targetParams.rarm1    = rnd(20,  180)   * mobileScale;
+    targetParams.larm2    = rnd(100, 600)   * mobileScale;
+    targetParams.rarm2    = rnd(100, 600)   * mobileScale;
+    targetParams.ext      = rnd(0,   120);
     targetParams.handlrot = rnd(0,   360);
 
-    // 40% chance for a gorgeous "Breathing Silk" figure with slow organic expansions and speed drifts
-    if (Math.random() > 0.6) {
-        targetParams.growth   = rnd(0.00003, 0.00015); // extremely slow expansion for nested silky layers
-        targetParams.driftL   = rnd(0.03, 0.12);       // slow harmonic speed fluctuations
-        targetParams.driftR   = rnd(0.03, 0.12);
-        targetParams.driftC   = Math.random() > 0.5 ? rnd(0.01, 0.05) : 0;
-    } else {
-        targetParams.growth   = 0;
-        targetParams.driftL   = 0;
-        targetParams.driftR   = 0;
-        targetParams.driftC   = 0;
-    }
+    targetParams.growth   = 0;
     targetParams.volume   = 0; // Keep zero: volume oscillation causes broken geometry
+    targetParams.driftL   = 0;
+    targetParams.driftR   = 0;
+    targetParams.driftC   = 0;
     targetParams.speed    = 400; // Super fast generation
     targetParams.colormode = 4;
 
-    // Symmetry: High-majesty symmetries (removing 1 and 2 to ensure elegant symmetry and proportions)
-    const symOpts = [3, 4, 5, 6, 8, 10, 12];
+    // Symmetry: 1 (none) to 12-fold for massive variety
+    const symOpts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
     targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
 
     // ── Viewport safety: scale DOWN if too large, scale UP if too small ─────
@@ -413,8 +384,7 @@ function draw() {
 
             // Optimized drawing: batch symmetry segments + avoid shadowBlur
             if (pen.x !== null) {
-                // Add a dynamic time offset to the phase to create a shimmering, silky color flow
-                const phase  = AM * rot.l + time * 25;
+                const phase  = AM * rot.l;
                 const stroke = getStrokeColor(phase);
                 const sym    = params.symmetry || 1;
                 const px = pen.x - cx,  py = pen.y - cy;
