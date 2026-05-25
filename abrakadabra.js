@@ -239,11 +239,19 @@ function randomize() {
     targetParams.ext      = rnd(0,   120);
     targetParams.handlrot = rnd(0,   360);
 
-    targetParams.growth   = 0;
+    // 40% chance for a gorgeous "Breathing Silk" figure with slow organic expansions and speed drifts
+    if (Math.random() > 0.6) {
+        targetParams.growth   = rnd(0.00003, 0.00018); // extremely slow expansion for nested silky layers
+        targetParams.driftL   = rnd(0.03, 0.15);       // slow harmonic speed fluctuations
+        targetParams.driftR   = rnd(0.03, 0.15);
+        targetParams.driftC   = Math.random() > 0.5 ? rnd(0.01, 0.06) : 0;
+    } else {
+        targetParams.growth   = 0;
+        targetParams.driftL   = 0;
+        targetParams.driftR   = 0;
+        targetParams.driftC   = 0;
+    }
     targetParams.volume   = 0; // Keep zero: volume oscillation causes broken geometry
-    targetParams.driftL   = 0;
-    targetParams.driftR   = 0;
-    targetParams.driftC   = 0;
     targetParams.speed    = 400; // Super fast generation
     targetParams.colormode = 4;
 
@@ -384,7 +392,8 @@ function draw() {
 
             // Optimized drawing: batch symmetry segments + avoid shadowBlur
             if (pen.x !== null) {
-                const phase  = AM * rot.l;
+                // Add a dynamic time offset to the phase to create a shimmering, silky color flow
+                const phase  = AM * rot.l + time * 25;
                 const stroke = getStrokeColor(phase);
                 const sym    = params.symmetry || 1;
                 const px = pen.x - cx,  py = pen.y - cy;
