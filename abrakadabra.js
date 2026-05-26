@@ -212,111 +212,44 @@ function randomize() {
     const isMobile  = window.innerWidth < 768;
     const mobileScale = isMobile ? 0.7 : 1;
 
-    // Reset dynamic drift parameters by default
+    // ── RPM strategy: one fast arm + one slow arm ───────────────────────────
+    // Broader ranges for more "magical" and intricate patterns.
+    const fastRPM = rnd(0.5, 6);
+    const slowRPM = 1 / rnd(10, 200);
+
+    if (Math.random() > 0.5) {
+        targetParams.lrota = sign() * fastRPM;
+        targetParams.rrota = sign() * slowRPM;
+    } else {
+        targetParams.lrota = sign() * slowRPM;
+        targetParams.rrota = sign() * fastRPM;
+    }
+
+    // Canvas rotation: often slow, but can be zero or moderate
+    targetParams.crota = Math.random() > 0.2 ? sign() * rnd(0.01, 1.2) : 0;
+
+    // ── Geometry ranges ─────────────────────────────────────────────────────
+    targetParams.hbx      = rnd(-200, 200)  * mobileScale;
+    targetParams.hby      = rnd(-550, -200) * mobileScale;  // keep pivot away from centre
+    targetParams.hdist    = rnd(50,  600)   * mobileScale;
+    targetParams.larm1    = rnd(20,  180)   * mobileScale;
+    targetParams.rarm1    = rnd(20,  180)   * mobileScale;
+    targetParams.larm2    = rnd(100, 600)   * mobileScale;
+    targetParams.rarm2    = rnd(100, 600)   * mobileScale;
+    targetParams.ext      = rnd(0,   120);
+    targetParams.handlrot = rnd(0,   360);
+
     targetParams.growth   = 0;
+    targetParams.volume   = 0; // Keep zero: volume oscillation causes broken geometry
     targetParams.driftL   = 0;
     targetParams.driftR   = 0;
     targetParams.driftC   = 0;
-    targetParams.volume   = 0;
     targetParams.speed    = 400; // Super fast generation
     targetParams.colormode = 4;
 
-    // ── Select Generative Archetype ──
-    const archetype = Math.floor(Math.random() * 5);
-
-    if (archetype === 0) {
-        // Archetype 0: "Sacred Seals & Mandalas" (Clean integer ratios, 100% closed, zero canvas rotation)
-        const resonantPairs = [
-            [2, -3], [3, -4], [3, -5], [4, -5], [5, -6], [3, 5], [2, 5], [4, 7], [3, 8], [5, -8], [7, -8], [5, 9]
-        ];
-        const pair = resonantPairs[Math.floor(Math.random() * resonantPairs.length)];
-        targetParams.lrota = pair[0];
-        targetParams.rrota = pair[1];
-        targetParams.crota = 0; // perfectly static to close the shape perfectly
-
-        const symOpts = [3, 4, 5, 6, 8, 10, 12];
-        targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
-    }
-    else if (archetype === 1) {
-        // Archetype 1: "Silky Cosmos & Cocoons" (Fast + very slow RPM, slow canvas rotation)
-        const fastRPM = rnd(1.5, 7);
-        const slowRPM = 1 / rnd(15, 180);
-        if (Math.random() > 0.5) {
-            targetParams.lrota = sign() * fastRPM;
-            targetParams.rrota = sign() * slowRPM;
-        } else {
-            targetParams.lrota = sign() * slowRPM;
-            targetParams.rrota = sign() * fastRPM;
-        }
-        targetParams.crota = sign() * rnd(0.02, 0.15);
-
-        const symOpts = [1, 2, 3, 4, 5, 6, 8];
-        targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
-    }
-    else if (archetype === 2) {
-        // Archetype 2: "Stellar Orbits & Rosettes" (One integer speed, one slow fractional speed)
-        const baseSpeed = Math.floor(rnd(2, 8));
-        const fraction = rnd(0.1, 0.9) * sign();
-        if (Math.random() > 0.5) {
-            targetParams.lrota = sign() * baseSpeed;
-            targetParams.rrota = fraction;
-        } else {
-            targetParams.lrota = fraction;
-            targetParams.rrota = sign() * baseSpeed;
-        }
-        targetParams.crota = sign() * rnd(0.01, 0.25);
-
-        const symOpts = [2, 3, 4, 5, 6, 8, 10];
-        targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
-    }
-    else if (archetype === 3) {
-        // Archetype 3: "Chaotic Nebulae & Waves" (Asynchronous speeds, moderate canvas rotation)
-        targetParams.lrota = rnd(2.2, 6.8) * sign();
-        targetParams.rrota = rnd(2.2, 6.8) * sign();
-        targetParams.crota = sign() * rnd(0.2, 0.8);
-
-        const symOpts = [1, 2, 3, 4, 5, 6];
-        targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
-    }
-    else {
-        // Archetype 4: "Harmonic Breathing & Drift" (Slow expansion and speed fluctuations)
-        const baseSpeed = Math.floor(rnd(1, 6));
-        const secondSpeed = Math.floor(rnd(1, 6));
-        targetParams.lrota = sign() * baseSpeed;
-        targetParams.rrota = sign() * (secondSpeed === baseSpeed ? secondSpeed + 1 : secondSpeed);
-        targetParams.crota = Math.random() > 0.5 ? sign() * rnd(0.01, 0.15) : 0;
-
-        targetParams.growth   = rnd(0.00003, 0.00015);
-        targetParams.driftL   = rnd(0.02, 0.12);
-        targetParams.driftR   = rnd(0.02, 0.12);
-        targetParams.driftC   = Math.random() > 0.5 ? rnd(0.01, 0.05) : 0;
-
-        const symOpts = [3, 4, 5, 6, 8, 10, 12];
-        targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
-    }
-
-    // ── Geometry ranges with Strict Reach Constraints (Ensuring smooth, unbroken curves) ──
-    targetParams.hbx      = rnd(-150, 150)  * mobileScale;
-    targetParams.hby      = rnd(-480, -250) * mobileScale;  // keep pivot away from centre
-    targetParams.hdist    = rnd(120,  450)  * mobileScale;
-    
-    // Joint arms 1 (inner rotating segments)
-    targetParams.larm1    = rnd(40,  160)   * mobileScale;
-    targetParams.rarm1    = rnd(40,  160)   * mobileScale;
-    
-    // Joint arms 2 (outer bridging segments)
-    // To ensure a valid triangle can ALWAYS close under all rotation angles (eliminating broken/jagged jumps):
-    // 1) larm2 + rarm2 > maxReach = hdist + larm1 + rarm1 (so they can always bridge the gap)
-    // 2) |larm2 - rarm2| < minReach = |hdist - larm1 - rarm1| (so they never collide when fully folded)
-    const maxReach = targetParams.hdist + targetParams.larm1 + targetParams.rarm1;
-    const outerBase = maxReach * rnd(0.55, 0.72); 
-    
-    targetParams.larm2 = outerBase;
-    // Keep rarm2 very close to larm2 so their difference is tiny, satisfying the minReach inequality
-    targetParams.rarm2 = outerBase + rnd(-15, 15) * mobileScale;
-    
-    targetParams.ext      = rnd(20,  100)   * mobileScale;
-    targetParams.handlrot = rnd(0,   360);
+    // Symmetry: 1 (none) to 12-fold for massive variety
+    const symOpts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+    targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
 
     // ── Viewport safety: scale DOWN if too large, scale UP if too small ─────
     const SAFE   = 900;  // max reach in AMUSE units (maps to ~90% of half-screen)
@@ -340,6 +273,11 @@ function randomize() {
         targetParams.rarm2 *= sizeScale;  targetParams.ext   *= sizeScale;
     }
 
+    // Display name — picked from AMUSE-style flat list
+    const names = isRu ? SHAPE_NAMES.ru : SHAPE_NAMES.en;
+    const adjs  = isRu ? ['Хаотичный', 'Дикий', 'Свободный', 'Случайный', 'Бесконечный']
+                       : ['Chaotic',   'Wild',   'Free',      'Random',    'Infinite'];
+    // Shape name indicator shows gallery title only (no per-figure names)
     if (shapeNameEl) {
         shapeNameEl.innerHTML = isRu
             ? '<span style="opacity:0.5;font-weight:200;">ABRAKADABRA</span> GENERATIVE GALLERY'
