@@ -51,7 +51,7 @@ const colorNameEl = document.getElementById('color-name');
 
 // ─── Default params — AMUSE-style, viewport-safe ─────────────────────────────
 let params = {
-    speed: 200,      // Acceleration
+    speed: 100,      // Acceleration (lower is slower/smoother drawing)
     colormode: 4,
     brightness: 1,
     crota: 4,        // Canvas Rotation RPM
@@ -206,31 +206,68 @@ function updateColorUI() {
 }
 
 function randomize() {
+    currentScheme = Math.floor(Math.random() * SCHEMES.length);
+    updateColorUI();
+
     const rnd  = (a, b) => Math.random() * (b - a) + a;
     const sign = ()     => Math.random() > 0.5 ? 1 : -1;
 
     const isMobile  = window.innerWidth < 768;
     const mobileScale = isMobile ? 0.7 : 1;
 
-    // ── RPM strategy: one fast arm + one slow arm ───────────────────────────
-    // Broader ranges for more "magical" and intricate patterns.
-    const fastRPM = rnd(0.5, 6);
-    const slowRPM = 1 / rnd(10, 200);
+    // ── Режим генерации (случайный выбор характера фигуры) ──────────────────
+    // 0 = классика (симметричная спираль)
+    // 1 = живая (дрейф скоростей → шёлковые переливы)
+    // 2 = пульсирующая (объём → 3D-дыхание)
+    // 3 = растущая (growth → цветок/галактика)
+    // 4 = хаос (все параметры вместе → полная абстракция)
+    const mode = Math.floor(Math.random() * 5);
 
-    if (Math.random() > 0.5) {
-        targetParams.lrota = sign() * fastRPM;
-        targetParams.rrota = sign() * slowRPM;
+    let isHighSpeed = false;
+
+    // ── RPM strategy: synchronized (identical/opposite) OR one fast + one slow ──
+    const rpmRoll = Math.random();
+    if (rpmRoll < 0.25) {
+        // Synchronized / Identical RPM Strategy: both arms have the exact same speed magnitude.
+        // This generates beautifully balanced, closed symmetrical figures and flower loops.
+        // Speeds vary widely from 0.1 all the way up to 100.0 (positive and negative, covering -100 to 100).
+        const syncRPM = Math.round(rnd(0.1, 100) * 1000) / 1000;
+        targetParams.lrota = sign() * syncRPM;
+
+        isHighSpeed = syncRPM >= 15.0; // Slower or faster rotor speed is chosen based on this threshold
+
+        if (isHighSpeed) {
+            // High-speed opposite pairs (e.g., 85.985 on left and -85.985 on right)
+            // This creates incredibly intricate, highly dense geometric spirograph webs
+            targetParams.rrota = -targetParams.lrota;
+        } else {
+            // Standard speed: 70% chance of exactly identical RPMs, 30% chance of opposite (equal magnitude)
+            targetParams.rrota = Math.random() > 0.3 ? targetParams.lrota : -targetParams.lrota;
+        }
     } else {
-        targetParams.lrota = sign() * slowRPM;
-        targetParams.rrota = sign() * fastRPM;
+        const fastRPM = Math.round(rnd(0.5, 6) * 1000) / 1000;
+        const slowRPM = Math.round((1 / rnd(10, 200)) * 1000) / 1000;
+
+        if (Math.random() > 0.5) {
+            targetParams.lrota = sign() * fastRPM;
+            targetParams.rrota = sign() * slowRPM;
+        } else {
+            targetParams.lrota = sign() * slowRPM;
+            targetParams.rrota = sign() * fastRPM;
+        }
     }
 
-    // Canvas rotation: often slow, but can be zero or moderate
-    targetParams.crota = Math.random() > 0.2 ? sign() * rnd(0.01, 1.2) : 0;
+    // Canvas rotation (rotor): often slow, but can be zero or moderate.
+    // When using high-speed synchronized arms, keep the rotor speed extremely slow or zero to let the intricate webs concentrate.
+    if (isHighSpeed) {
+        targetParams.crota = Math.random() > 0.3 ? Math.round(sign() * rnd(0.001, 0.08) * 1000) / 1000 : 0;
+    } else {
+        targetParams.crota = Math.random() > 0.2 ? Math.round(sign() * rnd(0.01, 1.2) * 1000) / 1000 : 0;
+    }
 
     // ── Geometry ranges ─────────────────────────────────────────────────────
     targetParams.hbx      = rnd(-200, 200)  * mobileScale;
-    targetParams.hby      = rnd(-550, -200) * mobileScale;  // keep pivot away from centre
+    targetParams.hby      = rnd(-550, -200) * mobileScale;
     targetParams.hdist    = rnd(50,  600)   * mobileScale;
     targetParams.larm1    = rnd(20,  180)   * mobileScale;
     targetParams.rarm1    = rnd(20,  180)   * mobileScale;
@@ -239,16 +276,52 @@ function randomize() {
     targetParams.ext      = rnd(0,   120);
     targetParams.handlrot = rnd(0,   360);
 
-    targetParams.growth   = 0;
-    targetParams.volume   = 0; // Keep zero: volume oscillation causes broken geometry
-    targetParams.driftL   = 0;
-    targetParams.driftR   = 0;
-    targetParams.driftC   = 0;
-    targetParams.speed    = 400; // Super fast generation
+    targetParams.speed    = 120; // Lower speed (from 400) to generate figures slowly and meditatively
     targetParams.colormode = 4;
 
-    // Symmetry: 1 (none) to 12-fold for massive variety
-    const symOpts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+    // ── Скрытые параметры — включаются по режиму ────────────────────────────
+    // По умолчанию всё выключено
+    targetParams.growth  = 0;
+    targetParams.volume  = 0;
+    targetParams.driftL  = 0;
+    targetParams.driftR  = 0;
+    targetParams.driftC  = 0;
+
+    if (mode === 1) {
+        // Живая: лёгкий дрейф скоростей — линии «виляют», создавая
+        // шёлковые переливы и муар без распада геометрии
+        targetParams.driftL = rnd(0.002, 0.025) * sign();
+        targetParams.driftR = rnd(0.002, 0.025) * sign();
+        targetParams.driftC = rnd(0.001, 0.010) * sign();
+
+    } else if (mode === 2) {
+        // Пульсирующая: расстояние между осями дышит → 3D-эффект
+        // Маленький volume чтобы геометрия не рвалась
+        targetParams.volume = rnd(0.02, 0.12);
+
+    } else if (mode === 3) {
+        // Растущая: рычаги удлиняются в процессе → цветок/галактика
+        // Маленький growth — фигура успевает раскрыться, не выйдя за экран
+        targetParams.growth = rnd(0.0001, 0.0006) * sign();
+
+    } else if (mode === 4) {
+        // Полный хаос: все три параметра вместе, но мягко
+        targetParams.driftL = rnd(0.001, 0.018) * sign();
+        targetParams.driftR = rnd(0.001, 0.018) * sign();
+        targetParams.driftC = rnd(0.001, 0.008) * sign();
+        targetParams.volume = rnd(0.01,  0.08);
+        targetParams.growth = rnd(0.00005, 0.0003) * sign();
+    }
+    // mode === 0: всё по нулям — чистая классическая спираль
+
+    // ── Symmetry: 1 (none) to 12-fold ───────────────────────────────────────
+    // В режимах хаоса и роста чаще низкая симметрия (1-3), в классике — любая
+    let symOpts;
+    if (mode === 3 || mode === 4) {
+        symOpts = [1, 1, 2, 3]; // чаще асимметрия → интереснее абстракция
+    } else {
+        symOpts = [1, 2, 3, 4, 5, 6, 8, 10, 12];
+    }
     targetParams.symmetry = symOpts[Math.floor(Math.random() * symOpts.length)];
 
     // ── Viewport safety: scale DOWN if too large, scale UP if too small ─────
@@ -290,8 +363,8 @@ function randomize() {
 }
 
 function updateDisplay() {
-    if (valLrpmEl) valLrpmEl.textContent = params.lrota.toFixed(2);
-    if (valRrpmEl) valRrpmEl.textContent = params.rrota.toFixed(2);
+    if (valLrpmEl) valLrpmEl.textContent = params.lrota.toFixed(3);
+    if (valRrpmEl) valRrpmEl.textContent = params.rrota.toFixed(3);
     // Determine symmetry text based on ratio
     let symTxt = "ASYM";
     if (params.rrota % params.lrota === 0 || params.lrota % params.rrota === 0) symTxt = "SYM";
@@ -496,6 +569,8 @@ if (redrawBtn) {
         }
     });
 }
+
+
 
 
 // ── SVG Export ────────────────────────────────────────────────────────────────
