@@ -326,7 +326,7 @@ function executeEnterSection(nodeIndex, isInstant = false) {
       isGallery1 = true;
     
       // Fade in Intro Text for ALL galleries
-      const titles = container.querySelectorAll('.g1-elegant-title, .g1-intro-text, .g1-intro-sub, .scroll-down-hint, .about-coat-of-arms');
+      const titles = container.querySelectorAll('.g1-elegant-title, .g1-intro-text, .g1-intro-sub, .scroll-down-hint, .about-coat-of-arms, .about-portrait');
       if(titles.length > 0) {
         if (isInstant) {
           gsap.set(titles, { opacity: 1, y: 0 });
