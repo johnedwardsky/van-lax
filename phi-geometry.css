@@ -273,6 +273,11 @@ footer {
         padding: 8px 10px;
     }
 
+    #toggle-points,
+    .btn-group a[href*="abrakadabra"] {
+        display: none !important;
+    }
+
     .btn-group .btn-home {
         margin-top: 0.4rem;
         border: none !important;
@@ -286,6 +291,8 @@ footer {
         display: inline-block;
         box-shadow: none !important;
         padding: 4px 8px;
+        order: 99;
+        align-self: center;
     }
 
     .btn-group .btn-home:hover {
