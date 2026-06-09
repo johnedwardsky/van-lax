@@ -2,7 +2,6 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const randomizeBtn = document.getElementById('randomize');
 const togglePointsBtn = document.getElementById('toggle-points');
-const shapeNameEl = document.getElementById('shape-name');
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const SQRT2 = Math.sqrt(2);
@@ -137,11 +136,6 @@ function generateInfiniteGeometry() {
         circles[i].r = c.r;
     });
 
-    // Generate Poetic Name
-    const adj = t.adjectives[Math.floor(Math.random() * t.adjectives.length)];
-    const noun = t.nouns[Math.floor(Math.random() * t.nouns.length)];
-    const ratioName = ['φ', '√2', '√3'][Math.floor(Math.random() * 3)];
-    shapeNameEl.innerHTML = `<span style="opacity: 0.5; font-weight: 200;">${t.projection}</span> ${adj} ${noun} ${ratioName}`;
     
     document.getElementById('val-phi').textContent = PHI.toFixed(3);
     document.getElementById('val-sqrt2').textContent = SQRT2.toFixed(3);
