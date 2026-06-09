@@ -46,7 +46,7 @@
       <h2 id="welcome-popup-title" class="wlc-logo">ВАН ЛАКС</h2>
       <div class="wlc-divider"></div>
       <p class="wlc-body">Добро пожаловать в Творческий дом Ван Лакса — приватное пространство, где вас приглашают исследовать творческое видение и философию современного художника.</p>
-      <p class="wlc-quote">Всё в нашем мире упорядочено и взаимосвязано.</p>
+      <p class="wlc-quote">Каждый завиток прекрасен и раскрывается в своих идеальных формах бытия по единым законам вселенной, божественному принципу золотого сечения.</p>
       <div id="gate-form" class="wlc-gate-form">
         <span class="wlc-invite-label">Введите инвайт-код</span>
         <div class="wlc-code-wrap">
@@ -118,17 +118,17 @@
           <div class="tooltip tooltip-right">Знания...</div>
         </div>
         
-        <div class="hotspot" id="hs-music" style="left: 31%; top: 39%;" onclick="flyThrough(5)">
+        <div class="hotspot" id="hs-music" style="left: 31%; top: 39%;" onclick="flyThrough(6)">
           <div class="ring"></div>
           <div class="tooltip tooltip-right">Музыка...</div>
         </div>
         
-        <div class="hotspot" id="hs-gallery2" style="left: 35%; top: 65%;" onclick="flyThrough(4)">
+        <div class="hotspot" id="hs-gallery2" style="left: 35%; top: 65%;" onclick="flyThrough(5)">
           <div class="ring"></div>
           <div class="tooltip tooltip-right">АБРАКАДАБРА</div>
         </div>
         
-        <div class="hotspot" id="hs-gallery3" style="left: 65%; top: 60%;" onclick="flyThrough(5)">
+        <div class="hotspot" id="hs-gallery3" style="left: 65%; top: 60%;" onclick="flyThrough(6)">
           <div class="ring"></div>
           <div class="tooltip tooltip-right">Галерея #3</div>
         </div>
@@ -158,6 +158,10 @@
               <span class="nav-text">ГЕОМЕТРИЯ ФИ</span>
             </li>
             <li onclick="flyThrough(4)">
+              <span class="gold-num">∞</span> 
+              <span class="nav-text">СПИРАЛИ ВРЕМЕНИ</span>
+            </li>
+            <li onclick="flyThrough(5)">
               <span class="gold-num">3</span> 
               <span class="nav-text">АБРАКАДАБРА</span>
             </li>
@@ -167,27 +171,27 @@
         </div>
 
         <div class="footer-left" style="margin-top:auto;">
-          <p class="nav-link" onclick="flyThrough(8)">О нас</p>
-          <p class="nav-link" onclick="flyThrough(9)">Контакты</p>
+          <p class="nav-link" onclick="flyThrough(9)">Об Авторе</p>
+          <p class="nav-link" onclick="flyThrough(10)">Контакты</p>
         </div>
       </aside>
 
       <!-- RIGHT PANEL -->
       <aside class="side-panel panel-right">
         <div class="panel-section">
-          <div class="category-btn" onclick="flyThrough(5)">
+          <div class="category-btn" onclick="flyThrough(6)">
             <span class="section-prefix"></span>
             <h2 class="section-title right-title gold">МУЗЫКА</h2>
           </div>
         </div>
         <div class="panel-section">
-          <div class="category-btn" onclick="flyThrough(6)">
+          <div class="category-btn" onclick="flyThrough(7)">
             <span class="section-prefix"></span>
             <h2 class="section-title right-title gold">КНИГА</h2>
           </div>
         </div>
         <div class="panel-section">
-          <div class="category-btn" onclick="flyThrough(7)">
+          <div class="category-btn" onclick="flyThrough(8)">
             <span class="section-prefix"></span>
             <h2 class="section-title right-title gold">МАГАЗИН</h2>
           </div>
@@ -216,8 +220,8 @@
 
       <!-- Mobile-only footer (visible only on small screens) -->
       <div id="mobile-footer">
-        <p class="nav-link" onclick="flyThrough(8)">О нас</p>
-        <p class="nav-link" onclick="flyThrough(9)">Контакты</p>
+        <p class="nav-link" onclick="flyThrough(9)">Об Авторе</p>
+        <p class="nav-link" onclick="flyThrough(10)">Контакты</p>
         <p class="copyright">&copy; 2026 Van Lax. Все права защищены.<br>Настоящий сайт и все представленные на нем предметы искусства являются авторскими работами Ивана Лакшинского под творческим псевдонимом Ван Лакс.</p>
       </div>
 
@@ -270,6 +274,13 @@
         <button class="start-view-btn btn-gold fade-in" onclick="enterPhi('ru')">Войти</button>
       </section>
 
+      <!-- Node ∞: Spirals of Time -->
+      <section class="gallery-node" id="node-spirals">
+        <h2 class="fade-in theme-glow-gold" style="margin-bottom:0;">∞ &nbsp;СПИРАЛИ ВРЕМЕНИ</h2>
+        <h3 class="fade-in subtitle" style="margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.3em; color: #C9A96E; font-size: 1.1rem;">ЖИВОПИСЬ</h3>
+        <button class="start-view-btn btn-gold fade-in" onclick="enterSpirals()">Войти</button>
+      </section>
+
       <!-- Node 3: Generative Gallery -->
       <section class="gallery-node" id="node-3">
         <h2 class="fade-in theme-glow-cyan" style="margin-bottom:0;">ГАЛЕРЕЯ АБРАКАДАБРА</h2>
@@ -298,7 +309,7 @@
 
       <!-- Node 7: About -->
       <section class="gallery-node" id="node-7">
-        <h2 class="fade-in theme-glow-gold">О НАС</h2>
+        <h2 class="fade-in theme-glow-gold">ОБ АВТОРЕ</h2>
         <button class="start-view-btn btn-gold fade-in" onclick="enterSection(7)">Войти</button>
       </section>
 
@@ -739,14 +750,19 @@
     </div>
     <div class="g1-scroll-content">
       <div class="g1-intro-section">
-        <div class="g1-elegant-title">О НАС <span>#7</span></div>
-        <h1 class="g1-intro-text">Ван Лакс</h1>
+        <div class="g1-elegant-title">ОБ АВТОРЕ <span>#7</span></div>
+        <h1 class="g1-intro-text" style="margin-bottom: 5px;">Ван Лакс</h1>
+        <p class="g1-intro-sub" style="font-size: clamp(1rem, 1.8vw, 1.35rem); color: rgba(255,255,255,0.45); font-weight: 300; letter-spacing: 0.15em; margin-top: 0; margin-bottom: 0; text-transform: uppercase;">Иван Лакшинский</p>
       </div>
       
       <div class="sacred-story" style="margin-top: 0; padding-top: 0;">
         <div class="about-coat-of-arms">
           <img src="assets/coat_of_arms.svg" alt="Герб творческого дома Ван Лакс" class="coat-img">
         </div>
+        <blockquote class="manifesto-quote">
+          <p>«Искусство художника-дизайнера новой эпохи отражает реалии современности, где технологии, философия реального мира или иллюзий тесно переплетаются с экзистенциальными витками времени. Оглядываясь назад, мы понимаем, как многое циклично: сюжеты, ценности, привычки или ошибки.</p>
+          <p>Всё словно сосредоточено вокруг нас, и в то же время мы порой блуждаем по кругу, не замечая этого. И всё же любые события, люди, красота, иллюзии и мир, в котором мы живём, — каждый завиток прекрасен и раскрывается в своих идеальных формах бытия по единым законам вселенной, божественному принципу золотого сечения. Будь то геометрия, звук, цвет или аромат эфирных нот».</p>
+        </blockquote>
         <p>На стыке эпох мы получили колоссальные знания. Сегодня старый мир рушится, а контуры нового только начинают проступать сквозь туман неизвестности. Во все времена искусство отражало дух эпохи и готовило умы к глубокой трансформации. Меня зовут Иван Лакшинский (Ivan Lakshinsky) aka Van Lax. Я родом из России, родился в Сибири, учился в Англии и непрерывно совершенствовал свое творчество, вдохновляясь многогранностью этого мира. Я — исследователь и проводник в будущее.</p>
         
         <p>«Творческий дом Ван Лакс» — это не просто моё портфолио. Это первое и единственное в мире виртуальное пространство, где академическое искусство сливается с новейшими веб-технологиями и сакральной геометрией. Здесь древние знания сбрасывают свою вуаль благодаря цифровому коду. Искусство сегодня как никогда жаждет не просто зрителя, а активного соучастника, способного мыслить и чувствовать.</p>
@@ -952,7 +968,7 @@
       const section = urlParams.get('section');
       if (section === '3') {
         setTimeout(() => {
-          if (typeof flyThrough === 'function') flyThrough(3, true);
+          if (typeof flyThrough === 'function') flyThrough(5, true);
           if (typeof enterSection === 'function') enterSection(3, true);
         }, 500);
       }

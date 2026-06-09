@@ -13,9 +13,10 @@
 
   // Map of EN page → RU page
   const RU_MAP = {
-    'index.html':         'index-ru.html',
-    'abrakadabra.html':   'abrakadabra-ru.html',
-    'phi-geometry.html':  'phi-geometry-ru.html',
+    'index.html':              'index-ru.html',
+    'abrakadabra.html':        'abrakadabra-ru.html',
+    'phi-geometry.html':       'phi-geometry-ru.html',
+    'spirals-of-time-en.html': 'spirals-of-time.html',
   };
   const ROOT_REDIRECT = 'index-ru.html';
 

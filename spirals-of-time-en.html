@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spirals of Time | Van Lax — Generative Art</title>
+  <meta name="description" content="Spirals of Time — a generative painting gallery by Van Lax. A meditation on the recurrence of temporal events, spirals of knowledge, and the beautiful forms that create patterns in space and time.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gate.css">
+  <script>window.GATE_LOCKED_PAGE = true;</script>
+  <script src="gate.js" defer></script>
+  <style>
+    :root {
+      --bg: #05070a;
+      --gold: #E5B236;
+      --gold-dim: rgba(229, 178, 54, 0.4);
+      --gold-glow: rgba(229, 178, 54, 0.15);
+      --silver: #c8c8c8;
+      --glass: rgba(8, 10, 16, 0.82);
+      --border: rgba(229, 178, 54, 0.18);
+      --frame-gold: #C9962A;
+      --font-serif: 'Cormorant Garamond', serif;
+      --font-sans: 'Montserrat', sans-serif;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--silver);
+      font-family: var(--font-sans);
+      overflow: hidden;
+    }
+
+    /* ─── STARFIELD CANVAS ─────────────────────────────── */
+    #stars-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── MAIN LAYOUT ──────────────────────────────────── */
+    #page {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 42% 58%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── LEFT PANEL ───────────────────────────────────── */
+    #left-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5vh 4vw 5vh 5vw;
+      position: relative;
+      z-index: 2;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    #left-panel::-webkit-scrollbar { display: none; }
+
+    /* subtle left-side vignette */
+    #left-panel::before {
+      content: '';
+      position: fixed;
+      left: 0; top: 0;
+      width: 42%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(5,7,10,0.9) 60%, transparent);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* lang switch */
+    .lang-switch {
+      position: fixed;
+      top: 22px; right: 28px;
+      display: flex; gap: 7px; align-items: center;
+      font-family: var(--font-sans);
+      font-size: 11px; font-weight: 300;
+      letter-spacing: 0.12em;
+      z-index: 100;
+    }
+    .lang-switch a { color: rgba(255,255,255,0.45); text-decoration: none; transition: 0.3s; }
+    .lang-switch a:hover, .lang-switch a.active { color: var(--gold); }
+    .lang-switch a.active { font-weight: 500; pointer-events: none; }
+    .lang-switch span { color: rgba(255,255,255,0.2); }
+
+    /* return link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+      color: rgba(229,178,54,0.5);
+      text-decoration: none;
+      margin-bottom: 3.5vh;
+      transition: color 0.3s;
+    }
+    .back-link:hover { color: var(--gold); }
+    .back-link svg { transition: transform 0.3s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* gallery label */
+    .gallery-label {
+      font-family: var(--font-sans);
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 0.55em; text-transform: uppercase;
+      color: rgba(229,178,54,0.55);
+      margin-bottom: 14px;
+    }
+
+    /* main title */
+    h1.gallery-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.4rem, 4vw, 3.4rem);
+      font-weight: 300;
+      color: var(--gold);
+      letter-spacing: 0.07em;
+      line-height: 1.12;
+      margin-bottom: 10px;
+      text-shadow: 0 0 60px rgba(229,178,54,0.2);
+    }
+
+    .title-subtitle {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+      color: rgba(229,178,54,0.5);
+      letter-spacing: 0.06em;
+      margin-bottom: 3.5vh;
+    }
+
+    /* gold divider */
+    .gold-divider {
+      width: 52px; height: 1px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+      margin-bottom: 3.2vh;
+    }
+
+    /* description blocks */
+    .desc-block {
+      margin-bottom: 2.8vh;
+    }
+    .desc-block h3 {
+      font-family: var(--font-serif);
+      font-size: clamp(1rem, 1.6vw, 1.2rem);
+      font-weight: 400;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+    .desc-block p {
+      font-family: var(--font-serif);
+      font-size: clamp(0.88rem, 1.3vw, 1rem);
+      font-weight: 300;
+      line-height: 1.78;
+      color: rgba(210, 205, 195, 0.82);
+    }
+
+    /* text overlay on the first canvas */
+    .card-text-overlay {
+      position: absolute;
+      inset: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 3;
+      opacity: 1;
+      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      text-align: center;
+    }
+    .browsing .card-text-overlay {
+      opacity: 0;
+    }
+    .card-philosophy-text {
+      max-width: 86%;
+      margin: 0 auto;
+      position: relative;
+      padding: 0 30px;
+    }
+    .card-philosophy-text::before {
+      content: '«';
+      position: absolute;
+      left: -15px;
+      top: -20px;
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 7vh, 5rem);
+      color: rgba(229, 178, 54, 0.22);
+      line-height: 1;
+    }
+    .card-philosophy-text::after {
+      content: '»';
+      position: absolute;
+      right: -15px;
+      bottom: -40px;
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 7vh, 5rem);
+      color: rgba(229, 178, 54, 0.22);
+      line-height: 1;
+    }
+    .card-philosophy-text p {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: clamp(0.72rem, 1.72vh, 1.02rem);
+      line-height: 1.75;
+      color: var(--silver);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(200, 200, 200, 0.12);
+      margin-bottom: 2.2vh;
+    }
+    .card-philosophy-text p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* artwork info (shown when navigating) */
+    #artwork-info {
+      margin-bottom: 3vh;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      pointer-events: none;
+    }
+    #artwork-info.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .artwork-number {
+      font-family: var(--font-sans);
+      font-size: 9px; letter-spacing: 0.5em; text-transform: uppercase;
+      color: rgba(229,178,54,0.4);
+      margin-bottom: 8px;
+    }
+    #artwork-title {
+      font-family: var(--font-serif);
+      font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+      font-weight: 300;
+      color: #fff;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+    #artwork-desc {
+      font-family: var(--font-serif);
+      font-size: clamp(0.85rem, 1.25vw, 0.97rem);
+      line-height: 1.75;
+      color: rgba(210,205,195,0.78);
+      font-style: italic;
+    }
+
+    /* ─── BUTTONS ───────────────────────────────────────── */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 2.5vh;
+    }
+
+    .vl-btn {
+      background: transparent;
+      border: 1px solid rgba(229,178,54,0.5);
+      color: var(--gold);
+      padding: 11px 22px;
+      font-family: var(--font-sans);
+      font-size: 10px; font-weight: 300;
+      letter-spacing: 0.25em; text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 7px;
+      transition: all 0.4s ease;
+      white-space: nowrap;
+    }
+    .vl-btn:hover {
+      background: rgba(229,178,54,0.08);
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(229,178,54,0.12);
+    }
+    .vl-btn.primary {
+      border-color: var(--gold);
+      background: transparent;
+    }
+    .vl-btn.secondary {
+      border-color: rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.55);
+    }
+    .vl-btn.secondary:hover {
+      border-color: rgba(255,255,255,0.6);
+      color: #fff;
+      box-shadow: none;
+    }
+    .vl-btn:disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .vl-btn svg { flex-shrink: 0; }
+
+    /* nav controls (prev/next) */
+    #nav-controls {
+      display: flex; gap: 10px; align-items: center;
+      margin-top: 10px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    #nav-controls.visible {
+      opacity: 1; pointer-events: auto;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid rgba(229,178,54,0.4);
+      color: var(--gold);
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.35s ease;
+      font-size: 18px;
+    }
+    .nav-btn:hover {
+      background: rgba(229,178,54,0.1);
+      border-color: var(--gold);
+      box-shadow: 0 0 15px rgba(229,178,54,0.15);
+    }
+    .nav-btn:disabled {
+      opacity: 0.22;
+      cursor: not-allowed;
+    }
+
+    .nav-counter {
+      font-family: var(--font-sans);
+      font-size: 10px; letter-spacing: 0.3em;
+      color: rgba(229,178,54,0.5);
+      padding: 0 4px;
+    }
+
+    /* ─── RIGHT PANEL: GALLERY STAGE ──────────────────── */
+    #right-panel {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding-left: 0;
+    }
+
+    /* right-side fade */
+    #right-panel::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0;
+      width: 12%;
+      height: 100%;
+      background: linear-gradient(to left, rgba(5,7,10,0.95), transparent);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* the container for accordion cards */
+    #cards-track {
+      position: relative;
+      display: flex;
+      align-items: center;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ─── PAINTING CARD ─────────────────────────────────── */
+    .painting-card {
+      position: absolute;
+      flex-shrink: 0;
+      /* large square */
+      --card-size: clamp(340px, 70vh, 620px);
+      width: var(--card-size);
+      height: var(--card-size);
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.7s ease,
+                  filter 0.7s ease;
+      will-change: transform, opacity, filter;
+    }
+
+    /* Thin gold frame with deep volumetric shadow */
+    .card-frame {
+      width: 100%; height: 100%;
+      position: relative;
+      padding: 2px;
+      background: linear-gradient(145deg,
+        #9A7B1A 0%, #D4A520 25%, #E5B236 50%,
+        #D4A520 75%, #9A7B1A 100%
+      );
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.4),
+        0 6px 14px rgba(0,0,0,0.5),
+        0 14px 36px rgba(0,0,0,0.55),
+        0 24px 60px rgba(0,0,0,0.4),
+        0 0 0 1px rgba(229,178,54,0.12),
+        inset 0 1px 0 rgba(255,220,100,0.15);
+    }
+
+    .card-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* subtle shimmer on active card only */
+    .painting-card[data-slot="0"] .card-frame::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        transparent 30%,
+        rgba(255,220,100,0.04) 50%,
+        transparent 70%
+      );
+      pointer-events: none;
+      animation: frameShimmer 5s ease-in-out infinite;
+    }
+    @keyframes frameShimmer {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    .card-overlay {
+      position: absolute;
+      inset: 2px;
+      background: var(--bg);
+      opacity: 0.88;
+      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .browsing .card-overlay {
+      opacity: 0;
+    }
+
+    /* ─── PARTICLE FLOAT ANIMATION ───────────────────────── */
+    @keyframes floatUp {
+      0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
+      50%  { transform: translateY(-30px) translateX(8px) scale(1.1); opacity: 1; }
+      100% { transform: translateY(-60px) translateX(-4px) scale(0.9); opacity: 0; }
+    }
+
+    /* ─── INTRO STATE / BROWSING STATE ──────────────────── */
+    #intro-content { transition: opacity 0.5s ease; }
+    #intro-content.hidden {
+      opacity: 0; pointer-events: none;
+      position: absolute;
+    }
+
+    #browse-content {
+      opacity: 0; pointer-events: none;
+      position: absolute;
+      width: 100%;
+      transition: opacity 0.5s ease 0.3s;
+    }
+    #browse-content.visible {
+      opacity: 1; pointer-events: auto;
+      position: relative;
+    }
+
+    /* ─── SCROLL HINT ─────────────────────────────────── */
+    .subtle-gradient-top {
+      position: fixed;
+      top: 0; left: 0;
+      width: 42%; height: 12vh;
+      background: linear-gradient(to bottom, rgba(5,7,10,1), transparent);
+      pointer-events: none;
+      z-index: 3;
+    }
+    .subtle-gradient-bottom {
+      position: fixed;
+      bottom: 0; left: 0;
+      width: 42%; height: 12vh;
+      background: linear-gradient(to top, rgba(5,7,10,1), transparent);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* ─── COSMIC GLOW BEHIND ACTIVE PAINTING ─────────────── */
+    #painting-glow {
+      position: absolute;
+      width: clamp(300px, 38vh, 520px);
+      height: clamp(300px, 38vh, 520px);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(229,178,54,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      animation: glowPulse 5s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+      50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.05); }
+    }
+
+    /* ─── LOADING FADE ───────────────────────────────────── */
+    #page-loader {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 999;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.8s ease;
+    }
+    #page-loader.done { opacity: 0; pointer-events: none; }
+    .loader-text {
+      font-family: var(--font-serif);
+      font-size: 1rem; letter-spacing: 0.5em;
+      color: rgba(229,178,54,0.5);
+      text-transform: uppercase;
+      animation: loaderPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes loaderPulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+
+    /* ═══════════════════════════════════════════════════
+       MOBILE ADAPTATION
+       ═══════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      html, body {
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: auto;
+      }
+
+      #page {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow: visible;
+      }
+
+      #left-panel {
+        padding: 22px 20px 40px;
+        justify-content: flex-start;
+        overflow: visible;
+      }
+      #left-panel::before { display: none; }
+
+      .subtle-gradient-top,
+      .subtle-gradient-bottom { display: none; }
+
+      .gallery-label {
+        font-size: 8px;
+        letter-spacing: 0.4em;
+        margin-bottom: 8px;
+      }
+
+      h1.gallery-title {
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+      }
+      h1.gallery-title br { display: none; }
+
+      .title-subtitle {
+        font-size: 0.85rem;
+        margin-bottom: 2vh;
+      }
+
+      .gold-divider { margin-bottom: 2vh; }
+
+      /* ─── Right panel becomes inline in flow ─── */
+      #right-panel {
+        width: 100%;
+        height: calc(min(82vw, 82vw) + 12px);
+        padding: 0;
+        display: block;
+        position: relative;
+        margin: 0 auto 15px;
+      }
+      #right-panel::after { display: none; }
+      #painting-glow { display: none; }
+
+      #cards-track {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      .painting-card {
+        --card-size: min(82vw, 82vw);
+        width: var(--card-size);
+        height: var(--card-size);
+        position: absolute !important;
+        left: 50%;
+        top: 50%;
+        margin-left: calc(-1 * var(--card-size) / 2);
+        margin-top: calc(-1 * var(--card-size) / 2);
+        display: block !important;
+        transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.65s ease,
+                    filter 0.65s ease !important;
+      }
+
+      .card-frame {
+        box-shadow:
+          0 4px 16px rgba(0,0,0,0.5),
+          0 10px 30px rgba(0,0,0,0.35);
+      }
+
+      /* Text overlay on mobile */
+      .card-text-overlay { inset: 8px; }
+      .card-philosophy-text {
+        max-width: 92%;
+        padding: 0 18px;
+      }
+      .card-philosophy-text p {
+        font-size: 0.76rem;
+        line-height: 1.75;
+        margin-bottom: 1.5vh;
+      }
+      .card-philosophy-text::before {
+        font-size: 2.2rem;
+        left: -6px;
+        top: -12px;
+      }
+      .card-philosophy-text::after {
+        font-size: 2.2rem;
+        right: -6px;
+        bottom: -20px;
+      }
+
+      /* Description blocks */
+      .desc-block { margin-bottom: 2vh; }
+      .desc-block h3 { font-size: 1rem; margin-bottom: 6px; }
+      .desc-block p { font-size: 0.94rem; line-height: 1.85; }
+
+      /* Layout reordering with flex direction & order */
+      #intro-content {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      #start-row {
+        order: 1 !important;
+        margin-top: 15px !important;
+        margin-bottom: 25px !important;
+        justify-content: center !important;
+      }
+      #intro-content .desc-block {
+        order: 2 !important;
+      }
+
+      #browse-content {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      /* Artwork info is moved above the paintings on mobile */
+      #artwork-info {
+        display: none !important;
+      }
+      .browsing #artwork-info {
+        display: block !important;
+        margin-top: 18px !important;
+        margin-bottom: 22px !important;
+        border-left: 1px solid var(--border);
+        padding-left: 14px;
+        min-height: 90px;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
+      .browsing #artwork-info.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      #artwork-title { font-size: 1.15rem; margin-bottom: 6px; }
+      #artwork-desc { font-size: 0.92rem; line-height: 1.8; }
+
+      /* Nav controls centered and right under paintings */
+      #nav-controls {
+        order: 1 !important;
+        margin-top: 15px !important;
+        margin-bottom: 15px !important;
+        justify-content: center !important;
+        display: flex !important;
+      }
+
+      /* Button rows centered */
+      .btn-row {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      #browse-content .btn-row {
+        order: 2 !important;
+        margin-top: 35px !important;
+        margin-bottom: 30px !important;
+        display: flex !important;
+      }
+      #start-row {
+        justify-content: center;
+      }
+
+      .vl-btn {
+        padding: 10px 16px;
+        font-size: 9px;
+        letter-spacing: 0.2em;
+      }
+
+      .nav-btn {
+        width: 40px;
+        height: 40px;
+      }
+
+      /* Lang switch */
+      .lang-switch {
+        top: 14px;
+        right: 16px;
+        font-size: 10px;
+      }
+
+      /* Swipe hint */
+      .swipe-hint {
+        text-align: center;
+        font-family: var(--font-sans);
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(229,178,54,0.35);
+        margin-top: 8px;
+        opacity: 1;
+        transition: opacity 0.5s ease;
+      }
+      .swipe-hint.hidden { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Page loader -->
+<div id="page-loader">
+  <span class="loader-text">Spirals of Time</span>
+</div>
+
+<!-- Starfield -->
+<canvas id="stars-canvas"></canvas>
+
+<!-- Gate elements (for consistency) -->
+<div id="gothic-gate-container"></div>
+<div id="welcome-popup-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="welcome-popup-title">
+  <div id="welcome-popup">
+    <button class="wlc-close-btn" onclick="closeGatePopup()" aria-label="Close">&times;</button>
+    <div class="wlc-crest">
+      <img src="assets/coat_of_arms.svg" alt="Crest" class="wlc-crest-img">
+    </div>
+    <p class="wlc-sup">THE HOUSE OF</p>
+    <h2 id="welcome-popup-title" class="wlc-logo">VAN LAX</h2>
+    <div class="wlc-divider"></div>
+    <p class="wlc-body">This is a private space. Enter your invite code to access Spirals of Time.</p>
+    <div id="gate-form" class="wlc-gate-form">
+      <span class="wlc-invite-label">Enter your invite code</span>
+      <div class="wlc-code-wrap">
+        <input id="invite-code-input" class="wlc-code-input" type="text" maxlength="13"
+               placeholder="VLX-XXXX-XXXX" autocomplete="off" spellcheck="false"/>
+      </div>
+      <p id="gate-error" class="wlc-gate-error" aria-live="polite"></p>
+      <button id="invite-submit-btn" class="wlc-gate-submit" onclick="submitInviteCode()">VERIFY ACCESS</button>
+    </div>
+    <div id="gate-success" class="wlc-gate-success" style="display:none">
+      <p class="wlc-access-granted">&#10003;&ensp;ACCESS GRANTED</p>
+      <p class="wlc-body" style="margin:0;">The gates of Van Lax open before you.</p>
+    </div>
+  </div>
+</div>
+<div id="cookie-banner" role="complementary" style="display:none"></div>
+
+<!-- Lang switch -->
+<div class="lang-switch">
+  <a href="spirals-of-time.html">RU</a>
+  <span>|</span>
+  <a href="spirals-of-time-en.html" class="active">EN</a>
+</div>
+
+<!-- Gradient overlays for left panel scroll -->
+<div class="subtle-gradient-top"></div>
+<div class="subtle-gradient-bottom"></div>
+
+<!-- ─── MAIN LAYOUT ─────────────────────────────────── -->
+<div id="page">
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+
+
+
+    <div class="gallery-label">Van Lax — Generative Gallery</div>
+    <h1 class="gallery-title">Spirals of<br>Time</h1>
+    <p class="title-subtitle">Spirals of Time</p>
+
+    <div class="gold-divider"></div>
+
+    <!-- INTRO CONTENT (visible before "Begin") -->
+    <div id="intro-content">
+      <div class="desc-block">
+        <h3>I. The Spiral of Time</h3>
+        <p>Time does not move in a straight line — it spirals, returning to its origins, weaving unique narratives from the very same notes. Every event, every encounter, every choice is a turn of a single thread that weaves the fabric of reality. Repetition is not a cycle of stagnation. It is a spiral of growth, where each revolution elevates to a new level.</p>
+      </div>
+
+      <div class="desc-block">
+        <h3>II. The Spiral of Knowledge</h3>
+        <p>A thought turned upon itself again and again does not repeat — it deepens. Sequences, patterns, rhythms of knowledge — these are the threads from which beautiful forms ultimately emerge. In space and time, any sufficiently long sequence gives rise to order, and order — to beauty.</p>
+      </div>
+
+
+
+      <div class="btn-row" id="start-row">
+        <a href="phi-geometry.html" class="vl-btn secondary">Phi Geometry</a>
+        <button class="vl-btn primary" id="start-btn">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1"/>
+            <path d="M4.5 3.5L8.5 6L4.5 8.5V3.5Z" fill="currentColor"/>
+          </svg>
+          Begin Viewing
+        </button>
+      </div>
+    </div>
+
+    <!-- BROWSE CONTENT (visible after "Begin") -->
+    <div id="browse-content">
+      <!-- artwork info block -->
+      <div id="artwork-info">
+        <div class="artwork-number" id="artwork-number">Artwork 01 / 18</div>
+        <div id="artwork-title">—</div>
+        <div id="artwork-desc"></div>
+      </div>
+
+      <!-- nav controls -->
+      <div id="nav-controls" class="visible">
+        <button class="nav-btn" id="btn-prev" disabled aria-label="Previous">
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <path d="M15 6H1M1 6L6 1M1 6L6 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <span class="nav-counter" id="nav-counter">01 / 18</span>
+        <button class="nav-btn" id="btn-next" aria-label="Next">
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <path d="M1 6H15M15 6L10 1M15 6L10 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="btn-row" style="margin-top: 10vh;">
+        <a href="phi-geometry.html" class="vl-btn secondary">Phi Geometry</a>
+        <button id="restart-btn" class="vl-btn primary" style="display: none;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          Restart
+        </button>
+        <button id="back-to-intro-btn" class="vl-btn secondary">About Gallery</button>
+        <a href="abrakadabra.html" class="vl-btn secondary">Become a Creator</a>
+      </div>
+    </div>
+
+  </div><!-- /left-panel -->
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div id="painting-glow"></div>
+
+    <!-- Cards track -->
+    <div id="cards-track">
+      <!-- Cards generated by JS -->
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+/* ===================================================
+   SPIRALS OF TIME — GALLERY LOGIC
+   =================================================== */
+
+// ─── DATA ────────────────────────────────────────────
+const PAINTINGS = [
+  { id: 1,  title: 'The First Spiral',        desc: 'In the beginning — a point. From a point — a line. From a line — a circle. From a circle — a spiral. The first work of the series: the birth of form from pure intention.' },
+  { id: 2,  title: 'Echo',                    desc: 'Every sound leaves a trace in the fabric of time. This work is about how the past continues to resonate in the present, creating invisible harmonics.' },
+  { id: 3,  title: 'Orbits',                  desc: 'Planets, thoughts, destinies — everything moves in orbits. Gravity determines the trajectory, and trajectory determines fate.' },
+  { id: 4,  title: 'Knot of Times',           desc: 'A point where several timelines intersect. Here, past and future exist simultaneously, creating a complex yet perfect pattern.' },
+  { id: 5,  title: 'Breath of the Universe',  desc: 'The Universe breathes. It expands and contracts, pulsating to a rhythm we call time. This work is an attempt to depict a single exhale of the cosmos.' },
+  { id: 6,  title: 'Ariadne\'s Thread',       desc: 'In every labyrinth, there is a thread. The algorithm found its own — and traced a path through chaos to this form. Beauty saves not just the world, but mathematics too.' },
+  { id: 7,  title: 'Memory of Water',         desc: 'Water remembers every touch. Time preserves every event. This painting is about the fact that nothing disappears — it only changes form.' },
+  { id: 8,  title: 'Quantum Garden',           desc: 'Where does certainty end and probability begin? This garden exists in all states simultaneously — until you look at it.' },
+  { id: 9,  title: 'The Golden Ratio',         desc: 'The proportion that nature uses everywhere: in seashells, in galaxies, in flower petals. The algorithm reproduced it — and found beauty.' },
+  { id: 10, title: 'Point of No Return',       desc: 'There is a moment after which a system changes irreversibly. This work depicts the moment of transformation — beautiful and inevitable.' },
+  { id: 11, title: 'Infinite Pattern',         desc: 'A pattern that contains itself within itself. The fractal nature of time: any segment reflects the whole.' },
+  { id: 12, title: 'Star Map',                 desc: 'If you plot all the events of a life on a plane and draw lines between connected moments — you get a star map of destiny.' },
+  { id: 13, title: 'Resonance',                desc: 'When frequencies align — resonance is born. This work is about the idea that all great moments in history are a resonance of ideas.' },
+  { id: 14, title: 'Vortex of Creation',       desc: 'At the center of every creative act is a vortex. Chaos and order, chance and intention, freedom and law — they are all here.' },
+  { id: 15, title: 'Silence Between Notes',    desc: 'Music lives not in the sounds, but in the pauses between them. This painting is about the space between events that defines meaning.' },
+  { id: 16, title: 'Labyrinth of Times',       desc: 'Time is a labyrinth without dead ends. Every path leads somewhere, every decision opens a new room of reality.' },
+  { id: 17, title: 'The Final Coil',           desc: 'All spirals end someday — or do they? Perhaps the end of one spiral is the beginning of the next.' },
+  { id: 18, title: 'Perpetual Motion',         desc: 'The finale of the series: motion that never stops. Time continues. The spiral continues. Creation continues.' },
+];
+
+const TOTAL = PAINTINGS.length;
+let currentIndex = 0;
+let isBrowsing = false;
+let isAnimating = false;
+const VISIBLE_CARDS = 10; // more cards to fill width
+
+function isMobileView() {
+  return window.innerWidth <= 768;
+}
+
+// ─── STARFIELD ───────────────────────────────────────
+(function initStars() {
+  const canvas = document.getElementById('stars-canvas');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createStars() {
+    stars = [];
+    const N = Math.floor((canvas.width * canvas.height) / 5000);
+    for (let i = 0; i < N; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.1 + 0.2,
+        a: Math.random(),
+        s: (Math.random() * 0.4 + 0.2) * (Math.random() < 0.5 ? 1 : -1),
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  let raf;
+  function draw(t) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(st => {
+      const alpha = 0.3 + 0.4 * Math.abs(Math.sin(t * 0.0003 * Math.abs(st.s) + st.phase));
+      ctx.beginPath();
+      ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(220,210,180,${alpha})`;
+      ctx.fill();
+    });
+    raf = requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createStars(); });
+  resize();
+  createStars();
+  raf = requestAnimationFrame(draw);
+})();
+
+// ─── CALCULATE ACCORDION OFFSET ─────────────────────
+function getAccordionOffset(cardCount) {
+  if (isMobileView()) return 0;
+  const panel = document.getElementById('right-panel');
+  if (!panel || cardCount <= 1) return 30;
+  const panelW = panel.offsetWidth;
+  const cardEl = document.querySelector('.painting-card');
+  const cardW = cardEl ? cardEl.offsetWidth : 400;
+  // Spread remaining cards evenly from card edge to right edge
+  const availableSpace = panelW - cardW + 40; // 40px to bleed off edge
+  return Math.max(20, availableSpace / (cardCount - 1));
+}
+
+// ─── POSITION CARDS IN ACCORDION ─────────────────────
+function positionCards() {
+  const cards = document.querySelectorAll('.painting-card');
+  const count = cards.length;
+  const offset = getAccordionOffset(count);
+  const scaleStep = isMobileView() ? 0.02 : 0.012;
+
+  cards.forEach((card, slot) => {
+    const zIndex = count + 1 - slot;
+    const translateX = slot * offset;
+    const scale = 1 - slot * scaleStep;
+    const brightness = isMobileView()
+      ? Math.max(0.2, 1 - slot * 0.2)
+      : Math.max(0.06, 1 - slot * 0.11);
+    const opacity = isMobileView()
+      ? Math.max(0.0, 1 - slot * 0.25)
+      : Math.max(0.05, 1 - slot * 0.1);
+
+    card.style.zIndex = zIndex;
+    card.style.transform = `translateX(${translateX}px) scale(${scale})`;
+    card.style.filter = `brightness(${brightness})`;
+    card.style.opacity = opacity;
+    card.setAttribute('data-slot', slot);
+  });
+}
+
+// ─── BUILD CARDS ─────────────────────────────────────
+function buildCards() {
+  const track = document.getElementById('cards-track');
+  track.innerHTML = '';
+
+  const remaining = TOTAL - currentIndex;
+  const count = Math.min(VISIBLE_CARDS, remaining);
+
+  for (let slot = 0; slot < count; slot++) {
+    const idx = currentIndex + slot;
+    const painting = PAINTINGS[idx];
+    const card = document.createElement('div');
+    card.className = 'painting-card';
+    card.setAttribute('data-slot', slot);
+    card.setAttribute('data-idx', idx);
+
+    const frame = document.createElement('div');
+    frame.className = 'card-frame';
+
+    const img = document.createElement('img');
+    img.className = 'card-img';
+    img.src = `Spirals of time/${painting.id}.webp`;
+    img.alt = painting.title;
+    img.loading = slot === 0 ? 'eager' : 'lazy';
+    img.decoding = 'async';
+
+    frame.appendChild(img);
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'card-overlay';
+    frame.appendChild(overlay);
+
+    // Add philosophy text on the first canvas (idx === 0)
+    if (idx === 0) {
+      const textOverlay = document.createElement('div');
+      textOverlay.className = 'card-text-overlay';
+      textOverlay.innerHTML = `
+        <div class="card-philosophy-text">
+          <p>Everything in the world is governed by number. Mathematics stands as the singular, absolute law of the Universe, merging with aesthetics and the form of human thought. Here there are no familiar brushes and canvases — their place has been taken by an algorithm, created by man according to the laws of the universe, time, and pure intention.</p>
+          <p>Just as our world, if viewed as a great Program, was once set in motion by the Creator, everything around us is born, blooms, and flows into new forms according to His invisible rules. In music that gives rise to spirals of sound, in geometry and color, there lies a strict numerical order. It sustains harmony at every level of existence — both the visible and the hidden.</p>
+          <p>We are invited here only to contemplate this beauty and to understand how refined, fragile, and fleeting it truly is.</p>
+        </div>
+      `;
+      frame.appendChild(textOverlay);
+    }
+
+    card.appendChild(frame);
+    track.appendChild(card);
+  }
+
+  positionCards();
+}
+
+// ─── UPDATE INFO ─────────────────────────────────────
+function updateInfo() {
+  const p = PAINTINGS[currentIndex];
+  document.getElementById('artwork-number').textContent =
+    `Artwork ${String(currentIndex + 1).padStart(2,'0')} / ${TOTAL}`;
+  document.getElementById('artwork-title').textContent = p.title;
+  document.getElementById('artwork-desc').textContent  = p.desc;
+  document.getElementById('nav-counter').textContent   =
+    `${String(currentIndex + 1).padStart(2,'0')} / ${TOTAL}`;
+
+  document.getElementById('btn-prev').disabled = currentIndex === 0;
+  document.getElementById('btn-next').disabled = false;
+
+  const restartBtn = document.getElementById('restart-btn');
+  if (restartBtn) {
+    restartBtn.style.display = currentIndex === TOTAL - 1 ? 'inline-flex' : 'none';
+  }
+}
+
+// ─── NAVIGATE (SMOOTH) ──────────────────────────────
+function navigate(dir) {
+  if (isAnimating) return;
+  const next = currentIndex + dir;
+  if (next < 0) return;
+  if (next >= TOTAL) {
+    restartGallery();
+    return;
+  }
+  isAnimating = true;
+
+  const infoEl = document.getElementById('artwork-info');
+  infoEl.classList.remove('visible');
+
+  const cards = document.querySelectorAll('.painting-card');
+  const offset = getAccordionOffset(cards.length);
+  const scaleStep = isMobileView() ? 0.02 : 0.012;
+
+  if (dir > 0) {
+    // NEXT: front card slides out left & fades, others shift forward
+    const frontCard = cards[0];
+    if (frontCard) {
+      frontCard.style.transition = 'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease, filter 0.5s ease';
+      frontCard.style.transform = isMobileView() ? 'translateX(-115%) scale(0.92)' : 'translateX(-120px) scale(0.92)';
+      frontCard.style.opacity = '0';
+      frontCard.style.filter = 'brightness(0)';
+    }
+
+    // Remaining cards animate to their new (slot - 1) positions
+    cards.forEach((card, slot) => {
+      if (slot === 0) return;
+      const newSlot = slot - 1;
+      const translateX = newSlot * offset;
+      const scale = 1 - newSlot * scaleStep;
+      const brightness = isMobileView()
+        ? Math.max(0.2, 1 - newSlot * 0.2)
+        : Math.max(0.06, 1 - newSlot * 0.11);
+      const opacity = isMobileView()
+        ? Math.max(0.0, 1 - newSlot * 0.25)
+        : Math.max(0.05, 1 - newSlot * 0.1);
+
+      card.style.transition = 'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.6s ease, filter 0.6s ease';
+      card.style.zIndex = cards.length - newSlot;
+      card.style.transform = `translateX(${translateX}px) scale(${scale})`;
+      card.style.filter = `brightness(${brightness})`;
+      card.style.opacity = opacity;
+      card.setAttribute('data-slot', newSlot);
+    });
+
+    setTimeout(() => {
+      currentIndex = next;
+      buildCards();
+      updateInfo();
+      setTimeout(() => infoEl.classList.add('visible'), 150);
+      isAnimating = false;
+    }, 600);
+
+  } else {
+    // PREV: all cards shift right, new front card fades in from left
+    cards.forEach((card, slot) => {
+      const newSlot = slot + 1;
+      const translateX = newSlot * offset;
+      const scale = 1 - newSlot * scaleStep;
+      const brightness = isMobileView()
+        ? Math.max(0.2, 1 - newSlot * 0.2)
+        : Math.max(0.06, 1 - newSlot * 0.11);
+      const opacity = isMobileView()
+        ? Math.max(0.0, 1 - newSlot * 0.25)
+        : Math.max(0.05, 1 - newSlot * 0.1);
+
+      card.style.transition = 'transform 0.65s cubic-bezier(0.4,0,0.2,1), opacity 0.6s ease, filter 0.6s ease';
+      card.style.zIndex = cards.length - newSlot;
+      card.style.transform = `translateX(${translateX}px) scale(${scale})`;
+      card.style.filter = `brightness(${brightness})`;
+      card.style.opacity = opacity;
+    });
+
+    setTimeout(() => {
+      currentIndex = next;
+      buildCards();
+
+      // Animate new front card from the left
+      const newFront = document.querySelector('.painting-card[data-slot="0"]');
+      if (newFront) {
+        newFront.style.transition = 'none';
+        newFront.style.transform = isMobileView() ? 'translateX(-115%) scale(0.95)' : 'translateX(-80px) scale(0.95)';
+        newFront.style.opacity = '0';
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            newFront.style.transition = 'transform 0.55s cubic-bezier(0.4,0,0.2,1), opacity 0.45s ease, filter 0.45s ease';
+            newFront.style.transform = 'translateX(0) scale(1)';
+            newFront.style.opacity = '1';
+            newFront.style.filter = 'brightness(1)';
+          });
+        });
+      }
+
+      updateInfo();
+      setTimeout(() => infoEl.classList.add('visible'), 200);
+      isAnimating = false;
+    }, 500);
+  }
+}
+
+// ─── RESTART GALLERY ──────────────────────────────────
+function restartGallery() {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  const infoEl = document.getElementById('artwork-info');
+  if (infoEl) infoEl.classList.remove('visible');
+
+  const track = document.getElementById('cards-track');
+  if (track) track.style.opacity = '0';
+
+  setTimeout(() => {
+    currentIndex = 0;
+    buildCards();
+    updateInfo();
+    if (track) track.style.opacity = '1';
+
+    setTimeout(() => {
+      if (infoEl) infoEl.classList.add('visible');
+      isAnimating = false;
+    }, 200);
+  }, 400);
+}
+
+// ─── START BROWSING ───────────────────────────────────
+function startBrowsing() {
+  isBrowsing = true;
+  document.getElementById('page').classList.add('browsing');
+  positionCards();
+
+  const introEl  = document.getElementById('intro-content');
+  const browseEl = document.getElementById('browse-content');
+  const infoEl   = document.getElementById('artwork-info');
+
+  introEl.classList.add('hidden');
+
+  setTimeout(() => {
+    browseEl.classList.add('visible');
+    updateInfo();
+    setTimeout(() => infoEl.classList.add('visible'), 300);
+  }, 350);
+}
+
+// ─── STOP BROWSING / SHOW INTRO ───────────────────────
+function stopBrowsing() {
+  isBrowsing = false;
+  document.getElementById('page').classList.remove('browsing');
+  positionCards();
+
+  const introEl  = document.getElementById('intro-content');
+  const browseEl = document.getElementById('browse-content');
+  const infoEl   = document.getElementById('artwork-info');
+
+  infoEl.classList.remove('visible');
+  browseEl.classList.remove('visible');
+
+  setTimeout(() => {
+    introEl.classList.remove('hidden');
+  }, 350);
+}
+
+// ─── INIT ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildCards();
+
+  // Event listeners
+  document.getElementById('start-btn').addEventListener('click', startBrowsing);
+  document.getElementById('back-to-intro-btn').addEventListener('click', stopBrowsing);
+  document.getElementById('restart-btn').addEventListener('click', restartGallery);
+  document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
+  document.getElementById('btn-next').addEventListener('click', () => navigate(1));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (!isBrowsing) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   navigate(-1);
+    if (e.key === 'Escape') stopBrowsing();
+  });
+
+  // ─── MOBILE SETUP ────────────────────────────────────
+
+  if (isMobileView()) {
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    const artworkInfo = document.getElementById('artwork-info');
+    const divider = leftPanel.querySelector('.gold-divider');
+    if (divider) {
+      if (artworkInfo) {
+        divider.after(artworkInfo);
+      }
+      if (rightPanel) {
+        (artworkInfo || divider).after(rightPanel);
+      }
+    }
+
+    // Add swipe hint below painting
+    if (rightPanel) {
+      const swipeHint = document.createElement('div');
+      swipeHint.className = 'swipe-hint';
+      swipeHint.id = 'swipe-hint';
+      swipeHint.textContent = '← swipe to navigate →';
+      rightPanel.after(swipeHint);
+    }
+  }
+
+  // ─── TOUCH SWIPE FOR PAINTINGS ────────────────────────
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  const cardsTrack = document.getElementById('cards-track');
+
+  if (cardsTrack) {
+    cardsTrack.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }, { passive: true });
+
+    cardsTrack.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const dt = Date.now() - touchStartTime;
+
+      // Must be a horizontal swipe: fast enough, far enough, more horizontal than vertical
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2 && dt < 500) {
+        if (!isBrowsing) {
+          startBrowsing();
+          // Hide swipe hint after first interaction
+          const hint = document.getElementById('swipe-hint');
+          if (hint) hint.classList.add('hidden');
+          return;
+        }
+        if (dx < 0) navigate(1);   // swipe left = next
+        else navigate(-1);          // swipe right = prev
+
+        // Hide swipe hint
+        const hint = document.getElementById('swipe-hint');
+        if (hint) hint.classList.add('hidden');
+      }
+    }, { passive: true });
+  }
+
+  // Hide loader
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('page-loader').classList.add('done');
+    }, 600);
+  });
+  setTimeout(() => {
+    document.getElementById('page-loader').classList.add('done');
+  }, 1800);
+});
+</script>
+</body>
+</html>

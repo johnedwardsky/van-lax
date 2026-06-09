@@ -1433,3 +1433,33 @@ h2 { font-size: 2.75rem; font-weight: 200; margin-bottom: 1.1rem; letter-spacing
     gap: 12px;
   }
 }
+
+/* Manifesto Quote Block styling */
+.manifesto-quote {
+  background: rgba(229, 178, 54, 0.02);
+  border: 1px solid rgba(229, 178, 54, 0.1);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  padding: 30px 40px;
+  margin: 40px 0;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(18px, 2.2vw, 22px);
+  line-height: 1.8;
+  color: rgba(220, 210, 190, 0.95);
+  font-style: italic;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(229,178,54,0.02);
+  transition: all 0.5s ease;
+}
+.manifesto-quote:hover {
+  border-color: rgba(229, 178, 54, 0.25);
+  background: rgba(229, 178, 54, 0.04);
+  box-shadow: 0 15px 40px rgba(229,178,54,0.03), 0 10px 30px rgba(0,0,0,0.6);
+  transform: translateY(-2px);
+}
+.manifesto-quote p {
+  margin-bottom: 15px;
+  text-align: justify;
+}
+.manifesto-quote p:last-child {
+  margin-bottom: 0;
+}

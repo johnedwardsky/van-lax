@@ -28,7 +28,7 @@ let targetCameraZ = 0;
 
 // Shift these up so they are ready for any function calls
 const nodeSpacing = 200; 
-const totalNodes = 13; 
+const totalNodes = 14; 
 const spiralLength = nodeSpacing * (totalNodes - 1);
 const nodes = document.querySelectorAll('.gallery-node');
 
@@ -570,15 +570,16 @@ const nodeColors = [
   new THREE.Color(0x333333), // node 0 (Art)
   new THREE.Color(0xE5B236), // node 1 (Gallery 1)
   new THREE.Color(0x8A2BE2), // node 2 (Gallery 2)
-  new THREE.Color(0xffffff), // node 3 (The Book)
-  new THREE.Color(0x00d2ff), // node 4 (Generative)
-  new THREE.Color(0xaa00ff), // node 5 (Music / Rebirth)
-  new THREE.Color(0xff0055), // node 6 (Store)
-  new THREE.Color(0x00ff88), // node 7 (About)
-  new THREE.Color(0xff8800), // node 8 (Contacts)
-  new THREE.Color(0x00b4d8), // node 9 (Deep Blue)
-  new THREE.Color(0xaa00ff), // node 10 (NOX)
-  new THREE.Color(0x00ffcc), // node 11 (Evolution)
+  new THREE.Color(0xffffff), // node 3 (Phi)
+  new THREE.Color(0xC9A96E), // node 4 (Spirals of Time)
+  new THREE.Color(0x00d2ff), // node 5 (Generative / Abrakadabra)
+  new THREE.Color(0xaa00ff), // node 6 (Music / Rebirth)
+  new THREE.Color(0xff0055), // node 7 (Store)
+  new THREE.Color(0x00ff88), // node 8 (About)
+  new THREE.Color(0xff8800), // node 9 (Contacts)
+  new THREE.Color(0x00b4d8), // node 10 (Deep Blue)
+  new THREE.Color(0xaa00ff), // node 11 (NOX)
+  new THREE.Color(0x00ffcc), // node 12 (Evolution)
 ];
 
 let currentNodeIndex = 0;

@@ -62,6 +62,26 @@
     <priority>0.6</priority>
   </url>
 
+  <!-- Spirals of Time — English -->
+  <url>
+    <loc>https://vanlax.space/spirals-of-time-en.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/spirals-of-time-en.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/spirals-of-time.html"/>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Spirals of Time — Russian -->
+  <url>
+    <loc>https://vanlax.space/spirals-of-time.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://vanlax.space/spirals-of-time.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://vanlax.space/spirals-of-time-en.html"/>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- The Book -->
   <url>
     <loc>https://vanlax.space/book/</loc>

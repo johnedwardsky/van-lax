@@ -543,11 +543,24 @@ window.enterPhi = function(lang) {
   }
 };
 
+// Enter Spirals of Time page (separate locked page)
+window.enterSpirals = function() {
+  const isRu = window.location.pathname.includes('-ru');
+  const dest = isRu ? 'spirals-of-time.html' : 'spirals-of-time-en.html';
+  if (GATE.isValid()) {
+    window.location.href = dest;
+  } else {
+    window._vanlaxPendingNav = () => { window.location.href = dest; };
+    showGatePopup();
+  }
+};
+
 // Close popup without entering code
 function closeGatePopup() {
   // On a fully locked page (e.g. phi-geometry), send user back to hub
   if (window.GATE_LOCKED_PAGE) {
-    window.location.href = 'index.html';
+    const isRu = window.location.pathname.includes('-ru') || (window.location.pathname.includes('spirals-of-time') && !window.location.pathname.includes('-en'));
+    window.location.href = isRu ? 'index-ru.html' : 'index.html';
     return;
   }
   const overlay = document.getElementById('welcome-popup-overlay');
@@ -654,14 +667,16 @@ window.addEventListener('DOMContentLoaded', () => {
     return; // No need to wrap flyThrough/enterSection on standalone pages
   }
 
-  // Sections that require an invite code
-  const RESTRICTED = new Set([1, 2, 3, 4, 9, 11]);
+  // DNA positions that require an invite code (for flyThrough)
+  const RESTRICTED_FLY = new Set([1, 2, 3, 4, 5, 10, 12]);
+  // Gallery container IDs that require an invite code (for enterSection)
+  const RESTRICTED_SECTION = new Set([1, 2, 3, 4, 9, 11]);
 
   // Wrap flyThrough
   if (typeof window.flyThrough === 'function') {
     const _orig = window.flyThrough;
     window.flyThrough = function(n, ...args) {
-      if (RESTRICTED.has(n) && !GATE.isValid()) {
+      if (RESTRICTED_FLY.has(n) && !GATE.isValid()) {
         window._vanlaxPendingNav = () => _orig.call(window, n, ...args);
         showGatePopup();
         return;
@@ -674,7 +689,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof window.enterSection === 'function') {
     const _orig = window.enterSection;
     window.enterSection = function(n, ...args) {
-      if (RESTRICTED.has(n) && !GATE.isValid()) {
+      if (RESTRICTED_SECTION.has(n) && !GATE.isValid()) {
         window._vanlaxPendingNav = () => _orig.call(window, n, ...args);
         showGatePopup();
         return;
