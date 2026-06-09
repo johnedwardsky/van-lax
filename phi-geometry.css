@@ -287,8 +287,9 @@ footer {
         text-decoration: underline;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        width: auto;
-        display: inline-block;
+        width: max-content !important;
+        display: block !important;
+        margin: 0.4rem auto 0 !important;
         box-shadow: none !important;
         padding: 4px 8px;
         order: 99;
