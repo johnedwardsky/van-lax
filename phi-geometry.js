@@ -275,3 +275,23 @@ window.addEventListener('mousemove', (e) => {
         c.currY += my * (i % 3 === 0 ? 1 : -1) * 0.05;
     });
 });
+
+// Mobile swipe: right-to-left triggers new transformation when panel is collapsed
+let touchStartX = 0;
+let touchStartY = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+canvas.addEventListener('touchend', (e) => {
+    if (!controlsPanel.classList.contains('collapsed')) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Swipe left: dx < -60, mostly horizontal
+    if (dx < -60 && Math.abs(dy) < Math.abs(dx)) {
+        baseHue = Math.random() * 360;
+        generateInfiniteGeometry();
+    }
+}, { passive: true });
