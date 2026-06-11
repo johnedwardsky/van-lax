@@ -255,14 +255,11 @@ pointsOnlyBtn.addEventListener('click', () => {
 });
 
 const togglePanelBtn = document.getElementById('toggle-panel');
-const btnGroup = document.querySelector('.btn-group');
-const infoPanel = document.querySelector('.info-panel');
+const controlsPanel = document.querySelector('.controls');
 
 togglePanelBtn.addEventListener('click', () => {
-    const isHidden = btnGroup.style.display === 'none';
-    btnGroup.style.display = isHidden ? '' : 'none';
-    infoPanel.style.display = isHidden ? '' : 'none';
-    togglePanelBtn.classList.toggle('collapsed', !isHidden);
+    controlsPanel.classList.toggle('collapsed');
+    togglePanelBtn.classList.toggle('collapsed');
 });
 
 // Initial state
