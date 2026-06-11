@@ -111,6 +111,11 @@ h1 {
     height: 100%;
     z-index: 0;
     background: radial-gradient(circle at center, #0a111a 0%, #05070a 100%);
+    transition: background 0.6s ease;
+}
+
+#canvas.points-only-bg {
+    background: #000;
 }
 
 .controls {
@@ -249,7 +254,8 @@ footer {
     }
 
     .btn-group {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 0.5rem;
         width: 100%;
     }
@@ -258,6 +264,23 @@ footer {
         width: 100%;
         padding: 8px 16px;
         font-size: 0.72rem;
+    }
+
+    #randomize {
+        width: 100%;
+        order: 1;
+    }
+
+    #points-only {
+        flex: 1 1 45%;
+        width: auto;
+        order: 2;
+    }
+
+    .btn-group a[href*="spirals"] {
+        flex: 1 1 45%;
+        width: auto !important;
+        order: 3;
     }
 
     .btn-row-dual {
@@ -273,7 +296,6 @@ footer {
         padding: 8px 10px;
     }
 
-    #toggle-points,
     .btn-group a[href*="abrakadabra"] {
         display: none !important;
     }

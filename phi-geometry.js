@@ -1,7 +1,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const randomizeBtn = document.getElementById('randomize');
-const togglePointsBtn = document.getElementById('toggle-points');
+const pointsOnlyBtn = document.getElementById('points-only');
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const SQRT2 = Math.sqrt(2);
@@ -10,7 +10,7 @@ const SQRT3 = Math.sqrt(3);
 let width, height, centerX, centerY, baseR;
 let circles = [];
 let intersections = [];
-let showPoints = true;
+let pointsOnlyMode = false;
 let frame = 0;
 let baseHue = 40;
 
@@ -54,6 +54,7 @@ class Circle {
     }
 
     draw() {
+        if (pointsOnlyMode) return;
         ctx.beginPath();
         ctx.arc(this.currX, this.currY, this.currR, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(212, 175, 55, ${this.opacity * 0.45})`;
@@ -162,6 +163,7 @@ function updateIntersections() {
 }
 
 function drawConnections() {
+    if (pointsOnlyMode) return;
     if (intersections.length < 2) return;
 
     // Connect points using a distance-based web to reveal the hidden geometry
@@ -197,7 +199,6 @@ function drawConnections() {
 }
 
 function drawPoints() {
-    if (!showPoints) return;
     
     intersections.forEach((p, i) => {
         if (i % 2 !== 0) return; // Optimization: draw half the points
@@ -245,8 +246,12 @@ randomizeBtn.addEventListener('click', () => {
     generateInfiniteGeometry();
 });
 
-togglePointsBtn.addEventListener('click', () => {
-    showPoints = !showPoints;
+pointsOnlyBtn.addEventListener('click', () => {
+    pointsOnlyMode = !pointsOnlyMode;
+    pointsOnlyBtn.classList.toggle('active', pointsOnlyMode);
+    canvas.classList.toggle('points-only-bg', pointsOnlyMode);
+    document.querySelector('header').style.display = pointsOnlyMode ? 'none' : '';
+    document.querySelector('footer').style.display = pointsOnlyMode ? 'none' : '';
 });
 
 // Initial state
