@@ -254,6 +254,17 @@ pointsOnlyBtn.addEventListener('click', () => {
     document.querySelector('footer').style.display = pointsOnlyMode ? 'none' : '';
 });
 
+const togglePanelBtn = document.getElementById('toggle-panel');
+const controlsPanel = document.querySelector('.controls');
+
+togglePanelBtn.addEventListener('click', () => {
+    const isHidden = controlsPanel.style.display === 'none';
+    controlsPanel.style.display = isHidden ? '' : 'none';
+    togglePanelBtn.classList.toggle('panel-hidden', !isHidden);
+    document.querySelector('header').style.display = isHidden ? '' : 'none';
+    document.querySelector('footer').style.display = isHidden ? '' : 'none';
+});
+
 // Initial state
 generateInfiniteGeometry();
 animate();
