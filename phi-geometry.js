@@ -280,12 +280,12 @@ window.addEventListener('mousemove', (e) => {
 let touchStartX = 0;
 let touchStartY = 0;
 
-canvas.addEventListener('touchstart', (e) => {
+document.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
 }, { passive: true });
 
-canvas.addEventListener('touchend', (e) => {
+document.addEventListener('touchend', (e) => {
     if (!controlsPanel.classList.contains('collapsed')) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
