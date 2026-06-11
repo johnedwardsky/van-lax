@@ -118,29 +118,22 @@ h1 {
     background: #000;
 }
 
-.toggle-panel-btn {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 1.4rem;
+.panel-arrow {
+    display: inline-block;
     cursor: pointer;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.75rem;
     transition: all 0.4s ease;
-    padding: 6px 16px;
-    line-height: 1;
+    margin-left: 6px;
+    vertical-align: middle;
 }
 
-.toggle-panel-btn:hover {
+.panel-arrow:hover {
     color: var(--accent-gold);
 }
 
-.toggle-panel-btn.panel-hidden {
-    bottom: 1.2rem;
-    transform: translateX(-50%) rotate(180deg);
+.panel-arrow.collapsed {
+    transform: rotate(180deg);
 }
 
 .controls {
